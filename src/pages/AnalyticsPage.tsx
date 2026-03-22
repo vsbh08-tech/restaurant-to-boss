@@ -1042,17 +1042,17 @@ function TransferKpiCard({ icon: Icon, label, value, subtitle, tone }: TransferK
   const toneConfig = toneMap[tone];
 
   return (
-    <div className={cn("rounded-2xl border px-4 py-3 shadow-sm", toneConfig.cardClassName)}>
-      <div className="flex items-start gap-3">
-        <div className={cn("mt-0.5 rounded-xl bg-background/80 p-2 shadow-sm", toneConfig.iconClassName)}>
-          <Icon className="h-4 w-4" />
+    <div className={cn("rounded-xl border px-3 py-2 shadow-sm", toneConfig.cardClassName)}>
+      <div className="flex items-start gap-2.5">
+        <div className={cn("mt-0.5 rounded-lg bg-background/80 p-1.5 shadow-sm", toneConfig.iconClassName)}>
+          <Icon className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm leading-snug text-muted-foreground">{label}</p>
-          <p className={cn("mt-1 text-2xl font-semibold leading-none tracking-tight", toneConfig.valueClassName)}>
+          <p className="text-xs leading-snug text-muted-foreground">{label}</p>
+          <p className={cn("mt-0.5 text-xl font-semibold leading-none tracking-tight", toneConfig.valueClassName)}>
             {value}
           </p>
-          {subtitle ? <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p> : null}
+          {subtitle ? <p className="mt-0.5 text-[11px] text-muted-foreground">{subtitle}</p> : null}
         </div>
       </div>
     </div>
@@ -1069,15 +1069,15 @@ function TransferPeriodCard({
   onChange: (next: string[]) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background px-4 py-3 shadow-sm">
-      <div className="flex h-full min-h-[94px] flex-col justify-between gap-3">
+    <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background px-3 py-2 shadow-sm">
+      <div className="flex h-full min-h-[78px] flex-col justify-between gap-2">
         <div>
-          <p className="text-sm leading-snug text-muted-foreground">Период</p>
-          <p className="mt-1 text-xs text-muted-foreground">Выбор месяца для матрицы и накопленного итога</p>
+          <p className="text-xs leading-snug text-muted-foreground">Период</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">Месяц матрицы и накопленного итога</p>
         </div>
 
         <Select value={selectedPeriodKey ?? undefined} onValueChange={(value) => onChange([value])}>
-          <SelectTrigger className="h-11 w-full bg-background/90 text-left">
+          <SelectTrigger className="h-9 w-full bg-background/90 text-left text-sm">
             <SelectValue placeholder="Выберите период" />
           </SelectTrigger>
           <SelectContent>
@@ -1096,12 +1096,12 @@ function TransferPeriodCard({
 function TransferMatrixCard({ title, periodLabel, summary, description }: TransferMatrixCardProps) {
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-2.5">
         <div>
-          <CardTitle className="text-base font-serif">{title}</CardTitle>
-          {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
+          <CardTitle className="text-sm font-serif">{title}</CardTitle>
+          {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
         </div>
-        <div className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
+        <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
           Период: {periodLabel}
         </div>
       </CardHeader>
@@ -1111,21 +1111,21 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky left-0 z-20 min-w-[160px] bg-background px-4 text-sm font-semibold text-foreground">
+                <TableHead className="sticky left-0 z-20 min-w-[132px] bg-background px-3 py-2 text-xs font-semibold text-foreground">
                   Откуда / Куда
                 </TableHead>
                 {summary.restaurants.map((restaurant) => (
-                  <TableHead key={restaurant} className="min-w-[132px] px-3 text-center text-sm font-semibold">
+                  <TableHead key={restaurant} className="min-w-[112px] px-2 py-2 text-center text-xs font-semibold">
                     {restaurant}
                   </TableHead>
                 ))}
-                <TableHead className="min-w-[132px] px-3 text-right text-sm font-semibold">Итого выдано</TableHead>
+                <TableHead className="min-w-[112px] px-2 py-2 text-right text-xs font-semibold">Итого выдано</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {summary.rows.map((row) => (
                 <TableRow key={row.restaurant}>
-                  <TableCell className="sticky left-0 z-10 bg-background px-4 py-3 text-sm font-semibold">
+                  <TableCell className="sticky left-0 z-10 bg-background px-3 py-2.5 text-sm font-semibold">
                     {row.restaurant}
                   </TableCell>
                   {row.cells.map((cell) => {
@@ -1134,7 +1134,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                     return (
                       <TableCell
                         key={[row.restaurant, cell.restaurant].join("::")}
-                        className={cn("px-3 py-3 text-right text-sm font-mono", cellStyle.className)}
+                        className={cn("px-2 py-2.5 text-right text-xs font-mono", cellStyle.className)}
                         style={cellStyle.style}
                       >
                         {formatCurrency(Math.round(cell.amount))} ₽
@@ -1143,7 +1143,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                   })}
                   <TableCell
                     className={cn(
-                      "px-3 py-3 text-right text-sm font-mono font-semibold",
+                      "px-2 py-2.5 text-right text-xs font-mono font-semibold",
                       row.totalOut < 0 ? "text-destructive" : "text-foreground",
                     )}
                   >
@@ -1154,14 +1154,14 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             </TableBody>
             <TableFooter>
               <TableRow className="hover:bg-muted/50">
-                <TableCell className="sticky left-0 z-10 bg-muted/50 px-4 py-3 text-sm font-bold">
+                <TableCell className="sticky left-0 z-10 bg-muted/50 px-3 py-2.5 text-sm font-bold">
                   Итого получено
                 </TableCell>
                 {summary.columnTotals.map((amount, index) => (
                   <TableCell
                     key={summary.restaurants[index]}
                     className={cn(
-                      "px-3 py-3 text-right text-sm font-mono font-bold",
+                      "px-2 py-2.5 text-right text-xs font-mono font-bold",
                       amount < 0 ? "text-destructive" : "text-foreground",
                     )}
                   >
@@ -1170,7 +1170,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 ))}
                 <TableCell
                   className={cn(
-                    "px-3 py-3 text-right text-sm font-mono font-bold",
+                    "px-2 py-2.5 text-right text-xs font-mono font-bold",
                     summary.grandTotal < 0 ? "text-destructive" : "text-foreground",
                   )}
                 >
