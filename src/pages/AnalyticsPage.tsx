@@ -146,6 +146,8 @@ type TransferMatrixSummary = {
   grandTotal: number;
   topRecipient: TransferLeader;
   topDonor: TransferLeader;
+  topRepayer: TransferLeader;
+  topReturnReceiver: TransferLeader;
   maxMagnitude: number;
 };
 
@@ -574,7 +576,7 @@ function buildStructureRows(
     .sort((a, b) => b.magnitude - a.magnitude);
 }
 
-function pickTransferLeader(items: Array<{ restaurant: string; amount: number }>) {
+function pickPositiveTransferLeader(items: Array<{ restaurant: string; amount: number }>) {
   return items.reduce<TransferLeader>(
     (best, item) => {
       if (item.amount <= 0) {
@@ -590,6 +592,27 @@ function pickTransferLeader(items: Array<{ restaurant: string; amount: number }>
         best.restaurant !== null &&
         item.restaurant.localeCompare(best.restaurant, "ru") < 0
       ) {
+        return item;
+      }
+
+      return best;
+    },
+    { restaurant: null, amount: 0 },
+  );
+}
+
+function pickNegativeTransferLeader(items: Array<{ restaurant: string; amount: number }>) {
+  return items.reduce<TransferLeader>(
+    (best, item) => {
+      if (item.amount >= 0) {
+        return best;
+      }
+
+      if (best.restaurant === null || item.amount < best.amount) {
+        return item;
+      }
+
+      if (item.amount === best.amount && item.restaurant.localeCompare(best.restaurant, "ru") < 0) {
         return item;
       }
 
@@ -638,9 +661,15 @@ function buildTransferMatrix(rows: IntragroupTransferRow[], restaurants: string[
     rows: matrixRows,
     columnTotals,
     grandTotal,
-    topDonor: pickTransferLeader(matrixRows.map((row) => ({ restaurant: row.restaurant, amount: row.totalOut }))),
-    topRecipient: pickTransferLeader(
+    topDonor: pickPositiveTransferLeader(matrixRows.map((row) => ({ restaurant: row.restaurant, amount: row.totalOut }))),
+    topRecipient: pickPositiveTransferLeader(
       restaurants.map((restaurant, index) => ({ restaurant, amount: columnTotals[index] ?? 0 })),
+    ),
+    topRepayer: pickNegativeTransferLeader(
+      restaurants.map((restaurant, index) => ({ restaurant, amount: columnTotals[index] ?? 0 })),
+    ),
+    topReturnReceiver: pickNegativeTransferLeader(
+      matrixRows.map((row) => ({ restaurant: row.restaurant, amount: row.totalOut })),
     ),
     maxMagnitude,
   };
@@ -1116,26 +1145,29 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
               <TableRow>
                 <TableHead
                   rowSpan={2}
-                  className="sticky left-0 z-20 min-w-[132px] bg-muted/30 px-3 py-2 text-left text-xs font-semibold text-foreground"
+                  className="sticky left-0 z-20 min-w-[132px] bg-muted/30 px-3 py-2.5 text-left text-sm font-semibold text-foreground"
                 >
                   Откуда ↓
                 </TableHead>
                 <TableHead
                   colSpan={summary.restaurants.length}
-                  className="bg-muted/30 px-2 py-2 text-center text-xs font-semibold text-foreground"
+                  className="bg-muted/30 px-2 py-2.5 text-center text-sm font-semibold text-foreground"
                 >
                   Куда →
                 </TableHead>
                 <TableHead
                   rowSpan={2}
-                  className="min-w-[112px] bg-muted/30 px-2 py-2 text-right text-xs font-semibold text-foreground"
+                  className="min-w-[112px] bg-muted/30 px-2 py-2.5 text-right text-sm font-semibold text-foreground"
                 >
                   Итого выдано
                 </TableHead>
               </TableRow>
               <TableRow>
                 {summary.restaurants.map((restaurant) => (
-                  <TableHead key={restaurant} className="min-w-[112px] px-2 py-2 text-center text-xs font-semibold">
+                  <TableHead
+                    key={restaurant}
+                    className="min-w-[112px] bg-muted/30 px-2 py-2.5 text-center text-sm font-semibold text-foreground"
+                  >
                     {restaurant}
                   </TableHead>
                 ))}
@@ -1897,6 +1929,68 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     () => buildTransferMatrix(accumulatedRows, restaurants),
     [accumulatedRows, restaurants],
   );
+  const monthlyGrandTotalDisplay = useMemo(
+    () => `${formatCurrency(roundTransferDisplayAmount(monthlySummary.grandTotal))} ₽`,
+    [monthlySummary.grandTotal],
+  );
+  const recipientKpi = useMemo(() => {
+    if (monthlySummary.topRecipient.restaurant) {
+      return {
+        icon: ArrowDownLeft,
+        label: "Основной получатель",
+        value: monthlySummary.topRecipient.restaurant,
+        subtitle: `получено ${formatCurrency(roundTransferDisplayAmount(monthlySummary.topRecipient.amount))} ₽`,
+        tone: "accent" as const,
+      };
+    }
+
+    if (monthlySummary.topRepayer.restaurant) {
+      return {
+        icon: ArrowDownLeft,
+        label: "Кто больше всех вернул",
+        value: monthlySummary.topRepayer.restaurant,
+        subtitle: `вернул ${formatCurrency(Math.abs(roundTransferDisplayAmount(monthlySummary.topRepayer.amount)))} ₽`,
+        tone: "accent" as const,
+      };
+    }
+
+    return {
+      icon: ArrowDownLeft,
+      label: "Основной получатель",
+      value: "Нет данных",
+      subtitle: "в выбранном месяце нет движений",
+      tone: "accent" as const,
+    };
+  }, [monthlySummary.topRecipient, monthlySummary.topRepayer]);
+  const donorKpi = useMemo(() => {
+    if (monthlySummary.topDonor.restaurant) {
+      return {
+        icon: ArrowUpRight,
+        label: "Основной донор",
+        value: monthlySummary.topDonor.restaurant,
+        subtitle: `выдано ${formatCurrency(roundTransferDisplayAmount(monthlySummary.topDonor.amount))} ₽`,
+        tone: "success" as const,
+      };
+    }
+
+    if (monthlySummary.topReturnReceiver.restaurant) {
+      return {
+        icon: ArrowUpRight,
+        label: "Кому больше всех вернули",
+        value: monthlySummary.topReturnReceiver.restaurant,
+        subtitle: `получено назад ${formatCurrency(Math.abs(roundTransferDisplayAmount(monthlySummary.topReturnReceiver.amount)))} ₽`,
+        tone: "success" as const,
+      };
+    }
+
+    return {
+      icon: ArrowUpRight,
+      label: "Основной донор",
+      value: "Нет данных",
+      subtitle: "в выбранном месяце нет движений",
+      tone: "success" as const,
+    };
+  }, [monthlySummary.topDonor, monthlySummary.topReturnReceiver]);
 
   if (isLoading) {
     return (
@@ -1929,32 +2023,24 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             />
             <TransferKpiCard
               icon={ArrowLeftRight}
-              label="Внутригрупповые переводы"
-              value={`${formatCurrency(Math.round(monthlySummary.grandTotal))} ₽`}
+              label="Чистое внутригрупповое движение"
+              value={monthlyGrandTotalDisplay}
               subtitle={selectedPeriodOption ? `за ${selectedPeriodOption.label}` : undefined}
               tone="primary"
             />
             <TransferKpiCard
-              icon={ArrowDownLeft}
-              label="Основной получатель"
-              value={monthlySummary.topRecipient.restaurant ?? "Нет данных"}
-              subtitle={
-                monthlySummary.topRecipient.restaurant
-                  ? `получено ${formatCurrency(Math.round(monthlySummary.topRecipient.amount))} ₽`
-                  : "в выбранном месяце нет переводов"
-              }
-              tone="accent"
+              icon={recipientKpi.icon}
+              label={recipientKpi.label}
+              value={recipientKpi.value}
+              subtitle={recipientKpi.subtitle}
+              tone={recipientKpi.tone}
             />
             <TransferKpiCard
-              icon={ArrowUpRight}
-              label="Основной донор"
-              value={monthlySummary.topDonor.restaurant ?? "Нет данных"}
-              subtitle={
-                monthlySummary.topDonor.restaurant
-                  ? `выдано ${formatCurrency(Math.round(monthlySummary.topDonor.amount))} ₽`
-                  : "в выбранном месяце нет переводов"
-              }
-              tone="success"
+              icon={donorKpi.icon}
+              label={donorKpi.label}
+              value={donorKpi.value}
+              subtitle={donorKpi.subtitle}
+              tone={donorKpi.tone}
             />
           </div>
 
