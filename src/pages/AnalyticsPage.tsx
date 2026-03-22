@@ -1069,15 +1069,11 @@ function TransferPeriodCard({
   onChange: (next: string[]) => void;
 }) {
   return (
-    <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background px-3 py-2 shadow-sm">
-      <div className="flex h-full min-h-[78px] flex-col justify-between gap-2">
-        <div>
-          <p className="text-xs leading-snug text-muted-foreground">Период</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">Месяц матрицы и накопленного итога</p>
-        </div>
-
+    <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background px-3 py-1.5 shadow-sm">
+      <div className="flex h-full min-h-[60px] flex-col justify-center gap-1.5">
+        <p className="text-[11px] leading-snug text-muted-foreground">Период</p>
         <Select value={selectedPeriodKey ?? undefined} onValueChange={(value) => onChange([value])}>
-          <SelectTrigger className="h-9 w-full bg-background/90 text-left text-sm">
+          <SelectTrigger className="h-8 w-full bg-background/90 text-left text-sm">
             <SelectValue placeholder="Выберите период" />
           </SelectTrigger>
           <SelectContent>
