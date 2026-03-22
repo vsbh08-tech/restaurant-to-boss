@@ -1,6 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDownLeft, ArrowDownRight, ArrowLeftRight, ArrowUpRight, Download, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowLeftRight, ArrowUpRight, Download, Minus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, parsePeriodDate, parseTextNumeric } from "@/lib/supabase-helpers";
@@ -11,8 +11,10 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AnalyticsImportDialog } from "@/components/AnalyticsImportDialog";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/roles";
+import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, XAxis, YAxis } from "recharts";
 
 type FinanceFlow = {
   id: string;
@@ -164,6 +166,11 @@ type TransferMatrixCardProps = {
   periodLabel: string;
   summary: TransferMatrixSummary;
   description?: string;
+};
+
+type TransferNetChartDatum = {
+  restaurant: string;
+  net: number;
 };
 
 type SaveFilePickerWindow = Window & {
@@ -680,6 +687,25 @@ function roundTransferDisplayAmount(amount: number) {
   return Object.is(roundedAmount, -0) ? 0 : roundedAmount;
 }
 
+const transferNetChartConfig = {
+  net: {
+    label: "Чистое движение",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
+
+function buildTransferNetChartData(summary: TransferMatrixSummary): TransferNetChartDatum[] {
+  return summary.restaurants.map((restaurant, index) => {
+    const totalReceived = summary.columnTotals[index] ?? 0;
+    const totalIssued = summary.rows[index]?.totalOut ?? 0;
+
+    return {
+      restaurant,
+      net: roundTransferDisplayAmount(totalReceived - totalIssued),
+    };
+  });
+}
+
 function getTransferCellStyle(amount: number, maxMagnitude: number) {
   const roundedAmount = roundTransferDisplayAmount(amount);
 
@@ -1145,7 +1171,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
               <TableRow>
                 <TableHead
                   rowSpan={2}
-                  className="sticky left-0 z-20 min-w-[132px] bg-muted/30 px-3 py-2.5 text-left text-sm font-semibold text-foreground"
+                  className="sticky left-0 z-20 min-w-[120px] bg-muted/30 px-3 py-2.5 text-left text-sm font-semibold text-foreground"
                 >
                   Откуда ↓
                 </TableHead>
@@ -1157,7 +1183,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 </TableHead>
                 <TableHead
                   rowSpan={2}
-                  className="min-w-[112px] bg-muted/30 px-2 py-2.5 text-right text-sm font-semibold text-foreground"
+                  className="min-w-[104px] bg-muted/30 px-2 py-2.5 text-right text-sm font-semibold text-foreground"
                 >
                   Итого выдано
                 </TableHead>
@@ -1166,7 +1192,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 {summary.restaurants.map((restaurant) => (
                   <TableHead
                     key={restaurant}
-                    className="min-w-[112px] bg-muted/30 px-2 py-2.5 text-center text-sm font-semibold text-foreground"
+                    className="min-w-[104px] bg-muted/30 px-2 py-2.5 text-center text-sm font-semibold text-foreground"
                   >
                     {restaurant}
                   </TableHead>
@@ -1233,6 +1259,87 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
           </Table>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TransferNetChartCard({
+  title,
+  description,
+  summary,
+}: {
+  title: string;
+  description?: string;
+  summary: TransferMatrixSummary;
+}) {
+  const chartData = buildTransferNetChartData(summary);
+  const hasData = chartData.some((item) => item.net !== 0);
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="px-4 py-3">
+        <CardTitle className="text-sm font-serif">{title}</CardTitle>
+        {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
+      </CardHeader>
+
+      <CardContent className="px-4 pb-4 pt-0">
+        {hasData ? (
+          <ChartContainer config={transferNetChartConfig} className="h-[260px] w-full">
+            <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 12, bottom: 4, left: 12 }}>
+              <CartesianGrid horizontal={false} />
+              <XAxis
+                type="number"
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => formatCurrency(Math.abs(Number(value)))}
+              />
+              <YAxis
+                dataKey="restaurant"
+                type="category"
+                tickLine={false}
+                axisLine={false}
+                width={96}
+                tick={{ fontSize: 12 }}
+              />
+              <ReferenceLine x={0} stroke="hsl(var(--border))" />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    hideIndicator
+                    formatter={(value) => {
+                      const numericValue = Number(value);
+                      const amountText = `${formatCurrency(Math.abs(numericValue))} ₽`;
+
+                      if (numericValue > 0) {
+                        return [amountText, "Чисто получено"];
+                      }
+
+                      if (numericValue < 0) {
+                        return [amountText, "Чисто отдано"];
+                      }
+
+                      return [amountText, "Без движения"];
+                    }}
+                  />
+                }
+              />
+              <Bar dataKey="net" radius={6}>
+                {chartData.map((entry) => (
+                  <Cell
+                    key={entry.restaurant}
+                    fill={entry.net >= 0 ? "rgba(37, 99, 235, 0.8)" : "rgba(239, 68, 68, 0.8)"}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex h-[260px] items-center justify-center text-sm text-muted-foreground">
+            Нет движений за выбранный период.
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -1933,64 +2040,6 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     () => `${formatCurrency(roundTransferDisplayAmount(monthlySummary.grandTotal))} ₽`,
     [monthlySummary.grandTotal],
   );
-  const recipientKpi = useMemo(() => {
-    if (monthlySummary.topRecipient.restaurant) {
-      return {
-        icon: ArrowDownLeft,
-        label: "Основной получатель",
-        value: monthlySummary.topRecipient.restaurant,
-        subtitle: `получено ${formatCurrency(roundTransferDisplayAmount(monthlySummary.topRecipient.amount))} ₽`,
-        tone: "accent" as const,
-      };
-    }
-
-    if (monthlySummary.topRepayer.restaurant) {
-      return {
-        icon: ArrowDownLeft,
-        label: "Кто больше всех вернул",
-        value: monthlySummary.topRepayer.restaurant,
-        subtitle: `вернул ${formatCurrency(Math.abs(roundTransferDisplayAmount(monthlySummary.topRepayer.amount)))} ₽`,
-        tone: "accent" as const,
-      };
-    }
-
-    return {
-      icon: ArrowDownLeft,
-      label: "Основной получатель",
-      value: "Нет данных",
-      subtitle: "в выбранном месяце нет движений",
-      tone: "accent" as const,
-    };
-  }, [monthlySummary.topRecipient, monthlySummary.topRepayer]);
-  const donorKpi = useMemo(() => {
-    if (monthlySummary.topDonor.restaurant) {
-      return {
-        icon: ArrowUpRight,
-        label: "Основной донор",
-        value: monthlySummary.topDonor.restaurant,
-        subtitle: `выдано ${formatCurrency(roundTransferDisplayAmount(monthlySummary.topDonor.amount))} ₽`,
-        tone: "success" as const,
-      };
-    }
-
-    if (monthlySummary.topReturnReceiver.restaurant) {
-      return {
-        icon: ArrowUpRight,
-        label: "Кому больше всех вернули",
-        value: monthlySummary.topReturnReceiver.restaurant,
-        subtitle: `получено назад ${formatCurrency(Math.abs(roundTransferDisplayAmount(monthlySummary.topReturnReceiver.amount)))} ₽`,
-        tone: "success" as const,
-      };
-    }
-
-    return {
-      icon: ArrowUpRight,
-      label: "Основной донор",
-      value: "Нет данных",
-      subtitle: "в выбранном месяце нет движений",
-      tone: "success" as const,
-    };
-  }, [monthlySummary.topDonor, monthlySummary.topReturnReceiver]);
 
   if (isLoading) {
     return (
@@ -2015,7 +2064,7 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     <div className="space-y-3">
       <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
         <CardContent className="space-y-3 px-4 py-4">
-          <div className="grid gap-2 xl:grid-cols-4">
+          <div className="grid gap-2 xl:grid-cols-[220px_minmax(0,1fr)]">
             <TransferPeriodCard
               selectedPeriodKey={selectedPeriodKey}
               options={periodOptions}
@@ -2028,20 +2077,6 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
               subtitle={selectedPeriodOption ? `за ${selectedPeriodOption.label}` : undefined}
               tone="primary"
             />
-            <TransferKpiCard
-              icon={recipientKpi.icon}
-              label={recipientKpi.label}
-              value={recipientKpi.value}
-              subtitle={recipientKpi.subtitle}
-              tone={recipientKpi.tone}
-            />
-            <TransferKpiCard
-              icon={donorKpi.icon}
-              label={donorKpi.label}
-              value={donorKpi.value}
-              subtitle={donorKpi.subtitle}
-              tone={donorKpi.tone}
-            />
           </div>
 
           {usingLegacyTransferGroup ? (
@@ -2053,19 +2088,33 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         </CardContent>
       </Card>
 
-      <TransferMatrixCard
-        title="Внутригрупповое финансирование"
-        periodLabel={selectedPeriodOption?.label ?? "—"}
-        summary={monthlySummary}
-        description="Кто кого финансировал за выбранный месяц."
-      />
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_320px]">
+        <TransferMatrixCard
+          title="Внутригрупповое финансирование"
+          periodLabel={selectedPeriodOption?.label ?? "—"}
+          summary={monthlySummary}
+          description="Кто кого финансировал за выбранный месяц."
+        />
+        <TransferNetChartCard
+          title="Чистое движение по ресторанам"
+          summary={monthlySummary}
+          description="Плюс — ресторан получил деньги, минус — выдал или вернул."
+        />
+      </div>
 
-      <TransferMatrixCard
-        title="Накопленный итог внутригруппового финансирования"
-        periodLabel={selectedPeriodOption ? `на конец ${selectedPeriodOption.label}` : "—"}
-        summary={accumulatedSummary}
-        description="Сколько всего вложено в рестораны на выбранный момент."
-      />
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_320px]">
+        <TransferMatrixCard
+          title="Накопленный итог внутригруппового финансирования"
+          periodLabel={selectedPeriodOption ? `на конец ${selectedPeriodOption.label}` : "—"}
+          summary={accumulatedSummary}
+          description="Сколько всего вложено в рестораны на выбранный момент."
+        />
+        <TransferNetChartCard
+          title="Накопленная чистая позиция"
+          summary={accumulatedSummary}
+          description="Баланс вложений по каждому ресторану на выбранную дату."
+        />
+      </div>
     </div>
   );
 }
