@@ -646,19 +646,26 @@ function buildTransferMatrix(rows: IntragroupTransferRow[], restaurants: string[
   };
 }
 
+function roundTransferDisplayAmount(amount: number) {
+  const roundedAmount = Math.round(amount);
+  return Object.is(roundedAmount, -0) ? 0 : roundedAmount;
+}
+
 function getTransferCellStyle(amount: number, maxMagnitude: number) {
-  if (amount === 0 || maxMagnitude === 0) {
+  const roundedAmount = roundTransferDisplayAmount(amount);
+
+  if (roundedAmount === 0 || maxMagnitude === 0) {
     return {
-      className: "bg-muted/20 text-muted-foreground",
+      className: "text-muted-foreground",
       style: undefined,
     };
   }
 
   const intensity = Math.min(0.78, 0.16 + (Math.abs(amount) / maxMagnitude) * 0.48);
-  const rgb = amount > 0 ? "239, 68, 68" : "59, 130, 246";
+  const rgb = roundedAmount > 0 ? "239, 68, 68" : "59, 130, 246";
 
   return {
-    className: amount > 0 ? "text-white" : "text-foreground",
+    className: roundedAmount > 0 ? "text-white" : "text-foreground",
     style: {
       backgroundColor: `rgba(${rgb}, ${intensity})`,
     } as const,
@@ -1107,15 +1114,31 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky left-0 z-20 min-w-[132px] bg-background px-3 py-2 text-xs font-semibold text-foreground">
-                  Откуда / Куда
+                <TableHead
+                  rowSpan={2}
+                  className="sticky left-0 z-20 min-w-[132px] bg-muted/30 px-3 py-2 text-left text-xs font-semibold text-foreground"
+                >
+                  Откуда ↓
                 </TableHead>
+                <TableHead
+                  colSpan={summary.restaurants.length}
+                  className="bg-muted/30 px-2 py-2 text-center text-xs font-semibold text-foreground"
+                >
+                  Куда →
+                </TableHead>
+                <TableHead
+                  rowSpan={2}
+                  className="min-w-[112px] bg-muted/30 px-2 py-2 text-right text-xs font-semibold text-foreground"
+                >
+                  Итого выдано
+                </TableHead>
+              </TableRow>
+              <TableRow>
                 {summary.restaurants.map((restaurant) => (
                   <TableHead key={restaurant} className="min-w-[112px] px-2 py-2 text-center text-xs font-semibold">
                     {restaurant}
                   </TableHead>
                 ))}
-                <TableHead className="min-w-[112px] px-2 py-2 text-right text-xs font-semibold">Итого выдано</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1126,6 +1149,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                   </TableCell>
                   {row.cells.map((cell) => {
                     const cellStyle = getTransferCellStyle(cell.amount, summary.maxMagnitude);
+                    const displayAmount = roundTransferDisplayAmount(cell.amount);
 
                     return (
                       <TableCell
@@ -1133,44 +1157,44 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                         className={cn("px-2 py-2.5 text-right text-xs font-mono", cellStyle.className)}
                         style={cellStyle.style}
                       >
-                        {formatCurrency(Math.round(cell.amount))} ₽
+                        {formatCurrency(displayAmount)} ₽
                       </TableCell>
                     );
                   })}
                   <TableCell
                     className={cn(
-                      "px-2 py-2.5 text-right text-xs font-mono font-semibold",
-                      row.totalOut < 0 ? "text-destructive" : "text-foreground",
+                      "bg-muted/20 px-2 py-2.5 text-right text-xs font-mono font-semibold",
+                      roundTransferDisplayAmount(row.totalOut) < 0 ? "text-destructive" : "text-foreground",
                     )}
                   >
-                    {formatCurrency(Math.round(row.totalOut))} ₽
+                    {formatCurrency(roundTransferDisplayAmount(row.totalOut))} ₽
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
             <TableFooter>
-              <TableRow className="hover:bg-muted/50">
-                <TableCell className="sticky left-0 z-10 bg-muted/50 px-3 py-2.5 text-sm font-bold">
+              <TableRow className="bg-muted/20 hover:bg-muted/30">
+                <TableCell className="sticky left-0 z-10 bg-muted/30 px-3 py-2.5 text-sm font-bold">
                   Итого получено
                 </TableCell>
                 {summary.columnTotals.map((amount, index) => (
                   <TableCell
                     key={summary.restaurants[index]}
                     className={cn(
-                      "px-2 py-2.5 text-right text-xs font-mono font-bold",
-                      amount < 0 ? "text-destructive" : "text-foreground",
+                      "bg-muted/20 px-2 py-2.5 text-right text-xs font-mono font-bold",
+                      roundTransferDisplayAmount(amount) < 0 ? "text-destructive" : "text-foreground",
                     )}
                   >
-                    {formatCurrency(Math.round(amount))} ₽
+                    {formatCurrency(roundTransferDisplayAmount(amount))} ₽
                   </TableCell>
                 ))}
                 <TableCell
                   className={cn(
-                    "px-2 py-2.5 text-right text-xs font-mono font-bold",
-                    summary.grandTotal < 0 ? "text-destructive" : "text-foreground",
+                    "bg-muted/30 px-2 py-2.5 text-right text-xs font-mono font-bold",
+                    roundTransferDisplayAmount(summary.grandTotal) < 0 ? "text-destructive" : "text-foreground",
                   )}
                 >
-                  {formatCurrency(Math.round(summary.grandTotal))} ₽
+                  {formatCurrency(roundTransferDisplayAmount(summary.grandTotal))} ₽
                 </TableCell>
               </TableRow>
             </TableFooter>
