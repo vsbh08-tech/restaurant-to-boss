@@ -1059,6 +1059,40 @@ function TransferKpiCard({ icon: Icon, label, value, subtitle, tone }: TransferK
   );
 }
 
+function TransferPeriodCard({
+  selectedPeriodKey,
+  options,
+  onChange,
+}: {
+  selectedPeriodKey: string | null;
+  options: PeriodOption[];
+  onChange: (next: string[]) => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background px-4 py-3 shadow-sm">
+      <div className="flex h-full min-h-[94px] flex-col justify-between gap-3">
+        <div>
+          <p className="text-sm leading-snug text-muted-foreground">Период</p>
+          <p className="mt-1 text-xs text-muted-foreground">Выбор месяца для матрицы и накопленного итога</p>
+        </div>
+
+        <Select value={selectedPeriodKey ?? undefined} onValueChange={(value) => onChange([value])}>
+          <SelectTrigger className="h-11 w-full bg-background/90 text-left">
+            <SelectValue placeholder="Выберите период" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.key} value={option.key}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
 function TransferMatrixCard({ title, periodLabel, summary, description }: TransferMatrixCardProps) {
   return (
     <Card className="overflow-hidden">
@@ -1867,51 +1901,41 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     <div className="space-y-3">
       <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
         <CardContent className="space-y-3 px-4 py-4">
-          <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)]">
-            <FilterChipGroup
-              label="Период"
-              options={periodKeys}
-              selection={selectedPeriods}
+          <div className="grid gap-2 xl:grid-cols-4">
+            <TransferPeriodCard
+              selectedPeriodKey={selectedPeriodKey}
+              options={periodOptions}
               onChange={setSelectedPeriods}
-              renderOption={(periodKey) =>
-                periodOptions.find((option) => option.key === periodKey)?.label ?? periodKey
-              }
-              singleSelect
-              compact
-              matchPeriodHeight
             />
-
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              <TransferKpiCard
-                icon={ArrowLeftRight}
-                label="Внутригрупповые переводы"
-                value={`${formatCurrency(Math.round(monthlySummary.grandTotal))} ₽`}
-                subtitle={selectedPeriodOption ? `за ${selectedPeriodOption.label}` : undefined}
-                tone="primary"
-              />
-              <TransferKpiCard
-                icon={ArrowDownLeft}
-                label="Основной получатель"
-                value={monthlySummary.topRecipient.restaurant ?? "Нет данных"}
-                subtitle={
-                  monthlySummary.topRecipient.restaurant
-                    ? `получено ${formatCurrency(Math.round(monthlySummary.topRecipient.amount))} ₽`
-                    : "в выбранном месяце нет переводов"
-                }
-                tone="accent"
-              />
-              <TransferKpiCard
-                icon={ArrowUpRight}
-                label="Основной донор"
-                value={monthlySummary.topDonor.restaurant ?? "Нет данных"}
-                subtitle={
-                  monthlySummary.topDonor.restaurant
-                    ? `выдано ${formatCurrency(Math.round(monthlySummary.topDonor.amount))} ₽`
-                    : "в выбранном месяце нет переводов"
-                }
-                tone="success"
-              />
-            </div>
+            <TransferKpiCard
+              icon={ArrowLeftRight}
+              label="Внутригрупповые переводы"
+              value={`${formatCurrency(Math.round(monthlySummary.grandTotal))} ₽`}
+              subtitle={selectedPeriodOption ? `за ${selectedPeriodOption.label}` : undefined}
+              tone="primary"
+            />
+            <TransferKpiCard
+              icon={ArrowDownLeft}
+              label="Основной получатель"
+              value={monthlySummary.topRecipient.restaurant ?? "Нет данных"}
+              subtitle={
+                monthlySummary.topRecipient.restaurant
+                  ? `получено ${formatCurrency(Math.round(monthlySummary.topRecipient.amount))} ₽`
+                  : "в выбранном месяце нет переводов"
+              }
+              tone="accent"
+            />
+            <TransferKpiCard
+              icon={ArrowUpRight}
+              label="Основной донор"
+              value={monthlySummary.topDonor.restaurant ?? "Нет данных"}
+              subtitle={
+                monthlySummary.topDonor.restaurant
+                  ? `выдано ${formatCurrency(Math.round(monthlySummary.topDonor.amount))} ₽`
+                  : "в выбранном месяце нет переводов"
+              }
+              tone="success"
+            />
           </div>
 
           {usingLegacyTransferGroup ? (
