@@ -173,6 +173,12 @@ type TransferNetChartDatum = {
   net: number;
 };
 
+type TransferTimelineDatum = {
+  periodKey: string;
+  label: string;
+  amount: number;
+};
+
 type SaveFilePickerWindow = Window & {
   showSaveFilePicker?: (options?: {
     suggestedName?: string;
@@ -694,6 +700,13 @@ const transferNetChartConfig = {
   },
 } satisfies ChartConfig;
 
+const transferTimelineChartConfig = {
+  amount: {
+    label: "Внутригрупповое движение",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
+
 function buildTransferNetChartData(summary: TransferMatrixSummary): TransferNetChartDatum[] {
   return summary.restaurants.map((restaurant, index) => {
     const totalReceived = summary.columnTotals[index] ?? 0;
@@ -702,6 +715,42 @@ function buildTransferNetChartData(summary: TransferMatrixSummary): TransferNetC
     return {
       restaurant,
       net: roundTransferDisplayAmount(totalReceived - totalIssued),
+    };
+  });
+}
+
+function buildTransferTimelineData(
+  rows: IntragroupTransferRow[],
+  periodOptions: PeriodOption[],
+  selectedPeriodKey: string | null,
+  mode: "monthly" | "cumulative",
+  limit = 6,
+): TransferTimelineDatum[] {
+  if (!selectedPeriodKey) {
+    return [];
+  }
+
+  const selectedIndex = periodOptions.findIndex((option) => option.key === selectedPeriodKey);
+
+  if (selectedIndex === -1) {
+    return [];
+  }
+
+  const windowOptions = periodOptions.slice(Math.max(0, selectedIndex - (limit - 1)), selectedIndex + 1);
+
+  return windowOptions.map((option) => {
+    const amount = rows
+      .filter((row) =>
+        mode === "monthly"
+          ? row.periodKey === option.key
+          : row.periodDate.getTime() <= option.date.getTime(),
+      )
+      .reduce((sum, row) => sum + row.amount, 0);
+
+    return {
+      periodKey: option.key,
+      label: option.label,
+      amount: roundTransferDisplayAmount(amount),
     };
   });
 }
@@ -1264,17 +1313,16 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
   );
 }
 
-function TransferNetChartCard({
+function TransferTimelineChartCard({
   title,
   description,
-  summary,
+  data,
 }: {
   title: string;
   description?: string;
-  summary: TransferMatrixSummary;
+  data: TransferTimelineDatum[];
 }) {
-  const chartData = buildTransferNetChartData(summary);
-  const hasData = chartData.some((item) => item.net !== 0);
+  const hasData = data.some((item) => item.amount !== 0);
 
   return (
     <Card className="overflow-hidden">
@@ -1285,24 +1333,25 @@ function TransferNetChartCard({
 
       <CardContent className="px-4 pb-4 pt-0">
         {hasData ? (
-          <ChartContainer config={transferNetChartConfig} className="h-[260px] w-full">
-            <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 12, bottom: 4, left: 12 }}>
-              <CartesianGrid horizontal={false} />
+          <ChartContainer config={transferTimelineChartConfig} className="h-[260px] w-full">
+            <BarChart data={data} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
+              <CartesianGrid vertical={false} />
               <XAxis
-                type="number"
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => formatCurrency(Math.abs(Number(value)))}
-              />
-              <YAxis
-                dataKey="restaurant"
+                dataKey="label"
                 type="category"
                 tickLine={false}
                 axisLine={false}
-                width={96}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 11 }}
               />
-              <ReferenceLine x={0} stroke="hsl(var(--border))" />
+              <YAxis
+                type="number"
+                tickLine={false}
+                axisLine={false}
+                width={72}
+                tick={{ fontSize: 11 }}
+                tickFormatter={(value) => formatCurrency(Math.abs(Number(value)))}
+              />
+              <ReferenceLine y={0} stroke="hsl(var(--border))" />
               <ChartTooltip
                 cursor={false}
                 content={
@@ -1325,11 +1374,11 @@ function TransferNetChartCard({
                   />
                 }
               />
-              <Bar dataKey="net" radius={6}>
-                {chartData.map((entry) => (
+              <Bar dataKey="amount" radius={6}>
+                {data.map((entry) => (
                   <Cell
-                    key={entry.restaurant}
-                    fill={entry.net >= 0 ? "rgba(37, 99, 235, 0.8)" : "rgba(239, 68, 68, 0.8)"}
+                    key={entry.periodKey}
+                    fill={entry.amount >= 0 ? "rgba(37, 99, 235, 0.8)" : "rgba(239, 68, 68, 0.8)"}
                   />
                 ))}
               </Bar>
@@ -2036,6 +2085,14 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     () => buildTransferMatrix(accumulatedRows, restaurants),
     [accumulatedRows, restaurants],
   );
+  const monthlyTimelineData = useMemo(
+    () => buildTransferTimelineData(transferRows, periodOptions, selectedPeriodKey, "monthly"),
+    [periodOptions, selectedPeriodKey, transferRows],
+  );
+  const accumulatedTimelineData = useMemo(
+    () => buildTransferTimelineData(transferRows, periodOptions, selectedPeriodKey, "cumulative"),
+    [periodOptions, selectedPeriodKey, transferRows],
+  );
   const monthlyGrandTotalDisplay = useMemo(
     () => `${formatCurrency(roundTransferDisplayAmount(monthlySummary.grandTotal))} ₽`,
     [monthlySummary.grandTotal],
@@ -2095,10 +2152,10 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           summary={monthlySummary}
           description="Кто кого финансировал за выбранный месяц."
         />
-        <TransferNetChartCard
-          title="Чистое движение по ресторанам"
-          summary={monthlySummary}
-          description="Плюс — ресторан получил деньги, минус — выдал или вернул."
+        <TransferTimelineChartCard
+          title="Динамика внутригруппового движения"
+          data={monthlyTimelineData}
+          description="Последние 6 месяцев до выбранного периода."
         />
       </div>
 
@@ -2109,10 +2166,10 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           summary={accumulatedSummary}
           description="Сколько всего вложено в рестораны на выбранный момент."
         />
-        <TransferNetChartCard
-          title="Накопленная чистая позиция"
-          summary={accumulatedSummary}
-          description="Баланс вложений по каждому ресторану на выбранную дату."
+        <TransferTimelineChartCard
+          title="Накопленная динамика"
+          data={accumulatedTimelineData}
+          description="Нарастающий итог на конец каждого месяца."
         />
       </div>
     </div>
