@@ -721,22 +721,25 @@ function buildTransferNetChartData(summary: TransferMatrixSummary): TransferNetC
 
 function buildTransferTimelineData(
   rows: IntragroupTransferRow[],
-  periodOptions: PeriodOption[],
-  selectedPeriodKey: string | null,
+  selectedPeriodDate: Date | null,
   mode: "monthly" | "cumulative",
   limit = 6,
 ): TransferTimelineDatum[] {
-  if (!selectedPeriodKey) {
+  if (!selectedPeriodDate) {
     return [];
   }
 
-  const selectedIndex = periodOptions.findIndex((option) => option.key === selectedPeriodKey);
+  const windowOptions = Array.from({ length: limit }, (_, index) => {
+    const offset = limit - index - 1;
+    const date = new Date(selectedPeriodDate.getFullYear(), selectedPeriodDate.getMonth() - offset, 1);
+    const key = makePeriodKey(date);
 
-  if (selectedIndex === -1) {
-    return [];
-  }
-
-  const windowOptions = periodOptions.slice(Math.max(0, selectedIndex - (limit - 1)), selectedIndex + 1);
+    return {
+      key,
+      label: formatPeriodChip(date),
+      date,
+    };
+  });
 
   return windowOptions.map((option) => {
     const amount = rows
@@ -1342,6 +1345,7 @@ function TransferTimelineChartCard({
                 tickLine={false}
                 axisLine={false}
                 tick={{ fontSize: 11 }}
+                interval={0}
               />
               <YAxis
                 type="number"
@@ -2086,12 +2090,12 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     [accumulatedRows, restaurants],
   );
   const monthlyTimelineData = useMemo(
-    () => buildTransferTimelineData(transferRows, periodOptions, selectedPeriodKey, "monthly"),
-    [periodOptions, selectedPeriodKey, transferRows],
+    () => buildTransferTimelineData(transferRows, selectedPeriodOption?.date ?? null, "monthly"),
+    [selectedPeriodOption, transferRows],
   );
   const accumulatedTimelineData = useMemo(
-    () => buildTransferTimelineData(transferRows, periodOptions, selectedPeriodKey, "cumulative"),
-    [periodOptions, selectedPeriodKey, transferRows],
+    () => buildTransferTimelineData(transferRows, selectedPeriodOption?.date ?? null, "cumulative"),
+    [selectedPeriodOption, transferRows],
   );
   const monthlyGrandTotalDisplay = useMemo(
     () => `${formatCurrency(roundTransferDisplayAmount(monthlySummary.grandTotal))} ₽`,
