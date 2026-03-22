@@ -176,6 +176,7 @@ type TransferNetChartDatum = {
 type TransferTimelineDatum = {
   periodKey: string;
   label: string;
+  fullLabel: string;
   amount: number;
 };
 
@@ -298,6 +299,11 @@ function formatPeriodChip(date: Date) {
 
 function formatPeriodRangeLabel(date: Date) {
   return `${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
+}
+
+function formatShortMonthYear(date: Date) {
+  const monthNames = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+  return `${monthNames[date.getMonth()]} ${String(date.getFullYear()).slice(-2)}`;
 }
 
 function normalizeFileNamePart(value: string) {
@@ -752,7 +758,8 @@ function buildTransferTimelineData(
 
     return {
       periodKey: option.key,
-      label: option.label,
+      label: formatShortMonthYear(option.date),
+      fullLabel: option.label,
       amount: roundTransferDisplayAmount(amount),
     };
   });
@@ -1223,7 +1230,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
               <TableRow>
                 <TableHead
                   rowSpan={2}
-                  className="sticky left-0 z-20 min-w-[120px] bg-muted/30 px-3 py-2.5 text-left text-sm font-semibold text-foreground"
+                  className="sticky left-0 z-20 min-w-[108px] bg-muted/30 px-2.5 py-2.5 text-left text-sm font-semibold text-foreground"
                 >
                   Откуда ↓
                 </TableHead>
@@ -1235,7 +1242,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 </TableHead>
                 <TableHead
                   rowSpan={2}
-                  className="min-w-[104px] bg-muted/30 px-2 py-2.5 text-right text-sm font-semibold text-foreground"
+                  className="min-w-[92px] bg-muted/30 px-2 py-2.5 text-right text-sm font-semibold text-foreground"
                 >
                   Итого выдано
                 </TableHead>
@@ -1244,7 +1251,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 {summary.restaurants.map((restaurant) => (
                   <TableHead
                     key={restaurant}
-                    className="min-w-[104px] bg-muted/30 px-2 py-2.5 text-center text-sm font-semibold text-foreground"
+                    className="min-w-[92px] bg-muted/30 px-2 py-2.5 text-center text-sm font-semibold text-foreground"
                   >
                     {restaurant}
                   </TableHead>
@@ -1254,7 +1261,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             <TableBody>
               {summary.rows.map((row) => (
                 <TableRow key={row.restaurant}>
-                  <TableCell className="sticky left-0 z-10 bg-background px-3 py-2.5 text-sm font-semibold">
+                  <TableCell className="sticky left-0 z-10 bg-background px-2.5 py-2.5 text-sm font-semibold">
                     {row.restaurant}
                   </TableCell>
                   {row.cells.map((cell) => {
@@ -1346,6 +1353,7 @@ function TransferTimelineChartCard({
                 axisLine={false}
                 tick={{ fontSize: 11 }}
                 interval={0}
+                tickMargin={8}
               />
               <YAxis
                 type="number"
@@ -1361,6 +1369,11 @@ function TransferTimelineChartCard({
                 content={
                   <ChartTooltipContent
                     hideIndicator
+                    labelFormatter={(_, payload) =>
+                      payload?.[0] && "payload" in payload[0]
+                        ? (payload[0] as { payload?: { fullLabel?: string } }).payload?.fullLabel ?? ""
+                        : ""
+                    }
                     formatter={(value) => {
                       const numericValue = Number(value);
                       const amountText = `${formatCurrency(Math.abs(numericValue))} ₽`;
@@ -2149,7 +2162,7 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_320px]">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_380px]">
         <TransferMatrixCard
           title="Внутригрупповое финансирование"
           periodLabel={selectedPeriodOption?.label ?? "—"}
@@ -2163,7 +2176,7 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         />
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.55fr)_320px]">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_380px]">
         <TransferMatrixCard
           title="Накопленный итог внутригруппового финансирования"
           periodLabel={selectedPeriodOption ? `на конец ${selectedPeriodOption.label}` : "—"}
