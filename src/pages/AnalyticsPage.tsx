@@ -1312,8 +1312,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
       </CardHeader>
 
       <CardContent className="px-0 pt-0">
-        <ScrollArea className="w-full whitespace-nowrap">
-          <Table>
+        <Table className="min-w-max">
             <TableHeader>
               <TableRow>
                 <TableHead
@@ -1403,9 +1402,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 </TableCell>
               </TableRow>
             </TableFooter>
-          </Table>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        </Table>
       </CardContent>
     </Card>
   );
@@ -2653,8 +2650,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             </CardHeader>
 
             <CardContent className="px-0 pt-0">
-              <ScrollArea className="w-full whitespace-nowrap">
-                <Table>
+                <Table className="min-w-max">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="sticky left-0 z-20 min-w-[152px] bg-card px-2.5 text-xs">Статья</TableHead>
@@ -2731,8 +2727,6 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                     </TableRow>
                   </TableFooter>
                 </Table>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
             </CardContent>
           </Card>
 
@@ -3122,8 +3116,7 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardHeader>
 
           <CardContent className="px-0 pt-0">
-            <ScrollArea className="w-full whitespace-nowrap">
-              <Table>
+              <Table className="min-w-max">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="sticky left-0 z-20 min-w-[84px] bg-card px-2 py-2 text-[11px] sm:px-3 sm:text-xs">
@@ -3182,8 +3175,6 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                   ))}
                 </TableBody>
               </Table>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
           </CardContent>
         </Card>
       )}
