@@ -1528,7 +1528,14 @@ function OwnersTimelineChartCard({
                         ? (payload[0] as { payload?: { fullLabel?: string } }).payload?.fullLabel ?? ""
                         : ""
                     }
-                    formatter={(value, name) => [`${formatCurrency(Number(value))} ₽`, String(name)]}
+                    formatter={(value, name) => {
+                      const label =
+                        typeof name === "string"
+                          ? ownersTimelineChartConfig[name as keyof typeof ownersTimelineChartConfig]?.label ?? name
+                          : String(name);
+
+                      return [`${formatCurrency(Number(value))} ₽`, String(label)];
+                    }}
                   />
                 }
               />
