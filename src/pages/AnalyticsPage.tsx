@@ -1318,7 +1318,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
               <TableRow>
                 <TableHead
                   rowSpan={2}
-                  className="sticky left-0 z-20 min-w-[108px] bg-muted/30 px-2.5 py-2.5 text-left text-sm font-semibold text-foreground"
+                  className="sticky left-0 z-20 min-w-[108px] bg-muted/30 px-2.5 py-2.5 text-left text-sm font-semibold text-foreground shadow-[1px_0_0_0_hsl(var(--border))]"
                 >
                   Откуда ↓
                 </TableHead>
@@ -1349,7 +1349,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             <TableBody>
               {summary.rows.map((row) => (
                 <TableRow key={row.restaurant}>
-                  <TableCell className="sticky left-0 z-10 bg-background px-2.5 py-2.5 text-sm font-semibold">
+                  <TableCell className="sticky left-0 z-10 bg-background px-2.5 py-2.5 text-sm font-semibold shadow-[1px_0_0_0_hsl(var(--border))]">
                     {row.restaurant}
                   </TableCell>
                   {row.cells.map((cell) => {
@@ -1379,7 +1379,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             </TableBody>
             <TableFooter>
               <TableRow className="bg-muted/20 hover:bg-muted/30">
-                <TableCell className="sticky left-0 z-10 bg-muted/30 px-3 py-2.5 text-sm font-bold">
+                <TableCell className="sticky left-0 z-10 bg-muted/30 px-3 py-2.5 text-sm font-bold shadow-[1px_0_0_0_hsl(var(--border))]">
                   Итого получено
                 </TableCell>
                 {summary.columnTotals.map((amount, index) => (
@@ -1431,24 +1431,24 @@ function TransferTimelineChartCard({
 
       <CardContent className="px-4 pb-4 pt-0">
         {hasData ? (
-          <ChartContainer config={transferTimelineChartConfig} className="h-[260px] w-full">
-            <BarChart data={data} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
+          <ChartContainer config={transferTimelineChartConfig} className="h-[220px] w-full sm:h-[260px]">
+            <BarChart data={data} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
               <CartesianGrid vertical={false} />
               <XAxis
                 dataKey="label"
                 type="category"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 10 }}
                 interval={0}
-                tickMargin={8}
+                tickMargin={6}
               />
               <YAxis
                 type="number"
                 tickLine={false}
                 axisLine={false}
-                width={72}
-                tick={{ fontSize: 11 }}
+                width={56}
+                tick={{ fontSize: 10 }}
                 tickFormatter={(value) => formatCurrency(Math.abs(Number(value)))}
               />
               <ReferenceLine y={0} stroke="hsl(var(--border))" />
@@ -1515,22 +1515,22 @@ function OwnersTimelineChartCard({
 
       <CardContent className="px-4 pb-4 pt-0">
         {hasData ? (
-          <ChartContainer config={ownersTimelineChartConfig} className="h-[280px] w-full">
-            <LineChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+          <ChartContainer config={ownersTimelineChartConfig} className="h-[220px] w-full sm:h-[280px]">
+            <LineChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: -12 }}>
               <CartesianGrid vertical={false} />
               <XAxis
                 dataKey="label"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 11 }}
-                tickMargin={8}
+                tick={{ fontSize: 10 }}
+                tickMargin={6}
                 interval={0}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                width={88}
-                tick={{ fontSize: 11 }}
+                width={64}
+                tick={{ fontSize: 10 }}
                 tickFormatter={(value) => formatCurrency(Number(value))}
               />
               <ChartLegend content={<ChartLegendContent />} />
@@ -2348,7 +2348,7 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_380px]">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_340px] 2xl:grid-cols-[minmax(0,1.35fr)_380px]">
         <TransferMatrixCard
           title="Внутригрупповое финансирование"
           periodLabel={selectedPeriodOption?.label ?? "—"}
@@ -2362,7 +2362,7 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         />
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_380px]">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_340px] 2xl:grid-cols-[minmax(0,1.35fr)_380px]">
         <TransferMatrixCard
           title="Накопленный итог внутригруппового финансирования"
           periodLabel={selectedPeriodOption ? `на конец ${selectedPeriodOption.label}` : "—"}
@@ -2646,7 +2646,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_420px]">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_360px] 2xl:grid-cols-[minmax(0,1.35fr)_420px]">
           <Card>
             <CardHeader className="px-4 py-3">
               <CardTitle className="text-base font-serif">Отчет</CardTitle>
@@ -2655,19 +2655,21 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             <CardContent className="px-0 pt-0">
               <ScrollArea className="w-full whitespace-nowrap">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="h-9 px-2.5 text-xs">Статья</TableHead>
-                      <TableHead className="h-9 px-2.5 text-right text-xs">Остаток на начало</TableHead>
-                      <TableHead className="h-9 px-2.5 text-right text-xs">Начислено / получено / в пути</TableHead>
-                      <TableHead className="h-9 px-2.5 text-right text-xs">Выплачено / возврат</TableHead>
-                      <TableHead className="h-9 px-2.5 text-right text-xs">Остаток на конец</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {reportRows.map((row) => (
-                      <TableRow key={row.article}>
-                        <TableCell className="px-2.5 py-2 text-xs font-medium">{row.article}</TableCell>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="sticky left-0 z-20 min-w-[152px] bg-card px-2.5 text-xs">Статья</TableHead>
+                    <TableHead className="h-9 px-2.5 text-right text-xs">Остаток на начало</TableHead>
+                    <TableHead className="h-9 px-2.5 text-right text-xs">Начислено / получено / в пути</TableHead>
+                    <TableHead className="h-9 px-2.5 text-right text-xs">Выплачено / возврат</TableHead>
+                    <TableHead className="h-9 px-2.5 text-right text-xs">Остаток на конец</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reportRows.map((row) => (
+                    <TableRow key={row.article}>
+                      <TableCell className="sticky left-0 z-10 min-w-[152px] bg-background px-2.5 py-2 text-xs font-medium shadow-[1px_0_0_0_hsl(var(--border))]">
+                        {row.article}
+                      </TableCell>
                         <TableCell
                           className={cn(
                             "px-2.5 py-2 text-right text-xs font-mono",
@@ -2691,7 +2693,9 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                   </TableBody>
                   <TableFooter>
                     <TableRow className="font-bold hover:bg-muted/50">
-                      <TableCell className="px-2.5 py-2 text-xs font-bold">Общий итог</TableCell>
+                      <TableCell className="sticky left-0 z-10 min-w-[152px] bg-muted px-2.5 py-2 text-xs font-bold shadow-[1px_0_0_0_hsl(var(--border))]">
+                        Общий итог
+                      </TableCell>
                       <TableCell
                         className={cn(
                           "px-2.5 py-2 text-right text-xs font-mono font-bold",
@@ -3122,12 +3126,16 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="h-10 px-3 text-xs">Дата</TableHead>
-                    <TableHead className="h-10 px-3 text-xs">Статья</TableHead>
-                    <TableHead className="h-10 px-3 text-right text-xs">Остаток на начало</TableHead>
-                    <TableHead className="h-10 px-3 text-right text-xs">Начислено</TableHead>
-                    <TableHead className="h-10 px-3 text-right text-xs">Выплачено</TableHead>
-                    <TableHead className="h-10 px-3 text-right text-xs">Остаток на конец</TableHead>
+                    <TableHead className="sticky left-0 z-20 min-w-[84px] bg-card px-2 py-2 text-[11px] sm:px-3 sm:text-xs">
+                      Дата
+                    </TableHead>
+                    <TableHead className="sticky left-[84px] z-20 min-w-[168px] bg-card px-2 py-2 text-[11px] shadow-[1px_0_0_0_hsl(var(--border))] sm:px-3 sm:text-xs">
+                      Статья
+                    </TableHead>
+                    <TableHead className="h-10 px-2 py-2 text-right text-[11px] sm:px-3 sm:text-xs">Остаток на начало</TableHead>
+                    <TableHead className="h-10 px-2 py-2 text-right text-[11px] sm:px-3 sm:text-xs">Начислено</TableHead>
+                    <TableHead className="h-10 px-2 py-2 text-right text-[11px] sm:px-3 sm:text-xs">Выплачено</TableHead>
+                    <TableHead className="h-10 px-2 py-2 text-right text-[11px] sm:px-3 sm:text-xs">Остаток на конец</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -3136,23 +3144,35 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                       key={[row.periodKey, row.article].join("::")}
                       className={cn(row.isSyntheticGap && "bg-muted/20")}
                     >
-                      <TableCell className="px-3 py-2 text-sm font-medium">
-                        {formatPeriodRangeLabel(row.periodDate)}
-                      </TableCell>
-                      <TableCell className="px-3 py-2 text-sm">{row.article}</TableCell>
                       <TableCell
                         className={cn(
-                          "px-3 py-2 text-right text-sm font-mono",
+                          "sticky left-0 z-10 min-w-[84px] px-2 py-2 text-xs font-medium sm:px-3 sm:text-sm",
+                          row.isSyntheticGap ? "bg-muted/20" : "bg-background",
+                        )}
+                      >
+                        {formatPeriodRangeLabel(row.periodDate)}
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "sticky left-[84px] z-10 min-w-[168px] px-2 py-2 text-xs shadow-[1px_0_0_0_hsl(var(--border))] sm:px-3 sm:text-sm",
+                          row.isSyntheticGap ? "bg-muted/20" : "bg-background",
+                        )}
+                      >
+                        {row.article}
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "px-2 py-2 text-right text-xs font-mono sm:px-3 sm:text-sm",
                           row.opening < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
                         {formatCurrency(row.opening)} ₽
                       </TableCell>
-                      <TableCell className="px-3 py-2 text-right text-sm font-mono text-sky">{formatCurrency(row.accrued)} ₽</TableCell>
-                      <TableCell className="px-3 py-2 text-right text-sm font-mono text-accent">{formatCurrency(row.paid)} ₽</TableCell>
+                      <TableCell className="px-2 py-2 text-right text-xs font-mono text-sky sm:px-3 sm:text-sm">{formatCurrency(row.accrued)} ₽</TableCell>
+                      <TableCell className="px-2 py-2 text-right text-xs font-mono text-accent sm:px-3 sm:text-sm">{formatCurrency(row.paid)} ₽</TableCell>
                       <TableCell
                         className={cn(
-                          "px-3 py-2 text-right text-sm font-mono font-semibold",
+                          "px-2 py-2 text-right text-xs font-mono font-semibold sm:px-3 sm:text-sm",
                           row.closing < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
