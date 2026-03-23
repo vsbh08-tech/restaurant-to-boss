@@ -11,10 +11,17 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AnalyticsImportDialog } from "@/components/AnalyticsImportDialog";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/roles";
-import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts";
 
 type FinanceFlow = {
   id: string;
@@ -178,6 +185,15 @@ type TransferTimelineDatum = {
   label: string;
   fullLabel: string;
   amount: number;
+};
+
+type OwnersTimelineDatum = {
+  periodKey: string;
+  label: string;
+  fullLabel: string;
+  closing: number;
+  accrued: number;
+  paid: number;
 };
 
 type SaveFilePickerWindow = Window & {
@@ -713,6 +729,21 @@ const transferTimelineChartConfig = {
   },
 } satisfies ChartConfig;
 
+const ownersTimelineChartConfig = {
+  closing: {
+    label: "Баланс на конец месяца",
+    color: "#2563eb",
+  },
+  paid: {
+    label: "Выплаты за месяц",
+    color: "#f97316",
+  },
+  accrued: {
+    label: "Начисления за месяц",
+    color: "#16a34a",
+  },
+} satisfies ChartConfig;
+
 function buildTransferNetChartData(summary: TransferMatrixSummary): TransferNetChartDatum[] {
   return summary.restaurants.map((restaurant, index) => {
     const totalReceived = summary.columnTotals[index] ?? 0;
@@ -761,6 +792,48 @@ function buildTransferTimelineData(
       label: formatShortMonthYear(option.date),
       fullLabel: option.label,
       amount: roundTransferDisplayAmount(amount),
+    };
+  });
+}
+
+function buildOwnersTimelineData(
+  rows: OwnersFactRow[],
+  selectedPeriodDate: Date | null,
+  limit = 6,
+): OwnersTimelineDatum[] {
+  if (!selectedPeriodDate) {
+    return [];
+  }
+
+  const windowOptions = Array.from({ length: limit }, (_, index) => {
+    const offset = limit - index - 1;
+    const date = new Date(selectedPeriodDate.getFullYear(), selectedPeriodDate.getMonth() - offset, 1);
+    const key = makePeriodKey(date);
+
+    return {
+      key,
+      label: formatShortMonthYear(date),
+      fullLabel: formatPeriodChip(date),
+      date,
+    };
+  });
+
+  return windowOptions.map((option) => {
+    const opening = rows
+      .filter((row) => row.periodDate.getTime() < option.date.getTime())
+      .reduce((sum, row) => sum + row.net, 0);
+    const periodRows = rows.filter((row) => row.periodKey === option.key);
+    const accrued = periodRows.reduce((sum, row) => sum + row.accrued, 0);
+    const paid = periodRows.reduce((sum, row) => sum + row.paid, 0);
+    const net = periodRows.reduce((sum, row) => sum + row.net, 0);
+
+    return {
+      periodKey: option.key,
+      label: option.label,
+      fullLabel: option.fullLabel,
+      closing: Math.round(opening + net),
+      accrued: Math.round(accrued),
+      paid: Math.round(paid),
     };
   });
 }
@@ -1404,6 +1477,91 @@ function TransferTimelineChartCard({
         ) : (
           <div className="flex h-[260px] items-center justify-center text-sm text-muted-foreground">
             Нет движений за выбранный период.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function OwnersTimelineChartCard({
+  data,
+}: {
+  data: OwnersTimelineDatum[];
+}) {
+  const hasData = data.some((item) => item.closing !== 0 || item.accrued !== 0 || item.paid !== 0);
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="px-4 py-3">
+        <CardTitle className="text-sm font-serif">Динамика расчетов с собственниками</CardTitle>
+        <p className="mt-0.5 text-xs text-muted-foreground">Последние 6 месяцев до выбранного периода.</p>
+      </CardHeader>
+
+      <CardContent className="px-4 pb-4 pt-0">
+        {hasData ? (
+          <ChartContainer config={ownersTimelineChartConfig} className="h-[280px] w-full">
+            <LineChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 11 }}
+                tickMargin={8}
+                interval={0}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                width={88}
+                tick={{ fontSize: 11 }}
+                tickFormatter={(value) => formatCurrency(Number(value))}
+              />
+              <ChartLegend content={<ChartLegendContent />} />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(_, payload) =>
+                      payload?.[0] && "payload" in payload[0]
+                        ? (payload[0] as { payload?: { fullLabel?: string } }).payload?.fullLabel ?? ""
+                        : ""
+                    }
+                    formatter={(value, name) => [`${formatCurrency(Number(value))} ₽`, String(name)]}
+                  />
+                }
+              />
+              <ReferenceLine y={0} stroke="hsl(var(--border))" />
+              <Line
+                type="monotone"
+                dataKey="closing"
+                stroke="var(--color-closing)"
+                strokeWidth={2.5}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="paid"
+                stroke="var(--color-paid)"
+                strokeWidth={2}
+                dot={{ r: 2.5 }}
+                activeDot={{ r: 4 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="accrued"
+                stroke="var(--color-accrued)"
+                strokeWidth={2}
+                dot={{ r: 2.5 }}
+                activeDot={{ r: 4 }}
+              />
+            </LineChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+            Нет данных за выбранный период.
           </div>
         )}
       </CardContent>
@@ -2368,6 +2526,22 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       ),
     [reportRows],
   );
+  const chartAnchorDate = useMemo(() => {
+    const selectedOptions = periodOptions.filter((option) => selectedPeriods.includes(option.key));
+
+    if (selectedOptions.length === 0) {
+      return periodOptions[0]?.date ?? null;
+    }
+
+    return selectedOptions.reduce(
+      (latest, option) => (option.date.getTime() > latest.getTime() ? option.date : latest),
+      selectedOptions[0].date,
+    );
+  }, [periodOptions, selectedPeriods]);
+  const ownersTimelineData = useMemo(
+    () => buildOwnersTimelineData(scopeRows, chartAnchorDate),
+    [chartAnchorDate, scopeRows],
+  );
 
   return (
     <div className="space-y-3">
@@ -2407,21 +2581,21 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </div>
 
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-            <div className="kpi-card kpi-card-primary px-3 py-2">
+            <div className="kpi-card kpi-card-primary px-2.5 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на начало</p>
-              <p className="mt-1 text-lg font-semibold leading-none text-primary">{formatOwnersWholeCurrency(totals.opening)} ₽</p>
+              <p className="mt-1 text-base font-semibold leading-none text-primary">{formatOwnersWholeCurrency(totals.opening)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-sky px-3 py-2">
+            <div className="kpi-card kpi-card-sky px-2.5 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Начислено</p>
-              <p className="mt-1 text-lg font-semibold leading-none text-sky">{formatOwnersWholeCurrency(totals.accrued)} ₽</p>
+              <p className="mt-1 text-base font-semibold leading-none text-sky">{formatOwnersWholeCurrency(totals.accrued)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-accent px-3 py-2">
+            <div className="kpi-card kpi-card-accent px-2.5 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Выплачено</p>
-              <p className="mt-1 text-lg font-semibold leading-none text-accent">{formatOwnersWholeCurrency(totals.paid)} ₽</p>
+              <p className="mt-1 text-base font-semibold leading-none text-accent">{formatOwnersWholeCurrency(totals.paid)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-muted px-3 py-2">
+            <div className="kpi-card kpi-card-muted px-2.5 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на конец</p>
-              <p className="mt-1 text-lg font-semibold leading-none">{formatOwnersWholeCurrency(totals.closing)} ₽</p>
+              <p className="mt-1 text-base font-semibold leading-none">{formatOwnersWholeCurrency(totals.closing)} ₽</p>
             </div>
           </div>
         </CardContent>
@@ -2444,87 +2618,94 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader className="px-4 py-3">
-            <CardTitle className="text-base font-serif">Отчет</CardTitle>
-          </CardHeader>
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_420px]">
+          <Card>
+            <CardHeader className="px-4 py-3">
+              <CardTitle className="text-base font-serif">Отчет</CardTitle>
+            </CardHeader>
 
-          <CardContent className="px-0 pt-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="h-10 px-3 text-xs">Статья</TableHead>
-                  <TableHead className="h-10 px-3 text-right text-xs">Остаток на начало</TableHead>
-                  <TableHead className="h-10 px-3 text-right text-xs">Начислено / получено / в пути</TableHead>
-                  <TableHead className="h-10 px-3 text-right text-xs">Выплачено / возврат</TableHead>
-                  <TableHead className="h-10 px-3 text-right text-xs">Остаток на конец</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reportRows.map((row) => (
-                  <TableRow key={row.article}>
-                    <TableCell className="px-3 py-2 text-sm font-medium">{row.article}</TableCell>
-                    <TableCell
-                      className={cn(
-                        "px-3 py-2 text-right text-sm font-mono",
-                        row.opening < 0 ? "text-destructive" : "text-foreground",
-                      )}
-                    >
-                      {formatOwnersWholeCurrency(row.opening)} ₽
-                    </TableCell>
-                    <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatOwnersWholeCurrency(row.accrued)} ₽</TableCell>
-                    <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatOwnersWholeCurrency(row.paid)} ₽</TableCell>
-                    <TableCell
-                      className={cn(
-                        "px-3 py-2 text-right text-sm font-mono",
-                        row.closing < 0 ? "text-destructive" : "text-foreground",
-                      )}
-                    >
-                      {formatOwnersWholeCurrency(row.closing)} ₽
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow className="font-bold hover:bg-muted/50">
-                  <TableCell className="px-3 py-2 text-sm font-bold">Общий итог</TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2 text-right text-sm font-mono font-bold",
-                      totals.opening < 0 ? "text-destructive" : "text-foreground",
-                    )}
-                  >
-                    {formatOwnersWholeCurrency(totals.opening)} ₽
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2 text-right text-sm font-mono font-bold",
-                      totals.accrued < 0 ? "text-destructive" : "text-foreground",
-                    )}
-                  >
-                    {formatOwnersWholeCurrency(totals.accrued)} ₽
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2 text-right text-sm font-mono font-bold",
-                      totals.paid < 0 ? "text-destructive" : "text-foreground",
-                    )}
-                  >
-                    {formatOwnersWholeCurrency(totals.paid)} ₽
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2 text-right text-sm font-mono font-bold",
-                      totals.closing < 0 ? "text-destructive" : "text-foreground",
-                    )}
-                  >
-                    {formatOwnersWholeCurrency(totals.closing)} ₽
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </CardContent>
-        </Card>
+            <CardContent className="px-0 pt-0">
+              <ScrollArea className="w-full whitespace-nowrap">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="h-9 px-2.5 text-xs">Статья</TableHead>
+                      <TableHead className="h-9 px-2.5 text-right text-xs">Остаток на начало</TableHead>
+                      <TableHead className="h-9 px-2.5 text-right text-xs">Начислено / получено / в пути</TableHead>
+                      <TableHead className="h-9 px-2.5 text-right text-xs">Выплачено / возврат</TableHead>
+                      <TableHead className="h-9 px-2.5 text-right text-xs">Остаток на конец</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reportRows.map((row) => (
+                      <TableRow key={row.article}>
+                        <TableCell className="px-2.5 py-2 text-xs font-medium">{row.article}</TableCell>
+                        <TableCell
+                          className={cn(
+                            "px-2.5 py-2 text-right text-xs font-mono",
+                            row.opening < 0 ? "text-destructive" : "text-foreground",
+                          )}
+                        >
+                          {formatOwnersWholeCurrency(row.opening)} ₽
+                        </TableCell>
+                        <TableCell className="px-2.5 py-2 text-right text-xs font-mono">{formatOwnersWholeCurrency(row.accrued)} ₽</TableCell>
+                        <TableCell className="px-2.5 py-2 text-right text-xs font-mono">{formatOwnersWholeCurrency(row.paid)} ₽</TableCell>
+                        <TableCell
+                          className={cn(
+                            "px-2.5 py-2 text-right text-xs font-mono",
+                            row.closing < 0 ? "text-destructive" : "text-foreground",
+                          )}
+                        >
+                          {formatOwnersWholeCurrency(row.closing)} ₽
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow className="font-bold hover:bg-muted/50">
+                      <TableCell className="px-2.5 py-2 text-xs font-bold">Общий итог</TableCell>
+                      <TableCell
+                        className={cn(
+                          "px-2.5 py-2 text-right text-xs font-mono font-bold",
+                          totals.opening < 0 ? "text-destructive" : "text-foreground",
+                        )}
+                      >
+                        {formatOwnersWholeCurrency(totals.opening)} ₽
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "px-2.5 py-2 text-right text-xs font-mono font-bold",
+                          totals.accrued < 0 ? "text-destructive" : "text-foreground",
+                        )}
+                      >
+                        {formatOwnersWholeCurrency(totals.accrued)} ₽
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "px-2.5 py-2 text-right text-xs font-mono font-bold",
+                          totals.paid < 0 ? "text-destructive" : "text-foreground",
+                        )}
+                      >
+                        {formatOwnersWholeCurrency(totals.paid)} ₽
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "px-2.5 py-2 text-right text-xs font-mono font-bold",
+                          totals.closing < 0 ? "text-destructive" : "text-foreground",
+                        )}
+                      >
+                        {formatOwnersWholeCurrency(totals.closing)} ₽
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          <OwnersTimelineChartCard data={ownersTimelineData} />
+        </div>
       )}
     </div>
   );
