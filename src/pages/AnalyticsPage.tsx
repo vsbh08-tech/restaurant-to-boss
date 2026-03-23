@@ -434,8 +434,32 @@ function getChangePercent(currentValue: number, previousValue: number) {
   return ((currentValue - previousValue) / Math.abs(previousValue)) * 100;
 }
 
-function getYearComparisonLabel() {
-  return "к аналог. периоду прошлого года";
+function formatComparisonMonthYear(date: Date) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    month: "short",
+    year: "numeric",
+  })
+    .format(date)
+    .replace(/\./g, "")
+    .replace(/\u00A0/g, " ");
+}
+
+function getYearComparisonLabel(selectedKeys: string[], periodOptions: PeriodOption[]) {
+  const selected = periodOptions
+    .filter((option) => selectedKeys.includes(option.key))
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  if (selected.length === 0) {
+    return "к прошлому году";
+  }
+
+  const shiftedDates = selected.map((option) => new Date(option.date.getFullYear() - 1, option.date.getMonth(), 1));
+
+  if (shiftedDates.length === 1) {
+    return `к ${formatComparisonMonthYear(shiftedDates[0])}`;
+  }
+
+  return `к ${formatComparisonMonthYear(shiftedDates[0])} - ${formatComparisonMonthYear(shiftedDates[shiftedDates.length - 1])}`;
 }
 
 function buildPeriodOptions(dates: Date[]) {
@@ -1973,8 +1997,8 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
   const comparisonText = useMemo(() => {
     if (selectedPeriods.length === 0) return "выберите период";
-    return getYearComparisonLabel();
-  }, [selectedPeriods.length]);
+    return getYearComparisonLabel(selectedPeriods, periodOptions);
+  }, [periodOptions, selectedPeriods]);
 
   const assetRows = useMemo(
     () => buildStructureRows(accumulatedBalanceRows.filter((row) => row.balanceType === "Актив")),
