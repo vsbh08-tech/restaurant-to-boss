@@ -382,10 +382,6 @@ function getNextSelection<T extends string | number>(selection: T[], value: T, i
   return [...selection, value];
 }
 
-function getMonthDistance(previous: Date, next: Date) {
-  return (next.getFullYear() - previous.getFullYear()) * 12 + (next.getMonth() - previous.getMonth());
-}
-
 function enumerateMonths(from: Date, to: Date) {
   const months: Date[] = [];
   const cursor = new Date(from.getFullYear(), from.getMonth(), 1);
@@ -403,7 +399,7 @@ function isNearlyZero(value: number, precision = 0.005) {
   return Math.abs(value) < precision;
 }
 
-function getPreviousPeriodKeys(selectedKeys: string[], periodOptions: PeriodOption[]) {
+function getPreviousYearPeriodKeys(selectedKeys: string[], periodOptions: PeriodOption[]) {
   if (selectedKeys.length === 0) return null;
 
   const selected = periodOptions
@@ -414,26 +410,23 @@ function getPreviousPeriodKeys(selectedKeys: string[], periodOptions: PeriodOpti
     return null;
   }
 
-  for (let index = 1; index < selected.length; index += 1) {
-    if (getMonthDistance(selected[index - 1].date, selected[index].date) !== 1) {
-      return null;
-    }
-  }
-
   const periodKeySet = new Set(periodOptions.map((option) => option.key));
-  const previousKeys: string[] = [];
-
-  for (let offset = selected.length; offset >= 1; offset -= 1) {
-    const previousDate = new Date(selected[0].date.getFullYear(), selected[0].date.getMonth() - offset, 1);
+  const previousKeys = selected.map((option) => {
+    const previousDate = new Date(option.date.getFullYear() - 1, option.date.getMonth(), 1);
     const previousKey = makePeriodKey(previousDate);
+
     if (!periodKeySet.has(previousKey)) {
       return null;
     }
 
-    previousKeys.push(previousKey);
+    return previousKey;
+  });
+
+  if (previousKeys.some((key) => key === null)) {
+    return null;
   }
 
-  return previousKeys;
+  return previousKeys as string[];
 }
 
 function getChangePercent(currentValue: number, previousValue: number) {
@@ -441,10 +434,8 @@ function getChangePercent(currentValue: number, previousValue: number) {
   return ((currentValue - previousValue) / Math.abs(previousValue)) * 100;
 }
 
-function getComparisonLabel(periodCount: number) {
-  if (periodCount <= 0) return "сравнение недоступно";
-  if (periodCount === 1) return "к пред. мес.";
-  return `к пред. ${periodCount} мес.`;
+function getYearComparisonLabel() {
+  return "к аналог. периоду прошлого года";
 }
 
 function buildPeriodOptions(dates: Date[]) {
@@ -1962,7 +1953,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
   }, [activeRestaurants, balanceRows, balanceSnapshotDate]);
 
   const comparisonPeriodKeys = useMemo(
-    () => getPreviousPeriodKeys(selectedPeriods, periodOptions),
+    () => getPreviousYearPeriodKeys(selectedPeriods, periodOptions),
     [periodOptions, selectedPeriods],
   );
 
@@ -1978,12 +1969,12 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
   const previousMetrics = useMemo(() => summarizeFinancialMetrics(previousFlowRows), [previousFlowRows]);
   const currentRentability = useMemo(() => calculateRentability(currentMetrics), [currentMetrics]);
   const previousRentability = useMemo(() => calculateRentability(previousMetrics), [previousMetrics]);
+  const hasComparisonData = comparisonPeriodKeys !== null && previousFlowRows.length > 0;
 
   const comparisonText = useMemo(() => {
     if (selectedPeriods.length === 0) return "выберите период";
-    if (!comparisonPeriodKeys) return "для непрерывного диапазона";
-    return getComparisonLabel(comparisonPeriodKeys.length);
-  }, [comparisonPeriodKeys, selectedPeriods.length]);
+    return getYearComparisonLabel();
+  }, [selectedPeriods.length]);
 
   const assetRows = useMemo(
     () => buildStructureRows(accumulatedBalanceRows.filter((row) => row.balanceType === "Актив")),
@@ -2029,32 +2020,38 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       label: "Доход",
       kind: "income",
       valueText: `${formatCurrency(currentMetrics.income)} ₽`,
-      changePct: getChangePercent(currentMetrics.income, previousMetrics.income),
+      changePct: hasComparisonData ? getChangePercent(currentMetrics.income, previousMetrics.income) : null,
+      changeText: hasComparisonData ? undefined : "нет данных",
       tone: "primary",
     },
     {
       label: "Расход",
       kind: "expense",
       valueText: `${formatCurrency(currentMetrics.expense)} ₽`,
-      changePct: getChangePercent(currentMetrics.expense, previousMetrics.expense),
+      changePct: hasComparisonData ? getChangePercent(currentMetrics.expense, previousMetrics.expense) : null,
+      changeText: hasComparisonData ? undefined : "нет данных",
       tone: "accent",
     },
     {
       label: "Прибыль",
       kind: "profit",
       valueText: `${formatCurrency(currentMetrics.profit)} ₽`,
-      changePct: getChangePercent(currentMetrics.profit, previousMetrics.profit),
+      changePct: hasComparisonData ? getChangePercent(currentMetrics.profit, previousMetrics.profit) : null,
+      changeText: hasComparisonData ? undefined : "нет данных",
       tone: "secondary",
     },
     {
       label: "Рентабельность",
       kind: "profit",
       valueText: `${currentRentability.toFixed(1)}%`,
-      changePct: previousMetrics.income === 0 ? null : currentRentability - previousRentability,
+      changePct:
+        hasComparisonData && previousMetrics.income !== 0 ? currentRentability - previousRentability : null,
       tone: "muted",
       changeText:
-        previousMetrics.income === 0
-          ? undefined
+        !hasComparisonData
+          ? "нет данных"
+          : previousMetrics.income === 0
+            ? "нет данных"
           : `${currentRentability - previousRentability > 0 ? "+" : ""}${(currentRentability - previousRentability).toFixed(1)} п.п.`,
     },
   ];
@@ -2095,7 +2092,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
               valueText={metric.valueText}
               kind={metric.kind}
               changePct={metric.changePct}
-              comparisonText={metric.changePct === null ? "нет базы сравнения" : comparisonText}
+              comparisonText={comparisonText}
               changeText={metric.changeText}
               tone={metric.tone}
             />
