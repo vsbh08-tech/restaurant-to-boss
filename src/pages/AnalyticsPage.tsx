@@ -233,6 +233,8 @@ type MetricSummary = {
 type CashBreakdownRow = {
   label: string;
   amount: number;
+  noteLabel?: string;
+  noteAmount?: number;
 };
 
 type CashArticleGroup = {
@@ -333,7 +335,7 @@ const FILTER_CHIP_BASE_CLASS =
 const FILTER_CHIP_ACTIVE_CLASS =
   "border-primary bg-primary text-primary-foreground font-semibold shadow-sm hover:border-primary hover:bg-primary hover:text-primary-foreground";
 const CASH_ACCOUNT_GROUPS: CashArticleGroup[] = [
-  { label: "Касса", aliases: ["касса"] },
+  { label: "Касса", aliases: ["касса", "хранение"] },
   { label: "Расчетный счет", aliases: ["расчетный счет", "расчетный счёт"] },
   { label: "Деньги в пути", aliases: ["деньги в пути"] },
   { label: "Снятие с р/с", aliases: ["снятие с р/с"] },
@@ -345,6 +347,7 @@ const CASH_REQUIRED_PAYMENT_GROUPS: CashArticleGroup[] = [
 const CASH_DIVIDEND_ARTICLE_ALIASES = ["доли"];
 const CASH_EXPLICIT_OTHER_INFLOW_ALIASES = ["займы полученные", "предоплата", "предоплаты"];
 const CASH_EXPLICIT_OTHER_OUTFLOW_ALIASES = ["п/о суммы", "расходы будущих периодов", "займы выданные"];
+const CASH_OWNER_WITHDRAWAL_GROUP_ALIASES = ["снятие с р/с", "снятие с р\\с"];
 
 function makePeriodKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -374,6 +377,14 @@ function normalizeLookupText(value: string | null | undefined) {
 function matchesArticleAlias(article: string, aliases: string[]) {
   const normalizedArticle = normalizeLookupText(article);
   return aliases.includes(normalizedArticle);
+}
+
+function normalizeBalanceArticle(article: string) {
+  if (matchesArticleAlias(article, ["хранение"])) {
+    return "Касса";
+  }
+
+  return article;
 }
 
 function sumAmountsByArticleAliases<T extends { article: string; amount: number }>(rows: T[], aliases: string[]) {
@@ -785,6 +796,11 @@ function buildTransferMatrix(rows: IntragroupTransferRow[], restaurants: string[
 }
 
 function roundTransferDisplayAmount(amount: number) {
+  const roundedAmount = Math.round(amount);
+  return Object.is(roundedAmount, -0) ? 0 : roundedAmount;
+}
+
+function roundMoneyDisplayAmount(amount: number) {
   const roundedAmount = Math.round(amount);
   return Object.is(roundedAmount, -0) ? 0 : roundedAmount;
 }
@@ -1705,7 +1721,7 @@ function OwnersTimelineChartCard({
                 axisLine={false}
                 width={74}
                 tick={{ fontSize: 10 }}
-                tickFormatter={(value) => formatCurrency(Number(value))}
+                tickFormatter={(value) => formatCurrency(roundMoneyDisplayAmount(Number(value)))}
               />
               <ChartLegend content={<ChartLegendContent />} />
               <ChartTooltip
@@ -1723,7 +1739,7 @@ function OwnersTimelineChartCard({
                           ? ownersTimelineChartConfig[name as keyof typeof ownersTimelineChartConfig]?.label ?? name
                           : String(name);
 
-                      return [`${formatCurrency(Number(value))} ₽`, String(label)];
+                      return [`${formatCurrency(roundMoneyDisplayAmount(Number(value)))} ₽`, String(label)];
                     }}
                   />
                 }
@@ -1769,10 +1785,14 @@ function CashBreakdownCard({
   title,
   rows,
   total,
+  footerNoteLabel,
+  footerNoteAmount,
 }: {
   title: string;
   rows: CashBreakdownRow[];
   total: number;
+  footerNoteLabel?: string;
+  footerNoteAmount?: number;
 }) {
   return (
     <Card className="overflow-hidden">
@@ -1785,14 +1805,22 @@ function CashBreakdownCard({
           <TableBody>
             {rows.map((row) => (
               <TableRow key={row.label}>
-                <TableCell className="px-4 py-2.5 text-sm">{row.label}</TableCell>
+                <TableCell className="px-4 py-2.5 text-sm">
+                  <div>{row.label}</div>
+                  {row.noteLabel ? (
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {row.noteLabel}
+                      {typeof row.noteAmount === "number" ? ` ${formatCurrency(roundMoneyDisplayAmount(row.noteAmount))} ₽` : ""}
+                    </div>
+                  ) : null}
+                </TableCell>
                 <TableCell
                   className={cn(
                     "px-4 py-2.5 text-right text-sm font-mono font-medium whitespace-nowrap",
                     row.amount < 0 ? "text-destructive" : "text-foreground",
                   )}
                 >
-                  {formatCurrency(row.amount)} ₽
+                  {formatCurrency(roundMoneyDisplayAmount(row.amount))} ₽
                 </TableCell>
               </TableRow>
             ))}
@@ -1806,9 +1834,22 @@ function CashBreakdownCard({
                   total < 0 ? "text-destructive" : "text-foreground",
                 )}
               >
-                {formatCurrency(total)} ₽
+                {formatCurrency(roundMoneyDisplayAmount(total))} ₽
               </TableCell>
             </TableRow>
+            {footerNoteLabel && typeof footerNoteAmount === "number" ? (
+              <TableRow className="hover:bg-muted/30">
+                <TableCell className="px-4 py-2 text-xs text-muted-foreground">{footerNoteLabel}</TableCell>
+                <TableCell
+                  className={cn(
+                    "px-4 py-2 text-right text-xs font-mono whitespace-nowrap text-muted-foreground",
+                    footerNoteAmount < 0 && "text-destructive",
+                  )}
+                >
+                  {formatCurrency(roundMoneyDisplayAmount(footerNoteAmount))} ₽
+                </TableCell>
+              </TableRow>
+            ) : null}
           </TableFooter>
         </Table>
       </CardContent>
@@ -1858,7 +1899,7 @@ function CashWaterfallChartCard({
               axisLine={false}
               width={78}
               tick={{ fontSize: 10 }}
-              tickFormatter={(value) => formatCurrency(Number(value))}
+              tickFormatter={(value) => formatCurrency(roundMoneyDisplayAmount(Number(value)))}
             />
             <ReferenceLine y={0} stroke="hsl(var(--border))" />
             <ChartTooltip
@@ -1880,10 +1921,11 @@ function CashWaterfallChartCard({
                     }
 
                     if (payload.kind === "total") {
-                      return [`${formatCurrency(payload.total)} ₽`, "Остаток"];
+                      return [`${formatCurrency(roundMoneyDisplayAmount(payload.total))} ₽`, "Остаток"];
                     }
 
-                    const amountText = `${payload.delta > 0 ? "+" : ""}${formatCurrency(payload.delta)} ₽`;
+                    const roundedDelta = roundMoneyDisplayAmount(payload.delta);
+                    const amountText = `${roundedDelta > 0 ? "+" : ""}${formatCurrency(roundedDelta)} ₽`;
                     return [amountText, "Изменение"];
                   }}
                 />
@@ -2228,7 +2270,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             periodDate,
             periodKey: makePeriodKey(periodDate),
             balanceType: row["БалансТип"] || "",
-            article: row["СтатьяKey"] || "Без статьи",
+            article: normalizeBalanceArticle(row["СтатьяKey"] || "Без статьи"),
             amount: parseTextNumeric(row["Сумма"]),
           };
         })
@@ -2521,6 +2563,12 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       return fetchAllRows<BalanceFact>("balance_fact");
     },
   });
+  const { data: owners = [], isLoading: ownersLoading } = useQuery({
+    queryKey: ["owners_fact"],
+    queryFn: async () => {
+      return fetchAllRows<OwnersFact>("owners_fact");
+    },
+  });
 
   const flowRows = useMemo<FinancialFlowRow[]>(
     () =>
@@ -2546,6 +2594,45 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     [accessibleRestaurantNameSet, flows],
   );
 
+  const ownerRows = useMemo(
+    () =>
+      owners
+        .map((row) => {
+          const periodDate = parsePeriodDate(row["Период"]);
+          const restaurant = row["Ресторан"]?.trim() ?? "";
+          const owner = row["Псевдо"]?.trim() ?? "";
+          const article = row["Группа"]?.trim() ?? "";
+
+          if (!periodDate || !restaurant || !owner || !article) {
+            return null;
+          }
+
+          return {
+            id: row.id,
+            restaurant,
+            owner,
+            article,
+            periodDate,
+            periodKey: makePeriodKey(periodDate),
+            amount: parseTextNumeric(row["Движение"]),
+          };
+        })
+        .filter(
+          (
+            row,
+          ): row is {
+            id: string;
+            restaurant: string;
+            owner: string;
+            article: string;
+            periodDate: Date;
+            periodKey: string;
+            amount: number;
+          } => row !== null && accessibleRestaurantNameSet.has(row.restaurant),
+        ),
+    [accessibleRestaurantNameSet, owners],
+  );
+
   const balanceRows = useMemo<BalanceFactRow[]>(
     () =>
       balances
@@ -2559,7 +2646,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             periodDate,
             periodKey: makePeriodKey(periodDate),
             balanceType: row["БалансТип"] || "",
-            article: row["СтатьяKey"] || "Без статьи",
+            article: normalizeBalanceArticle(row["СтатьяKey"] || "Без статьи"),
             amount: parseTextNumeric(row["Сумма"]),
           };
         })
@@ -2670,6 +2757,36 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     [requiredPaymentRows],
   );
   const remainingAfterPayments = closingCashTotal - requiredPaymentTotal;
+  const ownerNames = useMemo(() => OWNER_OPTIONS.map((owner) => normalizeLookupText(owner)), []);
+  const ownerWithdrawalTotal = useMemo(() => {
+    if (!rangeEndDate) return 0;
+
+    const nextMonthStart = new Date(rangeEndDate.getFullYear(), rangeEndDate.getMonth() + 1, 1);
+
+    return ownerRows
+      .filter(
+        (row) =>
+          activeRestaurants.includes(row.restaurant) &&
+          row.periodDate.getTime() < nextMonthStart.getTime() &&
+          matchesArticleAlias(row.article, CASH_OWNER_WITHDRAWAL_GROUP_ALIASES) &&
+          ownerNames.includes(normalizeLookupText(row.owner)),
+      )
+      .reduce((sum, row) => sum + row.amount, 0);
+  }, [activeRestaurants, ownerNames, ownerRows, rangeEndDate]);
+  const closingCashRowsWithOwnerNote = useMemo(
+    () =>
+      closingCashRows.map((row) =>
+        row.label === "Снятие с р/с"
+          ? {
+              ...row,
+              noteLabel: "в т.ч перевели собственникам",
+              noteAmount: ownerWithdrawalTotal,
+            }
+          : row,
+      ),
+    [closingCashRows, ownerWithdrawalTotal],
+  );
+  const closingCashTotalWithoutOwners = closingCashTotal - ownerWithdrawalTotal;
 
   const cashMovementBreakdown = useMemo(() => {
     let income = 0;
@@ -2746,7 +2863,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     [cashMovementBreakdown, closingCashTotal, openingCashTotal],
   );
 
-  const isLoading = flowsLoading || balancesLoading;
+  const isLoading = flowsLoading || balancesLoading || ownersLoading;
 
   if (isLoading) {
     return (
@@ -2796,21 +2913,21 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
               <TransferKpiCard
                 icon={ArrowLeftRight}
                 label="Денег всего"
-                value={`${formatCurrency(closingCashTotal)} ₽`}
+                value={`${formatCurrency(roundMoneyDisplayAmount(closingCashTotal))} ₽`}
                 subtitle={`на конец ${rangeLabel}`}
                 tone="primary"
               />
               <TransferKpiCard
                 icon={ArrowDownRight}
                 label="Нужно заплатить"
-                value={`${formatCurrency(requiredPaymentTotal)} ₽`}
+                value={`${formatCurrency(roundMoneyDisplayAmount(requiredPaymentTotal))} ₽`}
                 subtitle="обязательные выплаты"
                 tone={requiredPaymentTotal > 0 ? "accent" : "success"}
               />
               <TransferKpiCard
                 icon={ArrowUpRight}
                 label="Остаток после выплат"
-                value={`${formatCurrency(remainingAfterPayments)} ₽`}
+                value={`${formatCurrency(roundMoneyDisplayAmount(remainingAfterPayments))} ₽`}
                 tone={remainingAfterPayments < 0 ? "accent" : "success"}
               />
             </div>
@@ -2820,7 +2937,13 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
       <div className="grid gap-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
         <div className="grid gap-3">
-          <CashBreakdownCard title="Денег всего" rows={closingCashRows} total={closingCashTotal} />
+          <CashBreakdownCard
+            title="Денег всего"
+            rows={closingCashRowsWithOwnerNote}
+            total={closingCashTotal}
+            footerNoteLabel="без учета собственников"
+            footerNoteAmount={closingCashTotalWithoutOwners}
+          />
           <CashBreakdownCard
             title="Обязательные выплаты"
             rows={requiredPaymentRows}
