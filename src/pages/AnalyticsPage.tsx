@@ -252,6 +252,7 @@ type PeriodSelectorProps = {
   options: PeriodOption[];
   refsMap: React.MutableRefObject<Record<string, HTMLButtonElement | null>>;
   compact?: boolean;
+  allowSelectAll?: boolean;
 };
 
 type PeriodRangeSelectorProps = {
@@ -1120,7 +1121,14 @@ function PeriodRangeSelector({
   );
 }
 
-function PeriodSelector({ selection, onChange, options, refsMap, compact = false }: PeriodSelectorProps) {
+function PeriodSelector({
+  selection,
+  onChange,
+  options,
+  refsMap,
+  compact = false,
+  allowSelectAll = true,
+}: PeriodSelectorProps) {
   const allSelected = options.length > 0 && selection.length === options.length;
 
   return (
@@ -1128,7 +1136,7 @@ function PeriodSelector({ selection, onChange, options, refsMap, compact = false
       <div className={cn("flex items-center justify-between gap-2", compact ? "mb-1" : "mb-1.5")}>
         <p className={cn("font-semibold", compact ? "text-xs" : "text-sm")}>Период</p>
         <div className="flex items-center gap-1">
-          {options.length > 0 && (
+          {allowSelectAll && options.length > 0 && (
             <Button
               type="button"
               size="sm"
@@ -2608,6 +2616,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
               onChange={setSelectedPeriods}
               options={periodOptions}
               refsMap={periodRefs}
+              allowSelectAll={false}
             />
           </div>
 
