@@ -230,6 +230,27 @@ type MetricSummary = {
   profit: number;
 };
 
+type CashBreakdownRow = {
+  label: string;
+  amount: number;
+};
+
+type CashArticleGroup = {
+  label: string;
+  aliases: string[];
+};
+
+type CashWaterfallDatum = {
+  key: string;
+  label: string;
+  fullLabel: string;
+  offset: number;
+  value: number;
+  delta: number;
+  total: number;
+  kind: "total" | "positive" | "negative";
+};
+
 type MetricKind = "income" | "expense" | "profit";
 
 type FilterChipGroupProps<T extends string | number> = {
@@ -311,6 +332,19 @@ const FILTER_CHIP_BASE_CLASS =
   "h-7 rounded-md border border-border px-2.5 text-xs hover:border-primary hover:bg-primary/5 hover:text-primary";
 const FILTER_CHIP_ACTIVE_CLASS =
   "border-primary bg-primary text-primary-foreground font-semibold shadow-sm hover:border-primary hover:bg-primary hover:text-primary-foreground";
+const CASH_ACCOUNT_GROUPS: CashArticleGroup[] = [
+  { label: "Касса", aliases: ["касса"] },
+  { label: "Расчетный счет", aliases: ["расчетный счет", "расчетный счёт"] },
+  { label: "Деньги в пути", aliases: ["деньги в пути"] },
+  { label: "Снятие с р/с", aliases: ["снятие с р/с"] },
+];
+const CASH_REQUIRED_PAYMENT_GROUPS: CashArticleGroup[] = [
+  { label: "ЗП начисленная", aliases: ["зп начисленная", "зп нач", "зп. нач"] },
+  { label: "Комиссия начисленная", aliases: ["комиссия начисленная", "комиссия нач"] },
+];
+const CASH_DIVIDEND_ARTICLE_ALIASES = ["доли"];
+const CASH_EXPLICIT_OTHER_INFLOW_ALIASES = ["займы полученные", "предоплата", "предоплаты"];
+const CASH_EXPLICIT_OTHER_OUTFLOW_ALIASES = ["п/о суммы", "расходы будущих периодов", "займы выданные"];
 
 function makePeriodKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -335,6 +369,24 @@ function normalizeFileNamePart(value: string) {
 
 function normalizeLookupText(value: string | null | undefined) {
   return (value ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("ru-RU");
+}
+
+function matchesArticleAlias(article: string, aliases: string[]) {
+  const normalizedArticle = normalizeLookupText(article);
+  return aliases.includes(normalizedArticle);
+}
+
+function sumAmountsByArticleAliases<T extends { article: string; amount: number }>(rows: T[], aliases: string[]) {
+  return rows
+    .filter((row) => matchesArticleAlias(row.article, aliases))
+    .reduce((sum, row) => sum + row.amount, 0);
+}
+
+function buildCashBreakdownRows(rows: BalanceFactRow[], groups: CashArticleGroup[]) {
+  return groups.map((group) => ({
+    label: group.label,
+    amount: sumAmountsByArticleAliases(rows, group.aliases),
+  }));
 }
 
 function getUniqueValues<T extends string | number>(values: T[]) {
@@ -766,6 +818,17 @@ const ownersTimelineChartConfig = {
   },
 } satisfies ChartConfig;
 
+const cashWaterfallChartConfig = {
+  offset: {
+    label: "База",
+    color: "transparent",
+  },
+  value: {
+    label: "Движение денег",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
+
 function buildTransferNetChartData(summary: TransferMatrixSummary): TransferNetChartDatum[] {
   return summary.restaurants.map((restaurant, index) => {
     const totalReceived = summary.columnTotals[index] ?? 0;
@@ -858,6 +921,101 @@ function buildOwnersTimelineData(
       paid: Math.round(paid),
     };
   });
+}
+
+function buildCashWaterfallData({
+  openingTotal,
+  income,
+  expense,
+  dividends,
+  otherInflows,
+  otherOutflows,
+  closingTotal,
+}: {
+  openingTotal: number;
+  income: number;
+  expense: number;
+  dividends: number;
+  otherInflows: number;
+  otherOutflows: number;
+  closingTotal: number;
+}) {
+  const normalizedExpense = expense === 0 ? 0 : -Math.abs(expense);
+  const steps = [
+    {
+      key: "income",
+      label: "Доход",
+      fullLabel: "Поступления (Доход)",
+      delta: income,
+    },
+    {
+      key: "expense",
+      label: "Расход",
+      fullLabel: "Выплаты (Расход)",
+      delta: normalizedExpense,
+    },
+    {
+      key: "dividends",
+      label: "Доли",
+      fullLabel: "Доли",
+      delta: dividends,
+    },
+    {
+      key: "otherInflows",
+      label: "Прочие +",
+      fullLabel: "Прочие поступления",
+      delta: otherInflows,
+    },
+    {
+      key: "otherOutflows",
+      label: "Прочие -",
+      fullLabel: "Прочие выплаты",
+      delta: otherOutflows,
+    },
+  ];
+
+  const data: CashWaterfallDatum[] = [
+    {
+      key: "opening",
+      label: "Начало",
+      fullLabel: "Остаток денег на начало",
+      offset: Math.min(0, openingTotal),
+      value: Math.abs(openingTotal),
+      delta: openingTotal,
+      total: openingTotal,
+      kind: "total",
+    },
+  ];
+
+  let runningTotal = openingTotal;
+
+  steps.forEach((step) => {
+    const nextTotal = runningTotal + step.delta;
+    data.push({
+      key: step.key,
+      label: step.label,
+      fullLabel: step.fullLabel,
+      offset: Math.min(runningTotal, nextTotal),
+      value: Math.abs(step.delta),
+      delta: step.delta,
+      total: nextTotal,
+      kind: step.delta >= 0 ? "positive" : "negative",
+    });
+    runningTotal = nextTotal;
+  });
+
+  data.push({
+    key: "closing",
+    label: "Конец",
+    fullLabel: "Остаток денег на конец",
+    offset: Math.min(0, closingTotal),
+    value: Math.abs(closingTotal),
+    delta: closingTotal,
+    total: closingTotal,
+    kind: "total",
+  });
+
+  return data;
 }
 
 function getTransferCellStyle(amount: number, maxMagnitude: number) {
@@ -1602,6 +1760,156 @@ function OwnersTimelineChartCard({
   );
 }
 
+function CashBreakdownCard({
+  title,
+  rows,
+  total,
+}: {
+  title: string;
+  rows: CashBreakdownRow[];
+  total: number;
+}) {
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="px-4 py-3">
+        <CardTitle className="text-sm font-serif">{title}</CardTitle>
+      </CardHeader>
+
+      <CardContent className="px-0 pt-0">
+        <Table>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.label}>
+                <TableCell className="px-4 py-2.5 text-sm">{row.label}</TableCell>
+                <TableCell
+                  className={cn(
+                    "px-4 py-2.5 text-right text-sm font-mono font-medium whitespace-nowrap",
+                    row.amount < 0 ? "text-destructive" : "text-foreground",
+                  )}
+                >
+                  {formatCurrency(row.amount)} ₽
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow className="hover:bg-muted/50">
+              <TableCell className="px-4 py-2.5 text-sm font-bold">Итого</TableCell>
+              <TableCell
+                className={cn(
+                  "px-4 py-2.5 text-right text-sm font-mono font-bold whitespace-nowrap",
+                  total < 0 ? "text-destructive" : "text-foreground",
+                )}
+              >
+                {formatCurrency(total)} ₽
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CashWaterfallChartCard({
+  data,
+  periodLabel,
+}: {
+  data: CashWaterfallDatum[];
+  periodLabel: string;
+}) {
+  const hasMovement = data.some((item) => item.kind !== "total" && item.value !== 0);
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="px-4 py-3">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <CardTitle className="text-sm font-serif">Движение денег</CardTitle>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Из чего изменился остаток денег за выбранный период.
+            </p>
+          </div>
+          <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+            Период: {periodLabel}
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
+        <ChartContainer config={cashWaterfallChartConfig} className="h-[260px] w-full sm:h-[320px]">
+          <BarChart data={data} margin={{ top: 8, right: 4, bottom: 4, left: -12 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontSize: 10 }}
+              tickMargin={6}
+              interval={0}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              width={58}
+              tick={{ fontSize: 10 }}
+              tickFormatter={(value) => formatCurrency(Number(value))}
+            />
+            <ReferenceLine y={0} stroke="hsl(var(--border))" />
+            <ChartTooltip
+              cursor={false}
+              content={
+                <ChartTooltipContent
+                  indicator="dot"
+                  hideLabel={false}
+                  labelFormatter={(_, payload) =>
+                    payload?.[0] && "payload" in payload[0]
+                      ? (payload[0] as { payload?: { fullLabel?: string } }).payload?.fullLabel ?? ""
+                      : ""
+                  }
+                  formatter={(_, __, item) => {
+                    const payload = item?.payload as CashWaterfallDatum | undefined;
+
+                    if (!payload) {
+                      return ["—", "Значение"];
+                    }
+
+                    if (payload.kind === "total") {
+                      return [`${formatCurrency(payload.total)} ₽`, "Остаток"];
+                    }
+
+                    const amountText = `${payload.delta > 0 ? "+" : ""}${formatCurrency(payload.delta)} ₽`;
+                    return [amountText, "Изменение"];
+                  }}
+                />
+              }
+            />
+            <Bar dataKey="offset" stackId="cash-waterfall" fill="transparent" isAnimationActive={false} />
+            <Bar dataKey="value" stackId="cash-waterfall" radius={6} isAnimationActive={false}>
+              {data.map((entry) => {
+                const fill =
+                  entry.kind === "total"
+                    ? "rgba(37, 99, 235, 0.8)"
+                    : entry.kind === "positive"
+                      ? "rgba(22, 163, 74, 0.78)"
+                      : "rgba(239, 68, 68, 0.8)";
+
+                return <Cell key={entry.key} fill={fill} />;
+              })}
+            </Bar>
+          </BarChart>
+        </ChartContainer>
+
+        {!hasMovement ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            За выбранный период нет движений, которые меняли денежный остаток.
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 function StructureCard({
   title,
   rows,
@@ -2174,6 +2482,349 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
+  const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
+  const {
+    accessibleRestaurantNames,
+    accessibleRestaurantNameSet,
+    preferredRestaurantSelection,
+    fixedRestaurantNames,
+  } = useAnalyticsAccess(scope);
+
+  const { data: flows = [], isLoading: flowsLoading } = useQuery({
+    queryKey: ["finance_flows"],
+    queryFn: async () => {
+      return fetchAllRows<FinanceFlow>("finance_flows");
+    },
+  });
+
+  const { data: balances = [], isLoading: balancesLoading } = useQuery({
+    queryKey: ["balance_fact"],
+    queryFn: async () => {
+      return fetchAllRows<BalanceFact>("balance_fact");
+    },
+  });
+
+  const flowRows = useMemo<FinancialFlowRow[]>(
+    () =>
+      flows
+        .map((row) => {
+          const periodDate = parsePeriodDate(row["Период"]);
+          if (!periodDate) return null;
+
+          return {
+            id: row.id,
+            restaurant: row["Ресторан"] || "Без ресторана",
+            periodDate,
+            periodKey: makePeriodKey(periodDate),
+            flowType: row["Поток"] || "",
+            finType: row["ФинТип"] || "",
+            article: row["СтатьяKey"] || "Без статьи",
+            amount: parseTextNumeric(row["Сумма"]),
+            isOperationalExpense: row["IsOpExp"] === "1",
+          };
+        })
+        .filter((row): row is FinancialFlowRow => row !== null)
+        .filter((row) => accessibleRestaurantNameSet.has(row.restaurant)),
+    [accessibleRestaurantNameSet, flows],
+  );
+
+  const balanceRows = useMemo<BalanceFactRow[]>(
+    () =>
+      balances
+        .map((row) => {
+          const periodDate = parsePeriodDate(row["Период"]);
+          if (!periodDate) return null;
+
+          return {
+            id: row.id,
+            restaurant: row["Ресторан"] || "Без ресторана",
+            periodDate,
+            periodKey: makePeriodKey(periodDate),
+            balanceType: row["БалансТип"] || "",
+            article: row["СтатьяKey"] || "Без статьи",
+            amount: parseTextNumeric(row["Сумма"]),
+          };
+        })
+        .filter((row): row is BalanceFactRow => row !== null)
+        .filter((row) => accessibleRestaurantNameSet.has(row.restaurant)),
+    [accessibleRestaurantNameSet, balances],
+  );
+
+  const restaurantOptions = useMemo(
+    () =>
+      getUniqueValues([
+        ...accessibleRestaurantNames,
+        ...flowRows.map((row) => row.restaurant),
+        ...balanceRows.map((row) => row.restaurant),
+      ]).sort((a, b) => a.localeCompare(b, "ru")),
+    [accessibleRestaurantNames, balanceRows, flowRows],
+  );
+
+  const periodOptions = useMemo(
+    () => buildPeriodOptions([...flowRows.map((row) => row.periodDate), ...balanceRows.map((row) => row.periodDate)]),
+    [balanceRows, flowRows],
+  );
+
+  useInitializeSingleSelection({
+    selection: selectedRestaurants,
+    options: restaurantOptions,
+    onChange: setSelectedRestaurants,
+    preferredOption: preferredRestaurantSelection[0] ?? null,
+  });
+
+  const { selectedPeriods, setSelectedPeriods, activePeriods, periodRefs } = usePeriodSelection(periodOptions);
+  const activeRestaurants = useMemo(
+    () => resolveScopedSelection(selectedRestaurants, restaurantOptions, fixedRestaurantNames),
+    [fixedRestaurantNames, restaurantOptions, selectedRestaurants],
+  );
+
+  const filteredFlowRows = useMemo(
+    () =>
+      flowRows.filter(
+        (row) => activeRestaurants.includes(row.restaurant) && activePeriods.includes(row.periodKey),
+      ),
+    [activePeriods, activeRestaurants, flowRows],
+  );
+
+  const selectedRangeOptions = useMemo(
+    () =>
+      periodOptions
+        .filter((option) => activePeriods.includes(option.key))
+        .sort((a, b) => a.date.getTime() - b.date.getTime()),
+    [activePeriods, periodOptions],
+  );
+
+  const rangeStartDate = selectedRangeOptions[0]?.date ?? null;
+  const rangeEndDate = selectedRangeOptions[selectedRangeOptions.length - 1]?.date ?? null;
+
+  const rangeLabel = useMemo(() => {
+    if (selectedRangeOptions.length === 0) return "—";
+    if (selectedRangeOptions.length === 1) return selectedRangeOptions[0].label;
+    return `${selectedRangeOptions[0].label} - ${selectedRangeOptions[selectedRangeOptions.length - 1].label}`;
+  }, [selectedRangeOptions]);
+
+  const openingBalanceRows = useMemo(() => {
+    if (!rangeStartDate) return [];
+
+    return balanceRows.filter(
+      (row) => activeRestaurants.includes(row.restaurant) && row.periodDate.getTime() < rangeStartDate.getTime(),
+    );
+  }, [activeRestaurants, balanceRows, rangeStartDate]);
+
+  const closingBalanceRows = useMemo(() => {
+    if (!rangeEndDate) return [];
+
+    const nextMonthStart = new Date(rangeEndDate.getFullYear(), rangeEndDate.getMonth() + 1, 1);
+    return balanceRows.filter(
+      (row) =>
+        activeRestaurants.includes(row.restaurant) &&
+        row.periodDate.getTime() < nextMonthStart.getTime(),
+    );
+  }, [activeRestaurants, balanceRows, rangeEndDate]);
+
+  const openingCashRows = useMemo(
+    () => buildCashBreakdownRows(openingBalanceRows, CASH_ACCOUNT_GROUPS),
+    [openingBalanceRows],
+  );
+  const closingCashRows = useMemo(
+    () => buildCashBreakdownRows(closingBalanceRows, CASH_ACCOUNT_GROUPS),
+    [closingBalanceRows],
+  );
+  const requiredPaymentRows = useMemo(
+    () =>
+      buildCashBreakdownRows(
+        closingBalanceRows.filter((row) => row.balanceType === "Обязательство"),
+        CASH_REQUIRED_PAYMENT_GROUPS,
+      ),
+    [closingBalanceRows],
+  );
+
+  const openingCashTotal = useMemo(
+    () => openingCashRows.reduce((sum, row) => sum + row.amount, 0),
+    [openingCashRows],
+  );
+  const closingCashTotal = useMemo(
+    () => closingCashRows.reduce((sum, row) => sum + row.amount, 0),
+    [closingCashRows],
+  );
+  const requiredPaymentTotal = useMemo(
+    () => requiredPaymentRows.reduce((sum, row) => sum + row.amount, 0),
+    [requiredPaymentRows],
+  );
+  const remainingAfterPayments = closingCashTotal - requiredPaymentTotal;
+
+  const cashMovementBreakdown = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    let dividends = 0;
+    let otherInflows = 0;
+    let otherOutflows = 0;
+
+    filteredFlowRows.forEach((row) => {
+      if (matchesArticleAlias(row.article, CASH_DIVIDEND_ARTICLE_ALIASES)) {
+        dividends += row.amount;
+        return;
+      }
+
+      if (row.finType === "Операционная" && row.flowType === "Поступления") {
+        income += row.amount;
+        return;
+      }
+
+      if (row.finType === "Операционная" && row.flowType === "Платежи") {
+        expense += Math.abs(row.amount);
+        return;
+      }
+
+      if (matchesArticleAlias(row.article, CASH_EXPLICIT_OTHER_INFLOW_ALIASES)) {
+        otherInflows += row.amount;
+        return;
+      }
+
+      if (matchesArticleAlias(row.article, CASH_EXPLICIT_OTHER_OUTFLOW_ALIASES)) {
+        otherOutflows += row.amount;
+        return;
+      }
+
+      if (row.amount > 0) {
+        otherInflows += row.amount;
+      } else if (row.amount < 0) {
+        otherOutflows += row.amount;
+      }
+    });
+
+    const classifiedDelta = income - expense + dividends + otherInflows + otherOutflows;
+    const targetDelta = closingCashTotal - openingCashTotal;
+    const residualDelta = targetDelta - classifiedDelta;
+
+    if (!isNearlyZero(residualDelta)) {
+      if (residualDelta > 0) {
+        otherInflows += residualDelta;
+      } else {
+        otherOutflows += residualDelta;
+      }
+    }
+
+    return {
+      income,
+      expense,
+      dividends,
+      otherInflows,
+      otherOutflows,
+    };
+  }, [closingCashTotal, filteredFlowRows, openingCashTotal]);
+
+  const waterfallData = useMemo(
+    () =>
+      buildCashWaterfallData({
+        openingTotal: openingCashTotal,
+        closingTotal: closingCashTotal,
+        income: cashMovementBreakdown.income,
+        expense: cashMovementBreakdown.expense,
+        dividends: cashMovementBreakdown.dividends,
+        otherInflows: cashMovementBreakdown.otherInflows,
+        otherOutflows: cashMovementBreakdown.otherOutflows,
+      }),
+    [cashMovementBreakdown, closingCashTotal, openingCashTotal],
+  );
+
+  const isLoading = flowsLoading || balancesLoading;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center text-sm text-muted-foreground">Загрузка...</CardContent>
+      </Card>
+    );
+  }
+
+  if (flowRows.length === 0 && balanceRows.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center text-sm text-muted-foreground">
+          Нет данных для построения отчета по движению денег.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
+        <CardContent className="space-y-3 px-3 py-3">
+          <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,1fr)]">
+            <div className="flex flex-wrap items-start gap-2">
+              {!scope?.hideRestaurantFilter && (
+                <FilterChipGroup
+                  label="Рестораны"
+                  options={restaurantOptions}
+                  selection={selectedRestaurants}
+                  onChange={setSelectedRestaurants}
+                  matchPeriodHeight
+                  allowSelectAll
+                  compact
+                />
+              )}
+              <PeriodSelector
+                selection={selectedPeriods}
+                onChange={setSelectedPeriods}
+                options={periodOptions}
+                refsMap={periodRefs}
+                compact
+              />
+            </div>
+
+            <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-4">
+              <TransferKpiCard
+                icon={ArrowLeftRight}
+                label="Денег всего"
+                value={`${formatCurrency(closingCashTotal)} ₽`}
+                subtitle={`на конец ${rangeLabel}`}
+                tone="primary"
+              />
+              <TransferKpiCard
+                icon={ArrowDownRight}
+                label="Нужно заплатить"
+                value={`${formatCurrency(requiredPaymentTotal)} ₽`}
+                subtitle="обязательные выплаты"
+                tone={requiredPaymentTotal > 0 ? "accent" : "success"}
+              />
+              <TransferKpiCard
+                icon={ArrowUpRight}
+                label="Остаток после выплат"
+                value={`${formatCurrency(remainingAfterPayments)} ₽`}
+                subtitle="денег останется после выплат"
+                tone={remainingAfterPayments < 0 ? "accent" : "success"}
+              />
+              <TransferKpiCard
+                icon={Minus}
+                label="Остаток на начало"
+                value={`${formatCurrency(openingCashTotal)} ₽`}
+                subtitle={`на начало ${rangeLabel}`}
+                tone="primary"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
+        <div className="grid gap-3">
+          <CashBreakdownCard title="Денег всего" rows={closingCashRows} total={closingCashTotal} />
+          <CashBreakdownCard
+            title="Обязательные выплаты"
+            rows={requiredPaymentRows}
+            total={requiredPaymentTotal}
+          />
+        </div>
+
+        <CashWaterfallChartCard data={waterfallData} periodLabel={rangeLabel} />
+      </div>
     </div>
   );
 }
@@ -3542,9 +4193,7 @@ function AnalyticsWorkspacePage() {
       {view === "financial" ? <FinancialResultTab /> : null}
       {view === "owners" ? <AnalyticsOwnersSection /> : null}
       {view === "transfers" ? <TransfersTab /> : null}
-      {view === "cashMovement" ? (
-        <AnalyticsPlaceholderSection title={meta.title} description={meta.description} />
-      ) : null}
+      {view === "cashMovement" ? <CashMovementTab /> : null}
       {view === "loans" ? <AnalyticsPlaceholderSection title={meta.title} description={meta.description} /> : null}
     </div>
   );
