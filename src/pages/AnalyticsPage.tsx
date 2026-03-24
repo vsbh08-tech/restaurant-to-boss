@@ -1,8 +1,14 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDownRight, ArrowLeftRight, ArrowUpRight, Download, Minus } from "lucide-react";
+import { Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  ANALYTICS_ROUTE_PATHS,
+  ANALYTICS_WORKSPACE_META,
+  getAnalyticsWorkspaceView,
+} from "@/lib/analytics-navigation";
 import { formatCurrency, parsePeriodDate, parseTextNumeric } from "@/lib/supabase-helpers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -3456,7 +3462,86 @@ function OwnersVerificationTab() {
   );
 }
 
-export default function AnalyticsPage({ scope }: AnalyticsPageProps) {
+function AnalyticsPlaceholderSection({
+  title,
+  description,
+}: {
+  title: string;
+  description?: string;
+}) {
+  return (
+    <Card>
+      <CardHeader className="px-4 py-3">
+        <CardTitle className="text-base font-serif">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 pb-4 pt-0">
+        <div className="rounded-lg border border-dashed px-4 py-8 text-sm text-muted-foreground">
+          {description ?? "Раздел в разработке."}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AnalyticsOwnersSection({ scope }: { scope?: AnalyticsScopeConfig }) {
+  return (
+    <Tabs defaultValue="report" className="space-y-4">
+      <TabsList className="h-auto justify-start gap-1 bg-muted">
+        <TabsTrigger
+          value="report"
+          className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+        >
+          Общий отчет
+        </TabsTrigger>
+        <TabsTrigger
+          value="detail"
+          className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+        >
+          Детализация
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="report">
+        <OwnersReportTab scope={scope} />
+      </TabsContent>
+      <TabsContent value="detail">
+        <OwnersDetailTab scope={scope} />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function AnalyticsWorkspacePage() {
+  const location = useLocation();
+  const view = getAnalyticsWorkspaceView(location.pathname);
+
+  if (!view) {
+    return <Navigate to={ANALYTICS_ROUTE_PATHS.financial} replace />;
+  }
+
+  const meta = ANALYTICS_WORKSPACE_META[view];
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold font-serif">{meta.title}</h1>
+          {meta.description ? <p className="text-sm text-muted-foreground">{meta.description}</p> : null}
+        </div>
+        <AnalyticsImportDialog />
+      </div>
+
+      {view === "financial" ? <FinancialResultTab /> : null}
+      {view === "owners" ? <AnalyticsOwnersSection /> : null}
+      {view === "transfers" ? <TransfersTab /> : null}
+      {view === "cashMovement" ? (
+        <AnalyticsPlaceholderSection title={meta.title} description={meta.description} />
+      ) : null}
+      {view === "loans" ? <AnalyticsPlaceholderSection title={meta.title} description={meta.description} /> : null}
+    </div>
+  );
+}
+
+function AnalyticsTabbedPage({ scope }: AnalyticsPageProps) {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -3479,7 +3564,7 @@ export default function AnalyticsPage({ scope }: AnalyticsPageProps) {
               value="owners"
               className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
             >
-              Отчет Собственников
+              Общий отчет
             </TabsTrigger>
             <TabsTrigger
               value="detail"
@@ -3528,4 +3613,12 @@ export default function AnalyticsPage({ scope }: AnalyticsPageProps) {
       </Tabs>
     </div>
   );
+}
+
+export default function AnalyticsPage({ scope }: AnalyticsPageProps) {
+  if (scope) {
+    return <AnalyticsTabbedPage scope={scope} />;
+  }
+
+  return <AnalyticsWorkspacePage />;
 }
