@@ -2706,15 +2706,15 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     [activePeriods, periodOptions],
   );
 
-  const rangeStartDate = selectedRangeOptions[0]?.date ?? null;
-  const rangeEndDate = selectedRangeOptions[selectedRangeOptions.length - 1]?.date ?? null;
-  const endingPeriodLabel = selectedRangeOptions[selectedRangeOptions.length - 1]?.label ?? rangeLabel;
-
   const rangeLabel = useMemo(() => {
     if (selectedRangeOptions.length === 0) return "—";
     if (selectedRangeOptions.length === 1) return selectedRangeOptions[0].label;
     return `${selectedRangeOptions[0].label} - ${selectedRangeOptions[selectedRangeOptions.length - 1].label}`;
   }, [selectedRangeOptions]);
+
+  const rangeStartDate = selectedRangeOptions[0]?.date ?? null;
+  const rangeEndDate = selectedRangeOptions[selectedRangeOptions.length - 1]?.date ?? null;
+  const endingPeriodLabel = selectedRangeOptions[selectedRangeOptions.length - 1]?.label ?? rangeLabel;
 
   const openingBalanceRows = useMemo(() => {
     if (!rangeStartDate) return [];
