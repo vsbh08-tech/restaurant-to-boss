@@ -1312,24 +1312,24 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
       </CardHeader>
 
       <CardContent className="px-0 pt-0">
-        <Table className="min-w-max">
+        <Table className="min-w-max table-fixed">
             <TableHeader>
               <TableRow>
                 <TableHead
                   rowSpan={2}
-                  className="sticky left-0 z-20 min-w-[108px] bg-muted/30 px-2.5 py-2.5 text-left text-sm font-semibold text-foreground shadow-[1px_0_0_0_hsl(var(--border))]"
+                  className="sticky left-0 z-30 w-[120px] min-w-[120px] bg-muted/30 px-2 py-2 text-left text-xs font-semibold text-foreground shadow-[6px_0_8px_-6px_rgba(15,23,42,0.18)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
                 >
                   Откуда ↓
                 </TableHead>
                 <TableHead
                   colSpan={summary.restaurants.length}
-                  className="bg-muted/30 px-2 py-2.5 text-center text-sm font-semibold text-foreground"
+                  className="bg-muted/30 px-2 py-2 text-center text-xs font-semibold text-foreground sm:py-2.5 sm:text-sm"
                 >
                   Куда →
                 </TableHead>
                 <TableHead
                   rowSpan={2}
-                  className="min-w-[92px] bg-muted/30 px-2 py-2.5 text-right text-sm font-semibold text-foreground"
+                  className="w-[88px] min-w-[88px] bg-muted/30 px-1.5 py-2 text-right text-[11px] font-semibold text-foreground sm:w-[96px] sm:min-w-[96px] sm:px-2 sm:py-2.5 sm:text-sm"
                 >
                   Итого выдано
                 </TableHead>
@@ -1338,7 +1338,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 {summary.restaurants.map((restaurant) => (
                   <TableHead
                     key={restaurant}
-                    className="min-w-[92px] bg-muted/30 px-2 py-2.5 text-center text-sm font-semibold text-foreground"
+                    className="w-[82px] min-w-[82px] bg-muted/30 px-1.5 py-2 text-center text-[11px] font-semibold text-foreground sm:w-[96px] sm:min-w-[96px] sm:px-2 sm:py-2.5 sm:text-sm"
                   >
                     {restaurant}
                   </TableHead>
@@ -1348,7 +1348,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             <TableBody>
               {summary.rows.map((row) => (
                 <TableRow key={row.restaurant}>
-                  <TableCell className="sticky left-0 z-10 bg-background px-2.5 py-2.5 text-sm font-semibold shadow-[1px_0_0_0_hsl(var(--border))]">
+                  <TableCell className="sticky left-0 z-20 w-[120px] min-w-[120px] bg-background px-2 py-2 text-xs font-semibold shadow-[6px_0_8px_-6px_rgba(15,23,42,0.18)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm">
                     {row.restaurant}
                   </TableCell>
                   {row.cells.map((cell) => {
@@ -1358,7 +1358,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                     return (
                       <TableCell
                         key={[row.restaurant, cell.restaurant].join("::")}
-                        className={cn("px-2 py-2.5 text-right text-xs font-mono", cellStyle.className)}
+                        className={cn("w-[82px] min-w-[82px] px-1.5 py-2 text-right text-[11px] font-mono sm:w-[96px] sm:min-w-[96px] sm:px-2 sm:py-2.5 sm:text-xs", cellStyle.className)}
                         style={cellStyle.style}
                       >
                         {formatCurrency(displayAmount)} ₽
@@ -1367,7 +1367,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                   })}
                   <TableCell
                     className={cn(
-                      "bg-muted/20 px-2 py-2.5 text-right text-xs font-mono font-semibold",
+                      "w-[88px] min-w-[88px] bg-muted/20 px-1.5 py-2 text-right text-[11px] font-mono font-semibold sm:w-[96px] sm:min-w-[96px] sm:px-2 sm:py-2.5 sm:text-xs",
                       roundTransferDisplayAmount(row.totalOut) < 0 ? "text-destructive" : "text-foreground",
                     )}
                   >
@@ -1378,14 +1378,14 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             </TableBody>
             <TableFooter>
               <TableRow className="bg-muted/20 hover:bg-muted/30">
-                <TableCell className="sticky left-0 z-10 bg-muted/30 px-3 py-2.5 text-sm font-bold shadow-[1px_0_0_0_hsl(var(--border))]">
+                <TableCell className="sticky left-0 z-20 w-[120px] min-w-[120px] bg-muted/30 px-2 py-2 text-xs font-bold shadow-[6px_0_8px_-6px_rgba(15,23,42,0.18)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm">
                   Итого получено
                 </TableCell>
                 {summary.columnTotals.map((amount, index) => (
                   <TableCell
                     key={summary.restaurants[index]}
                     className={cn(
-                      "bg-muted/20 px-2 py-2.5 text-right text-xs font-mono font-bold",
+                      "w-[82px] min-w-[82px] bg-muted/20 px-1.5 py-2 text-right text-[11px] font-mono font-bold sm:w-[96px] sm:min-w-[96px] sm:px-2 sm:py-2.5 sm:text-xs",
                       roundTransferDisplayAmount(amount) < 0 ? "text-destructive" : "text-foreground",
                     )}
                   >
@@ -1394,7 +1394,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 ))}
                 <TableCell
                   className={cn(
-                    "bg-muted/30 px-2 py-2.5 text-right text-xs font-mono font-bold",
+                    "w-[88px] min-w-[88px] bg-muted/30 px-1.5 py-2 text-right text-[11px] font-mono font-bold sm:w-[96px] sm:min-w-[96px] sm:px-2 sm:py-2.5 sm:text-xs",
                     roundTransferDisplayAmount(summary.grandTotal) < 0 ? "text-destructive" : "text-foreground",
                   )}
                 >
@@ -2650,35 +2650,49 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             </CardHeader>
 
             <CardContent className="px-0 pt-0">
-                <Table className="min-w-max">
+                <Table className="min-w-max table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="sticky left-0 z-20 min-w-[152px] bg-card px-2.5 text-xs">Статья</TableHead>
-                    <TableHead className="h-9 px-2.5 text-right text-xs">Остаток на начало</TableHead>
-                    <TableHead className="h-9 px-2.5 text-right text-xs">Начислено / получено / в пути</TableHead>
-                    <TableHead className="h-9 px-2.5 text-right text-xs">Выплачено / возврат</TableHead>
-                    <TableHead className="h-9 px-2.5 text-right text-xs">Остаток на конец</TableHead>
+                    <TableHead className="sticky left-0 z-30 w-[120px] min-w-[120px] bg-card px-2 text-[11px] shadow-[6px_0_8px_-6px_rgba(15,23,42,0.18)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                      Статья
+                    </TableHead>
+                    <TableHead className="h-9 w-[92px] min-w-[92px] px-1.5 text-right text-[11px] sm:px-2.5 sm:text-xs">
+                      <span className="sm:hidden">Ост. нач.</span>
+                      <span className="hidden sm:inline">Остаток на начало</span>
+                    </TableHead>
+                    <TableHead className="h-9 w-[92px] min-w-[92px] px-1.5 text-right text-[11px] sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
+                      <span className="sm:hidden">Начисл.</span>
+                      <span className="hidden sm:inline">Начислено / получено / в пути</span>
+                    </TableHead>
+                    <TableHead className="h-9 w-[92px] min-w-[92px] px-1.5 text-right text-[11px] sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
+                      <span className="sm:hidden">Выплата</span>
+                      <span className="hidden sm:inline">Выплачено / возврат</span>
+                    </TableHead>
+                    <TableHead className="h-9 w-[92px] min-w-[92px] px-1.5 text-right text-[11px] sm:px-2.5 sm:text-xs">
+                      <span className="sm:hidden">Ост. кон.</span>
+                      <span className="hidden sm:inline">Остаток на конец</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {reportRows.map((row) => (
                     <TableRow key={row.article}>
-                      <TableCell className="sticky left-0 z-10 min-w-[152px] bg-background px-2.5 py-2 text-xs font-medium shadow-[1px_0_0_0_hsl(var(--border))]">
+                      <TableCell className="sticky left-0 z-20 w-[120px] min-w-[120px] bg-background px-2 py-2 text-[11px] font-medium shadow-[6px_0_8px_-6px_rgba(15,23,42,0.18)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
                         {row.article}
                       </TableCell>
                         <TableCell
                           className={cn(
-                            "px-2.5 py-2 text-right text-xs font-mono",
+                            "w-[92px] min-w-[92px] px-1.5 py-2 text-right text-[11px] font-mono sm:px-2.5 sm:text-xs",
                             row.opening < 0 ? "text-destructive" : "text-foreground",
                           )}
                         >
                           {formatOwnersWholeCurrency(row.opening)} ₽
                         </TableCell>
-                        <TableCell className="px-2.5 py-2 text-right text-xs font-mono">{formatOwnersWholeCurrency(row.accrued)} ₽</TableCell>
-                        <TableCell className="px-2.5 py-2 text-right text-xs font-mono">{formatOwnersWholeCurrency(row.paid)} ₽</TableCell>
+                        <TableCell className="w-[92px] min-w-[92px] px-1.5 py-2 text-right text-[11px] font-mono sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">{formatOwnersWholeCurrency(row.accrued)} ₽</TableCell>
+                        <TableCell className="w-[92px] min-w-[92px] px-1.5 py-2 text-right text-[11px] font-mono sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">{formatOwnersWholeCurrency(row.paid)} ₽</TableCell>
                         <TableCell
                           className={cn(
-                            "px-2.5 py-2 text-right text-xs font-mono",
+                            "w-[92px] min-w-[92px] px-1.5 py-2 text-right text-[11px] font-mono sm:px-2.5 sm:text-xs",
                             row.closing < 0 ? "text-destructive" : "text-foreground",
                           )}
                         >
@@ -2689,12 +2703,12 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                   </TableBody>
                   <TableFooter>
                     <TableRow className="font-bold hover:bg-muted/50">
-                      <TableCell className="sticky left-0 z-10 min-w-[152px] bg-muted px-2.5 py-2 text-xs font-bold shadow-[1px_0_0_0_hsl(var(--border))]">
+                      <TableCell className="sticky left-0 z-20 w-[120px] min-w-[120px] bg-muted px-2 py-2 text-[11px] font-bold shadow-[6px_0_8px_-6px_rgba(15,23,42,0.18)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
                         Общий итог
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "px-2.5 py-2 text-right text-xs font-mono font-bold",
+                          "w-[92px] min-w-[92px] px-1.5 py-2 text-right text-[11px] font-mono font-bold sm:px-2.5 sm:text-xs",
                           totals.opening < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
@@ -2702,7 +2716,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "px-2.5 py-2 text-right text-xs font-mono font-bold",
+                          "w-[92px] min-w-[92px] px-1.5 py-2 text-right text-[11px] font-mono font-bold sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs",
                           totals.accrued < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
@@ -2710,7 +2724,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "px-2.5 py-2 text-right text-xs font-mono font-bold",
+                          "w-[92px] min-w-[92px] px-1.5 py-2 text-right text-[11px] font-mono font-bold sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs",
                           totals.paid < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
@@ -2718,7 +2732,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "px-2.5 py-2 text-right text-xs font-mono font-bold",
+                          "w-[92px] min-w-[92px] px-1.5 py-2 text-right text-[11px] font-mono font-bold sm:px-2.5 sm:text-xs",
                           totals.closing < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
@@ -3116,19 +3130,25 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardHeader>
 
           <CardContent className="px-0 pt-0">
-              <Table className="min-w-max">
+              <Table className="min-w-max table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="sticky left-0 z-20 min-w-[84px] bg-card px-2 py-2 text-[11px] sm:px-3 sm:text-xs">
+                    <TableHead className="sticky left-0 z-30 w-[64px] min-w-[64px] bg-card px-1.5 py-2 text-[10px] shadow-[6px_0_8px_-6px_rgba(15,23,42,0.18)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-[11px]">
                       Дата
                     </TableHead>
-                    <TableHead className="sticky left-[84px] z-20 min-w-[168px] bg-card px-2 py-2 text-[11px] shadow-[1px_0_0_0_hsl(var(--border))] sm:px-3 sm:text-xs">
+                    <TableHead className="sticky left-[64px] z-30 w-[128px] min-w-[128px] bg-card px-1.5 py-2 text-[10px] shadow-[6px_0_8px_-6px_rgba(15,23,42,0.18)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-[11px]">
                       Статья
                     </TableHead>
-                    <TableHead className="h-10 px-2 py-2 text-right text-[11px] sm:px-3 sm:text-xs">Остаток на начало</TableHead>
-                    <TableHead className="h-10 px-2 py-2 text-right text-[11px] sm:px-3 sm:text-xs">Начислено</TableHead>
-                    <TableHead className="h-10 px-2 py-2 text-right text-[11px] sm:px-3 sm:text-xs">Выплачено</TableHead>
-                    <TableHead className="h-10 px-2 py-2 text-right text-[11px] sm:px-3 sm:text-xs">Остаток на конец</TableHead>
+                    <TableHead className="h-10 w-[88px] min-w-[88px] px-1.5 py-2 text-right text-[10px] sm:px-2 sm:text-[11px]">
+                      <span className="sm:hidden">Ост. нач.</span>
+                      <span className="hidden sm:inline">Остаток на начало</span>
+                    </TableHead>
+                    <TableHead className="h-10 w-[88px] min-w-[88px] px-1.5 py-2 text-right text-[10px] sm:px-2 sm:text-[11px]">Начислено</TableHead>
+                    <TableHead className="h-10 w-[88px] min-w-[88px] px-1.5 py-2 text-right text-[10px] sm:px-2 sm:text-[11px]">Выплачено</TableHead>
+                    <TableHead className="h-10 w-[88px] min-w-[88px] px-1.5 py-2 text-right text-[10px] sm:px-2 sm:text-[11px]">
+                      <span className="sm:hidden">Ост. кон.</span>
+                      <span className="hidden sm:inline">Остаток на конец</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -3139,7 +3159,7 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                     >
                       <TableCell
                         className={cn(
-                          "sticky left-0 z-10 min-w-[84px] px-2 py-2 text-xs font-medium sm:px-3 sm:text-sm",
+                          "sticky left-0 z-20 w-[64px] min-w-[64px] px-1.5 py-2 text-[10px] font-medium shadow-[6px_0_8px_-6px_rgba(15,23,42,0.18)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-xs",
                           row.isSyntheticGap ? "bg-muted/20" : "bg-background",
                         )}
                       >
@@ -3147,7 +3167,7 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "sticky left-[84px] z-10 min-w-[168px] px-2 py-2 text-xs shadow-[1px_0_0_0_hsl(var(--border))] sm:px-3 sm:text-sm",
+                          "sticky left-[64px] z-20 w-[128px] min-w-[128px] px-1.5 py-2 text-[10px] shadow-[6px_0_8px_-6px_rgba(15,23,42,0.18)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-xs",
                           row.isSyntheticGap ? "bg-muted/20" : "bg-background",
                         )}
                       >
@@ -3155,17 +3175,17 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "px-2 py-2 text-right text-xs font-mono sm:px-3 sm:text-sm",
+                          "w-[88px] min-w-[88px] px-1.5 py-2 text-right text-[10px] font-mono sm:px-2 sm:text-[11px]",
                           row.opening < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
                         {formatCurrency(row.opening)} ₽
                       </TableCell>
-                      <TableCell className="px-2 py-2 text-right text-xs font-mono text-sky sm:px-3 sm:text-sm">{formatCurrency(row.accrued)} ₽</TableCell>
-                      <TableCell className="px-2 py-2 text-right text-xs font-mono text-accent sm:px-3 sm:text-sm">{formatCurrency(row.paid)} ₽</TableCell>
+                      <TableCell className="w-[88px] min-w-[88px] px-1.5 py-2 text-right text-[10px] font-mono text-sky sm:px-2 sm:text-[11px]">{formatCurrency(row.accrued)} ₽</TableCell>
+                      <TableCell className="w-[88px] min-w-[88px] px-1.5 py-2 text-right text-[10px] font-mono text-accent sm:px-2 sm:text-[11px]">{formatCurrency(row.paid)} ₽</TableCell>
                       <TableCell
                         className={cn(
-                          "px-2 py-2 text-right text-xs font-mono font-semibold sm:px-3 sm:text-sm",
+                          "w-[88px] min-w-[88px] px-1.5 py-2 text-right text-[10px] font-mono font-semibold sm:px-2 sm:text-[11px]",
                           row.closing < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
