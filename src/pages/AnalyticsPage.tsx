@@ -2708,6 +2708,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
   const rangeStartDate = selectedRangeOptions[0]?.date ?? null;
   const rangeEndDate = selectedRangeOptions[selectedRangeOptions.length - 1]?.date ?? null;
+  const endingPeriodLabel = selectedRangeOptions[selectedRangeOptions.length - 1]?.label ?? rangeLabel;
 
   const rangeLabel = useMemo(() => {
     if (selectedRangeOptions.length === 0) return "—";
@@ -2926,7 +2927,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                 icon={ArrowLeftRight}
                 label="Денег всего"
                 value={`${formatCurrency(roundMoneyDisplayAmount(closingCashTotal))} ₽`}
-                subtitle={`на конец ${rangeLabel}`}
+                subtitle={`на конец ${endingPeriodLabel}`}
                 tone="primary"
               />
               <TransferKpiCard
@@ -4327,7 +4328,7 @@ function AnalyticsWorkspacePage() {
           <h1 className="text-2xl font-bold font-serif">{meta.title}</h1>
           {meta.description ? <p className="text-sm text-muted-foreground">{meta.description}</p> : null}
         </div>
-        <AnalyticsImportDialog />
+        {view === "financial" ? <AnalyticsImportDialog /> : null}
       </div>
 
       {view === "financial" ? <FinancialResultTab /> : null}
