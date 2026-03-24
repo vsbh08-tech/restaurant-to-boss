@@ -1430,7 +1430,12 @@ function TransferKpiCard({ icon: Icon, label, value, subtitle, tone }: TransferK
         </div>
         <div className="min-w-0">
           <p className="text-xs leading-snug text-muted-foreground">{label}</p>
-          <p className={cn("mt-0.5 text-xl font-semibold leading-none tracking-tight", toneConfig.valueClassName)}>
+          <p
+            className={cn(
+              "mt-0.5 text-lg font-semibold leading-tight tracking-tight xl:text-xl",
+              toneConfig.valueClassName,
+            )}
+          >
             {value}
           </p>
           {subtitle ? <p className="mt-0.5 text-[11px] text-muted-foreground">{subtitle}</p> : null}
@@ -1685,7 +1690,7 @@ function OwnersTimelineChartCard({
       <CardContent className="px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
         {hasData ? (
           <ChartContainer config={ownersTimelineChartConfig} className="h-[190px] w-full sm:h-[280px]">
-            <LineChart data={data} margin={{ top: 8, right: 4, bottom: 4, left: -16 }}>
+            <LineChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
               <CartesianGrid vertical={false} />
               <XAxis
                 dataKey="label"
@@ -1698,7 +1703,7 @@ function OwnersTimelineChartCard({
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                width={52}
+                width={74}
                 tick={{ fontSize: 10 }}
                 tickFormatter={(value) => formatCurrency(Number(value))}
               />
@@ -1838,7 +1843,7 @@ function CashWaterfallChartCard({
 
       <CardContent className="px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
         <ChartContainer config={cashWaterfallChartConfig} className="h-[260px] w-full sm:h-[320px]">
-          <BarChart data={data} margin={{ top: 8, right: 4, bottom: 4, left: -12 }}>
+          <BarChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="label"
@@ -1851,7 +1856,7 @@ function CashWaterfallChartCard({
             <YAxis
               tickLine={false}
               axisLine={false}
-              width={58}
+              width={78}
               tick={{ fontSize: 10 }}
               tickFormatter={(value) => formatCurrency(Number(value))}
             />
@@ -2319,13 +2324,21 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     return getYearComparisonLabel(selectedPeriods, periodOptions);
   }, [periodOptions, selectedPeriods]);
 
-  const assetRows = useMemo(
+  const assetRowsRaw = useMemo(
     () => buildStructureRows(accumulatedBalanceRows.filter((row) => row.balanceType === "Актив")),
     [accumulatedBalanceRows],
   );
-  const liabilityRows = useMemo(
+  const liabilityRowsRaw = useMemo(
     () => buildStructureRows(accumulatedBalanceRows.filter((row) => row.balanceType === "Обязательство")),
     [accumulatedBalanceRows],
+  );
+  const assetRows = useMemo(
+    () => assetRowsRaw.filter((row) => row.magnitude >= 50),
+    [assetRowsRaw],
+  );
+  const liabilityRows = useMemo(
+    () => liabilityRowsRaw.filter((row) => row.magnitude >= 50),
+    [liabilityRowsRaw],
   );
   const expenseStructureRows = useMemo(
     () =>
@@ -2343,12 +2356,12 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     [expenseStructureRows],
   );
   const assetStructureTotal = useMemo(
-    () => assetRows.reduce((sum, row) => sum + row.value, 0),
-    [assetRows],
+    () => assetRowsRaw.reduce((sum, row) => sum + row.value, 0),
+    [assetRowsRaw],
   );
   const liabilityStructureTotal = useMemo(
-    () => liabilityRows.reduce((sum, row) => sum + row.value, 0),
-    [liabilityRows],
+    () => liabilityRowsRaw.reduce((sum, row) => sum + row.value, 0),
+    [liabilityRowsRaw],
   );
 
   const kpiCards: Array<{
@@ -2779,7 +2792,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
               />
             </div>
 
-            <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-3">
               <TransferKpiCard
                 icon={ArrowLeftRight}
                 label="Денег всего"
@@ -2798,15 +2811,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                 icon={ArrowUpRight}
                 label="Остаток после выплат"
                 value={`${formatCurrency(remainingAfterPayments)} ₽`}
-                subtitle="денег останется после выплат"
                 tone={remainingAfterPayments < 0 ? "accent" : "success"}
-              />
-              <TransferKpiCard
-                icon={Minus}
-                label="Остаток на начало"
-                value={`${formatCurrency(openingCashTotal)} ₽`}
-                subtitle={`на начало ${rangeLabel}`}
-                tone="primary"
               />
             </div>
           </div>
