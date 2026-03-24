@@ -1312,12 +1312,12 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
       </CardHeader>
 
       <CardContent className="px-0 pt-0">
-        <Table className="min-w-[500px] table-fixed sm:min-w-max">
+        <Table className="min-w-[594px] table-fixed sm:min-w-max">
             <TableHeader>
               <TableRow>
                 <TableHead
                   rowSpan={2}
-                  className="sticky left-0 z-30 w-[112px] min-w-[112px] bg-muted/30 px-3 py-2 text-left text-xs font-semibold leading-tight text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
+                  className="sticky left-0 z-30 w-[128px] min-w-[128px] bg-muted/30 px-3 py-2 text-left text-xs font-semibold leading-tight text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
                 >
                   Откуда ↓
                 </TableHead>
@@ -1329,7 +1329,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 </TableHead>
                 <TableHead
                   rowSpan={2}
-                  className="w-[100px] min-w-[100px] bg-muted/30 px-2 py-2 text-right text-xs font-semibold leading-tight text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
+                  className="w-[112px] min-w-[112px] bg-muted/30 px-2 py-2 text-right text-xs font-semibold leading-tight text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
                 >
                   Итого выдано
                 </TableHead>
@@ -1338,7 +1338,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 {summary.restaurants.map((restaurant) => (
                   <TableHead
                     key={restaurant}
-                    className="w-[96px] min-w-[96px] bg-muted/30 px-2 py-2 text-center text-[10px] font-semibold leading-tight whitespace-normal break-all text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm sm:break-normal"
+                    className="w-[118px] min-w-[118px] bg-muted/30 px-2 py-2 text-center text-[10px] font-semibold leading-tight whitespace-nowrap text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
                   >
                     {restaurant}
                   </TableHead>
@@ -1348,7 +1348,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             <TableBody>
               {summary.rows.map((row) => (
                 <TableRow key={row.restaurant}>
-                  <TableCell className="sticky left-0 z-20 w-[112px] min-w-[112px] bg-background px-3 py-2 text-xs font-semibold leading-tight shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm">
+                  <TableCell className="sticky left-0 z-20 w-[128px] min-w-[128px] bg-background px-3 py-2 text-xs font-semibold leading-tight shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm">
                     {row.restaurant}
                   </TableCell>
                   {row.cells.map((cell) => {
@@ -1358,7 +1358,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                     return (
                       <TableCell
                         key={[row.restaurant, cell.restaurant].join("::")}
-                        className={cn("w-[96px] min-w-[96px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs", cellStyle.className)}
+                        className={cn("w-[118px] min-w-[118px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs", cellStyle.className)}
                         style={cellStyle.style}
                       >
                         {formatCurrency(displayAmount)} ₽
@@ -1367,7 +1367,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                   })}
                   <TableCell
                     className={cn(
-                      "w-[100px] min-w-[100px] bg-muted/20 px-2 py-2 text-right text-[10px] font-mono font-semibold whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs",
+                      "w-[112px] min-w-[112px] bg-muted/20 px-2 py-2 text-right text-[10px] font-mono font-semibold whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs",
                       roundTransferDisplayAmount(row.totalOut) < 0 ? "text-destructive" : "text-foreground",
                     )}
                   >
@@ -1378,14 +1378,14 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             </TableBody>
             <TableFooter>
               <TableRow className="bg-muted/20 hover:bg-muted/30">
-                <TableCell className="sticky left-0 z-20 w-[112px] min-w-[112px] bg-muted/30 px-3 py-2 text-xs font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm">
+                <TableCell className="sticky left-0 z-20 w-[128px] min-w-[128px] bg-muted/30 px-3 py-2 text-xs font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm">
                   Итого получено
                 </TableCell>
                 {summary.columnTotals.map((amount, index) => (
                   <TableCell
                     key={summary.restaurants[index]}
                     className={cn(
-                      "w-[96px] min-w-[96px] bg-muted/20 px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs",
+                      "w-[118px] min-w-[118px] bg-muted/20 px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs",
                       roundTransferDisplayAmount(amount) < 0 ? "text-destructive" : "text-foreground",
                     )}
                   >
@@ -1394,7 +1394,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 ))}
                 <TableCell
                   className={cn(
-                    "w-[100px] min-w-[100px] bg-muted/30 px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs",
+                    "w-[112px] min-w-[112px] bg-muted/30 px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs",
                     roundTransferDisplayAmount(summary.grandTotal) < 0 ? "text-destructive" : "text-foreground",
                   )}
                 >
