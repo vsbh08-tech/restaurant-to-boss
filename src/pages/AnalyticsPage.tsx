@@ -1317,19 +1317,19 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
               <TableRow>
                 <TableHead
                   rowSpan={2}
-                  className="sticky left-0 z-30 w-[128px] min-w-[128px] bg-muted/30 px-3 py-2 text-left text-xs font-semibold leading-tight text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
+                  className="sticky left-0 z-40 w-[128px] min-w-[128px] border-r border-border bg-muted px-3 py-2 text-left text-xs font-semibold leading-tight text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
                 >
                   Откуда ↓
                 </TableHead>
                 <TableHead
                   colSpan={summary.restaurants.length}
-                  className="bg-muted/30 px-2 py-2 text-center text-xs font-semibold text-foreground sm:py-2.5 sm:text-sm"
+                  className="bg-muted px-2 py-2 text-center text-xs font-semibold text-foreground sm:py-2.5 sm:text-sm"
                 >
                   Куда →
                 </TableHead>
                 <TableHead
                   rowSpan={2}
-                  className="w-[112px] min-w-[112px] bg-muted/30 px-2 py-2 text-right text-xs font-semibold leading-tight text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
+                  className="w-[112px] min-w-[112px] bg-muted px-2 py-2 text-right text-xs font-semibold leading-tight text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
                 >
                   Итого выдано
                 </TableHead>
@@ -1338,7 +1338,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 {summary.restaurants.map((restaurant) => (
                   <TableHead
                     key={restaurant}
-                    className="w-[118px] min-w-[118px] bg-muted/30 px-2 py-2 text-center text-[10px] font-semibold leading-tight whitespace-nowrap text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
+                    className="w-[118px] min-w-[118px] bg-muted px-2 py-2 text-center text-[10px] font-semibold leading-tight whitespace-nowrap text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
                   >
                     {restaurant}
                   </TableHead>
@@ -1348,7 +1348,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             <TableBody>
               {summary.rows.map((row) => (
                 <TableRow key={row.restaurant}>
-                  <TableCell className="sticky left-0 z-20 w-[128px] min-w-[128px] bg-background px-3 py-2 text-xs font-semibold leading-tight shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm">
+                  <TableCell className="sticky left-0 z-30 w-[128px] min-w-[128px] overflow-hidden border-r border-border bg-muted px-3 py-2 text-xs font-semibold leading-tight shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm">
                     {row.restaurant}
                   </TableCell>
                   {row.cells.map((cell) => {
@@ -1378,7 +1378,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             </TableBody>
             <TableFooter>
               <TableRow className="bg-muted/20 hover:bg-muted/30">
-                <TableCell className="sticky left-0 z-20 w-[128px] min-w-[128px] bg-muted/30 px-3 py-2 text-xs font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm">
+                <TableCell className="sticky left-0 z-40 w-[128px] min-w-[128px] overflow-hidden border-r border-border bg-muted px-3 py-2 text-xs font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm">
                   Итого получено
                 </TableCell>
                 {summary.columnTotals.map((amount, index) => (
@@ -3133,10 +3133,10 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
               <Table className="min-w-[520px] table-fixed sm:min-w-max">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="sticky left-0 z-30 w-[58px] min-w-[58px] bg-muted/20 px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[84px] sm:min-w-[84px] sm:bg-card sm:px-2 sm:text-[11px]">
+                    <TableHead className="sticky left-0 z-40 w-[58px] min-w-[58px] border-r border-border bg-muted px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-[11px]">
                       Дата
                     </TableHead>
-                    <TableHead className="sticky left-[58px] z-30 w-[88px] min-w-[88px] bg-muted/20 px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:bg-card sm:px-2 sm:text-[11px]">
+                    <TableHead className="sticky left-[58px] z-40 w-[88px] min-w-[88px] border-r border-border bg-muted px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-[11px]">
                       Статья
                     </TableHead>
                     <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
@@ -3155,12 +3155,12 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                   {visibleRows.map((row) => (
                     <TableRow key={[row.periodKey, row.article].join("::")}>
                       <TableCell
-                        className="sticky left-0 z-20 w-[58px] min-w-[58px] bg-muted/20 px-1.5 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[84px] sm:min-w-[84px] sm:bg-background sm:px-2 sm:text-xs"
+                        className="sticky left-0 z-30 w-[58px] min-w-[58px] overflow-hidden border-r border-border bg-muted px-1.5 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-xs"
                       >
                         {formatPeriodRangeLabel(row.periodDate)}
                       </TableCell>
                       <TableCell
-                        className="sticky left-[58px] z-20 w-[88px] min-w-[88px] truncate bg-muted/20 px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:bg-background sm:px-2 sm:text-xs"
+                        className="sticky left-[58px] z-30 w-[88px] min-w-[88px] overflow-hidden truncate border-r border-border bg-muted px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-xs"
                       >
                         {row.article}
                       </TableCell>
