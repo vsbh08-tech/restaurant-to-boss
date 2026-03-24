@@ -3977,17 +3977,17 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                           row.opening < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
-                        {formatCurrency(row.opening)} ₽
+                        {formatCurrency(roundMoneyDisplayAmount(row.opening))} ₽
                       </TableCell>
-                      <TableCell className="w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap text-sky sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">{formatCurrency(row.accrued)} ₽</TableCell>
-                      <TableCell className="w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap text-accent sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">{formatCurrency(row.paid)} ₽</TableCell>
+                      <TableCell className="w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap text-sky sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">{formatCurrency(roundMoneyDisplayAmount(row.accrued))} ₽</TableCell>
+                      <TableCell className="w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap text-accent sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">{formatCurrency(roundMoneyDisplayAmount(row.paid))} ₽</TableCell>
                       <TableCell
                         className={cn(
                           "w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono font-semibold whitespace-nowrap sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]",
                           row.closing < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
-                        {formatCurrency(row.closing)} ₽
+                        {formatCurrency(roundMoneyDisplayAmount(row.closing))} ₽
                       </TableCell>
                     </TableRow>
                   ))}
@@ -4222,11 +4222,11 @@ function OwnersVerificationTab() {
                         <TableCell className="px-3 py-2 text-sm">{row.owner}</TableCell>
                         <TableCell className="px-3 py-2 text-sm">{row.article}</TableCell>
                         <TableCell className="px-3 py-2 text-sm font-medium">{row.periodKey}</TableCell>
-                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(row.opening)} ₽</TableCell>
-                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(row.accrued)} ₽</TableCell>
-                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(row.paid)} ₽</TableCell>
+                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(roundMoneyDisplayAmount(row.opening))} ₽</TableCell>
+                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(roundMoneyDisplayAmount(row.accrued))} ₽</TableCell>
+                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(roundMoneyDisplayAmount(row.paid))} ₽</TableCell>
                         <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(row.sourceNet)} ₽</TableCell>
-                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(row.closing)} ₽</TableCell>
+                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(roundMoneyDisplayAmount(row.closing))} ₽</TableCell>
                         <TableCell
                           className={cn(
                             "px-3 py-2 text-right text-sm font-mono font-semibold",
