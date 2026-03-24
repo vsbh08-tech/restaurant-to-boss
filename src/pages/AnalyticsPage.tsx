@@ -1808,10 +1808,7 @@ function CashBreakdownCard({
                 <TableCell className="px-4 py-2.5 text-sm">
                   <div>{row.label}</div>
                   {row.noteLabel ? (
-                    <div className="mt-0.5 text-xs text-muted-foreground">
-                      {row.noteLabel}
-                      {typeof row.noteAmount === "number" ? ` ${formatCurrency(roundMoneyDisplayAmount(row.noteAmount))} ₽` : ""}
-                    </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">{row.noteLabel}</div>
                   ) : null}
                 </TableCell>
                 <TableCell
@@ -1820,7 +1817,17 @@ function CashBreakdownCard({
                     row.amount < 0 ? "text-destructive" : "text-foreground",
                   )}
                 >
-                  {formatCurrency(roundMoneyDisplayAmount(row.amount))} ₽
+                  <div>{formatCurrency(roundMoneyDisplayAmount(row.amount))} ₽</div>
+                  {typeof row.noteAmount === "number" ? (
+                    <div
+                      className={cn(
+                        "mt-0.5 text-xs text-muted-foreground",
+                        row.noteAmount < 0 && "text-destructive",
+                      )}
+                    >
+                      {formatCurrency(roundMoneyDisplayAmount(row.noteAmount))} ₽
+                    </div>
+                  ) : null}
                 </TableCell>
               </TableRow>
             ))}
@@ -2002,7 +2009,7 @@ function StructureCard({
                     ) : null}
                     <div className="min-w-[112px] text-right text-sm">
                       <span className={cn("font-medium", row.value < 0 && "text-destructive")}>
-                        {formatCurrency(row.value)} ₽
+                        {formatCurrency(roundMoneyDisplayAmount(row.value))} ₽
                       </span>
                       {showShare ? <span className="ml-2 text-xs text-muted-foreground">{Math.round(row.share)}%</span> : null}
                     </div>
@@ -2015,7 +2022,7 @@ function StructureCard({
             {typeof footerValue === "number" && footerLabel ? (
               <div className="mt-2 flex items-center justify-between border-t pt-2 text-sm font-semibold">
                 <span>{footerLabel}</span>
-                <span>{formatCurrency(footerValue)} ₽</span>
+                <span>{formatCurrency(roundMoneyDisplayAmount(footerValue))} ₽</span>
               </div>
             ) : null}
           </>
@@ -2417,7 +2424,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     {
       label: "Доход",
       kind: "income",
-      valueText: `${formatCurrency(currentMetrics.income)} ₽`,
+      valueText: `${formatCurrency(roundMoneyDisplayAmount(currentMetrics.income))} ₽`,
       changePct: hasComparisonData ? getChangePercent(currentMetrics.income, previousMetrics.income) : null,
       changeText: hasComparisonData ? undefined : "нет данных",
       tone: "primary",
@@ -2425,7 +2432,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     {
       label: "Расход",
       kind: "expense",
-      valueText: `${formatCurrency(currentMetrics.expense)} ₽`,
+      valueText: `${formatCurrency(roundMoneyDisplayAmount(currentMetrics.expense))} ₽`,
       changePct: hasComparisonData ? getChangePercent(currentMetrics.expense, previousMetrics.expense) : null,
       changeText: hasComparisonData ? undefined : "нет данных",
       tone: "accent",
@@ -2433,7 +2440,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     {
       label: "Прибыль",
       kind: "profit",
-      valueText: `${formatCurrency(currentMetrics.profit)} ₽`,
+      valueText: `${formatCurrency(roundMoneyDisplayAmount(currentMetrics.profit))} ₽`,
       changePct: hasComparisonData ? getChangePercent(currentMetrics.profit, previousMetrics.profit) : null,
       changeText: hasComparisonData ? undefined : "нет данных",
       tone: "secondary",
@@ -2441,7 +2448,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     {
       label: "Рентабельность",
       kind: "profit",
-      valueText: `${currentRentability.toFixed(1)}%`,
+      valueText: `${Math.round(currentRentability)}%`,
       changePct:
         hasComparisonData && previousMetrics.income !== 0 ? currentRentability - previousRentability : null,
       tone: "muted",
@@ -2450,7 +2457,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           ? "нет данных"
           : previousMetrics.income === 0
             ? "нет данных"
-          : `${currentRentability - previousRentability > 0 ? "+" : ""}${(currentRentability - previousRentability).toFixed(1)} п.п.`,
+          : `${currentRentability - previousRentability > 0 ? "+" : ""}${Math.round(currentRentability - previousRentability)} п.п.`,
     },
   ];
 
@@ -2786,6 +2793,10 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       ),
     [closingCashRows, ownerWithdrawalTotal],
   );
+  const visibleClosingCashRows = useMemo(
+    () => closingCashRowsWithOwnerNote.filter((row) => Math.abs(row.amount) >= 50),
+    [closingCashRowsWithOwnerNote],
+  );
   const closingCashTotalWithoutOwners = closingCashTotal - ownerWithdrawalTotal;
 
   const cashMovementBreakdown = useMemo(() => {
@@ -2906,6 +2917,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                 options={periodOptions}
                 refsMap={periodRefs}
                 compact
+                allowSelectAll={false}
               />
             </div>
 
@@ -2939,7 +2951,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         <div className="grid gap-3">
           <CashBreakdownCard
             title="Денег всего"
-            rows={closingCashRowsWithOwnerNote}
+            rows={visibleClosingCashRows}
             total={closingCashTotal}
             footerNoteLabel="без учета собственников"
             footerNoteAmount={closingCashTotalWithoutOwners}
