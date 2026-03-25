@@ -44,7 +44,7 @@ function getUserBadgeText(name: string | null, roleLabel: string) {
 }
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { role, userName, userEmail, signOut, canAccess } = useRole();
@@ -53,6 +53,12 @@ export function AppSidebar() {
   const analyticsVisible = visibleItems.some((item) => item.section === "analytics");
   const analyticsActive = location.pathname.startsWith(ANALYTICS_ROUTE_PATHS.root);
   const roleLabel = role ? roleLabels[role] : "Пользователь";
+
+  const handleSidebarItemClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -80,6 +86,7 @@ export function AppSidebar() {
                     <NavLink
                       to={item.section === "analytics" ? ANALYTICS_ROUTE_PATHS.financial : item.url}
                       end={item.section !== "analytics"}
+                      onClick={handleSidebarItemClick}
                       className="hover:bg-sidebar-accent/60"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >
@@ -96,6 +103,7 @@ export function AppSidebar() {
                             <NavLink
                               to={subItem.url}
                               end
+                              onClick={handleSidebarItemClick}
                               className="hover:bg-sidebar-accent/60"
                               activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                             >

@@ -2951,7 +2951,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       <div className="grid gap-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
         <div className="grid gap-3">
           <CashBreakdownCard
-            title="Денег всего"
+            title={`Денег всего на конец ${endingPeriodLabel}`}
             rows={visibleClosingCashRows}
             total={closingCashTotal}
             footerNoteLabel="без учета собственников"
