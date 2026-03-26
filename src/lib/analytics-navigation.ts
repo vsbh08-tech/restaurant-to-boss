@@ -31,7 +31,7 @@ export const ANALYTICS_WORKSPACE_META: Record<
   },
   loans: {
     title: "Займы",
-    description: "Раздел в разработке. Здесь появится отдельный отчет по займам.",
+    description: "Чистая позиция по займам, движения за период и детализация по контрагентам.",
   },
 };
 
