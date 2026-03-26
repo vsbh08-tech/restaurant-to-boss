@@ -384,6 +384,10 @@ function normalizeBalanceArticle(article: string) {
     return "Касса";
   }
 
+  if (matchesArticleAlias(article, ["авансы", "зп нач", "зп. нач"])) {
+    return "ЗП нач";
+  }
+
   return article;
 }
 
