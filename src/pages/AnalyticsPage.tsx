@@ -6,10 +6,16 @@ import {
   ArrowLeftRight,
   ArrowUp,
   ArrowUpRight,
+  Banknote,
   Download,
+  Gauge,
+  HandCoins,
   Minus,
+  PiggyBank,
+  Receipt,
   RefreshCcw,
   TrendingUp,
+  Wallet,
 } from "lucide-react";
 import { Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -288,7 +294,7 @@ type CashWaterfallDatum = {
   kind: "total" | "positive" | "negative";
 };
 
-type MetricKind = "income" | "expense" | "profit";
+type MetricKind = "income" | "expense" | "profit" | "rentability";
 
 type FilterChipGroupProps<T extends string | number> = {
   label: string;
@@ -1590,9 +1596,10 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
   };
 
   const kindIconMap: Record<MetricKind, typeof TrendingUp> = {
-    income: ArrowUpRight,
-    expense: ArrowDownRight,
-    profit: TrendingUp,
+    income: Banknote,
+    expense: Receipt,
+    profit: PiggyBank,
+    rentability: Gauge,
   };
 
   const KindIcon = kindIconMap[kind];
@@ -2941,7 +2948,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     },
     {
       label: "Рентабельность",
-      kind: "profit",
+      kind: "rentability",
       valueText: `${Math.round(currentRentability)}%`,
       changePct:
         hasComparisonData && previousMetrics.income !== 0 ? currentRentability - previousRentability : null,
@@ -3418,21 +3425,21 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
             <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-3">
               <TransferKpiCard
-                icon={ArrowLeftRight}
+                icon={Wallet}
                 label="Денег всего"
                 value={`${formatCurrency(roundMoneyDisplayAmount(closingCashTotal))} ₽`}
                 subtitle={`на конец ${endingPeriodLabel}`}
                 tone="primary"
               />
               <TransferKpiCard
-                icon={ArrowDownRight}
+                icon={HandCoins}
                 label="Нужно заплатить"
                 value={`${formatCurrency(roundMoneyDisplayAmount(requiredPaymentTotal))} ₽`}
                 subtitle="обязательные выплаты"
                 tone={requiredPaymentTotal > 0 ? "accent" : "success"}
               />
               <TransferKpiCard
-                icon={ArrowUpRight}
+                icon={PiggyBank}
                 label="Остаток после выплат"
                 value={`${formatCurrency(roundMoneyDisplayAmount(remainingAfterPayments))} ₽`}
                 tone={remainingAfterPayments < 0 ? "accent" : "success"}
