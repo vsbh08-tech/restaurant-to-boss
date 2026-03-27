@@ -385,6 +385,7 @@ const CASH_OWNER_WITHDRAWAL_GROUP_ALIASES = ["снятие с р/с", "снят�
 const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные"];
 const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные"];
 const LOAN_GENERIC_ARTICLE_ALIASES = ["займы"];
+const LOAN_RENT_ARTICLE_ALIASES = ["аренда", "аренда(долг)", "аренда (долг)"];
 
 function makePeriodKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -1006,6 +1007,10 @@ function isLoanIssuedArticle(article: string) {
 
 function isGenericLoanArticle(article: string) {
   return matchesArticleAlias(article, LOAN_GENERIC_ARTICLE_ALIASES);
+}
+
+function isRentLoanArticle(article: string) {
+  return matchesArticleAlias(article, LOAN_RENT_ARTICLE_ALIASES);
 }
 
 function buildLoanCounterpartyRows(rows: LoanFactRow[], selectedPeriodDate: Date | null) {
@@ -3448,7 +3453,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         .map((row) => {
           const periodDate = parsePeriodDate(row["Период"]);
           const restaurant = row["Ресторан"]?.trim() ?? "";
-          const counterparty = row["Псевдо"]?.trim() ?? "Без контрагента";
+          const baseCounterparty = row["Псевдо"]?.trim() ?? "Без контрагента";
           const article = row["Группа"] || "";
 
           if (!periodDate || !restaurant) {
@@ -3457,6 +3462,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
           const rawMovement = parseTextNumeric(row["Движение"]);
           let delta: number | null = null;
+          let counterparty = baseCounterparty;
 
           if (isLoanReceivedArticle(article)) {
             delta = rawMovement;
@@ -3464,6 +3470,9 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             delta = rawMovement * -1;
           } else if (isGenericLoanArticle(article)) {
             delta = rawMovement;
+          } else if (isRentLoanArticle(article)) {
+            delta = rawMovement;
+            counterparty = `${baseCounterparty} ар`;
           }
 
           if (delta === null) {
