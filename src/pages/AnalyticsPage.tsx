@@ -1719,11 +1719,14 @@ function TransferPeriodCard({
 
 function TransferMatrixCard({ title, periodLabel, summary, description }: TransferMatrixCardProps) {
   return (
-    <Card className="min-w-0 overflow-hidden">
-      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-2.5">
-        <div>
-          <CardTitle className="text-sm font-serif">{title}</CardTitle>
-          {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
+    <Card className="min-w-0 overflow-hidden border-0 shadow-md">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <div className="flex items-start gap-2">
+          <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent mt-0.5" />
+          <div>
+            <CardTitle className="text-sm font-serif">{title}</CardTitle>
+            {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
+          </div>
         </div>
         <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
           Период: {periodLabel}
@@ -2509,7 +2512,7 @@ function StructureCard({
           <div className="py-6 text-sm text-muted-foreground">Нет данных по выбранному срезу.</div>
         ) : (
           <>
-            <ScrollArea className="h-[220px] pr-1">
+            <div className="max-h-[320px] overflow-y-auto pr-1">
               <div className="divide-y divide-border/30">
                 {rows.map((row, idx) => {
                   const barWidth = maxMagnitude === 0 ? 0 : Math.max((row.magnitude / maxMagnitude) * 100, 4);
@@ -2521,7 +2524,7 @@ function StructureCard({
                       className="py-2.5 group hover:bg-muted/20 transition-colors -mx-1 px-1 rounded"
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <p className="truncate text-sm flex-1">{row.article}</p>
+                        <p className="text-sm flex-1 min-w-0 break-words leading-snug">{row.article}</p>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className={cn("text-sm font-mono font-medium whitespace-nowrap", row.value < 0 && "text-destructive")}>
                             {formatCurrency(roundMoneyDisplayAmount(row.value))} ₽
@@ -2545,8 +2548,7 @@ function StructureCard({
                   );
                 })}
               </div>
-              <ScrollBar />
-            </ScrollArea>
+            </div>
 
             {typeof footerValue === "number" && footerLabel ? (
               <div className="mt-2 flex items-center justify-between border-t-2 border-primary/20 pt-3 text-sm font-bold">
@@ -4202,9 +4204,12 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         </Card>
       ) : (
         <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.45fr)_360px] 2xl:grid-cols-[minmax(0,1.35fr)_420px]">
-          <Card className="min-w-0 overflow-hidden">
-            <CardHeader className="px-4 py-3">
-              <CardTitle className="text-base font-serif">Отчет</CardTitle>
+          <Card className="min-w-0 overflow-hidden border-0 shadow-md">
+            <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+              <CardTitle className="text-sm font-serif flex items-center gap-2">
+                <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
+                Отчет
+              </CardTitle>
             </CardHeader>
 
             <CardContent className="px-0 pt-0">
@@ -4664,10 +4669,11 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader className="px-4 py-3">
+        <Card className="overflow-hidden border-0 shadow-md">
+          <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="text-base font-serif">
+              <CardTitle className="text-sm font-serif flex items-center gap-2">
+                <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
                 Детализация
                 <span className="ml-2 text-sm font-sans font-normal text-muted-foreground">
                   {selectedRestaurant} • {activeSelectedOwner}
