@@ -3562,9 +3562,9 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
   return (
     <div className="space-y-3">
-      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(560px,1fr)]">
+      <div className="grid items-start gap-2 xl:grid-cols-[minmax(420px,0.82fr)_minmax(0,1.18fr)]">
         <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
-          <CardContent className="flex flex-wrap items-start gap-2 px-3 py-3">
+          <CardContent className="grid items-start gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_150px]">
             {!scope?.hideRestaurantFilter && (
               <FilterChipGroup
                 label="Рестораны"
@@ -3576,7 +3576,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                 compact
               />
             )}
-            <div className="min-w-[160px] flex-1 xl:max-w-[180px]">
+            <div className="min-w-0">
               <TransferPeriodCard
                 selectedPeriodKey={selectedPeriodKey}
                 options={periodOptions}
