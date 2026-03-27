@@ -1596,9 +1596,9 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
   };
 
   const kindIconMap: Record<MetricKind, typeof TrendingUp> = {
-    income: ArrowUpRight,
-    expense: ArrowDownRight,
-    profit: TrendingUp,
+    income: Banknote,
+    expense: Receipt,
+    profit: PiggyBank,
   };
 
   const KindIcon = kindIconMap[kind];
