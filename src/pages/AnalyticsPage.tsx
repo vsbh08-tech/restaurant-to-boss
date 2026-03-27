@@ -4121,21 +4121,41 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </div>
 
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-            <div className="kpi-card kpi-card-primary px-2.5 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на начало</p>
-              <p className="mt-1 text-base font-semibold leading-none text-primary">{formatOwnersWholeCurrency(totals.opening)} ₽</p>
+            <div className="kpi-card kpi-card-primary px-3 py-2.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/12 shadow-sm">
+                  <Wallet className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на начало</p>
+              </div>
+              <p className="text-lg font-bold leading-none text-primary">{formatOwnersWholeCurrency(totals.opening)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-sky px-2.5 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Начислено</p>
-              <p className="mt-1 text-base font-semibold leading-none text-sky">{formatOwnersWholeCurrency(totals.accrued)} ₽</p>
+            <div className="kpi-card kpi-card-success px-3 py-2.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-success/10 shadow-sm">
+                  <ArrowDown className="h-3.5 w-3.5 text-success" />
+                </div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Начислено</p>
+              </div>
+              <p className="text-lg font-bold leading-none text-success">{formatOwnersWholeCurrency(totals.accrued)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-accent px-2.5 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Выплачено</p>
-              <p className="mt-1 text-base font-semibold leading-none text-accent">{formatOwnersWholeCurrency(totals.paid)} ₽</p>
+            <div className="kpi-card kpi-card-destructive px-3 py-2.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-destructive/10 shadow-sm">
+                  <ArrowUp className="h-3.5 w-3.5 text-destructive" />
+                </div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Выплачено</p>
+              </div>
+              <p className="text-lg font-bold leading-none text-destructive">{formatOwnersWholeCurrency(totals.paid)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-muted px-2.5 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на конец</p>
-              <p className="mt-1 text-base font-semibold leading-none">{formatOwnersWholeCurrency(totals.closing)} ₽</p>
+            <div className="kpi-card kpi-card-sky px-3 py-2.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sky-light shadow-sm">
+                  <PiggyBank className="h-3.5 w-3.5 text-sky" />
+                </div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на конец</p>
+              </div>
+              <p className={cn("text-lg font-bold leading-none", totals.closing < 0 ? "text-destructive" : "text-sky")}>{formatOwnersWholeCurrency(totals.closing)} ₽</p>
             </div>
           </div>
         </CardContent>
