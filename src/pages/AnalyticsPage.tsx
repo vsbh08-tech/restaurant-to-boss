@@ -294,7 +294,7 @@ type CashWaterfallDatum = {
   kind: "total" | "positive" | "negative";
 };
 
-type MetricKind = "income" | "expense" | "profit";
+type MetricKind = "income" | "expense" | "profit" | "rentability";
 
 type FilterChipGroupProps<T extends string | number> = {
   label: string;
