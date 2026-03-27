@@ -2509,7 +2509,7 @@ function StructureCard({
           <div className="py-6 text-sm text-muted-foreground">Нет данных по выбранному срезу.</div>
         ) : (
           <>
-            <ScrollArea className="h-[220px] pr-1">
+            <div className="max-h-[320px] overflow-y-auto pr-1">
               <div className="divide-y divide-border/30">
                 {rows.map((row, idx) => {
                   const barWidth = maxMagnitude === 0 ? 0 : Math.max((row.magnitude / maxMagnitude) * 100, 4);
@@ -2521,7 +2521,7 @@ function StructureCard({
                       className="py-2.5 group hover:bg-muted/20 transition-colors -mx-1 px-1 rounded"
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <p className="truncate text-sm flex-1">{row.article}</p>
+                        <p className="text-sm flex-1 min-w-0 break-words leading-snug">{row.article}</p>
                         <div className="flex items-center gap-2 shrink-0">
                           <span className={cn("text-sm font-mono font-medium whitespace-nowrap", row.value < 0 && "text-destructive")}>
                             {formatCurrency(roundMoneyDisplayAmount(row.value))} ₽
@@ -2545,8 +2545,7 @@ function StructureCard({
                   );
                 })}
               </div>
-              <ScrollBar />
-            </ScrollArea>
+            </div>
 
             {typeof footerValue === "number" && footerLabel ? (
               <div className="mt-2 flex items-center justify-between border-t-2 border-primary/20 pt-3 text-sm font-bold">
