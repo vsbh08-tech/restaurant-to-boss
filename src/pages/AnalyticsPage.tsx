@@ -1576,23 +1576,30 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
 
   const cardToneMap = {
     primary: "kpi-card-primary",
-    accent: "kpi-card-accent",
+    accent: "kpi-card-destructive",
     muted: "kpi-card-muted",
-    secondary: "kpi-card-sky",
+    secondary: "kpi-card-success",
   };
 
   const iconBgMap = {
-    primary: "bg-primary/10",
-    accent: "bg-coral-light",
+    primary: "bg-primary/12",
+    accent: "bg-destructive/10",
     muted: "bg-muted",
-    secondary: "bg-sky-light",
+    secondary: "bg-success/10",
   };
 
   const iconColorMap = {
     primary: "text-primary",
-    accent: "text-accent",
+    accent: "text-destructive",
     muted: "text-muted-foreground",
-    secondary: "text-sky",
+    secondary: "text-success",
+  };
+
+  const valueColorMap = {
+    primary: "text-primary",
+    accent: "text-destructive",
+    muted: "text-foreground",
+    secondary: "text-success",
   };
 
   const kindIconMap: Record<MetricKind, typeof TrendingUp> = {
@@ -1606,14 +1613,14 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
   const cardToneClass = cardToneMap[tone];
 
   return (
-    <div className={cn("kpi-card min-h-[94px] px-2.5 py-2.5", cardToneClass)}>
-      <div className="flex items-center gap-2">
-        <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", iconBgMap[tone])}>
-          <KindIcon className={cn("h-3.5 w-3.5", iconColorMap[tone])} />
+    <div className={cn("kpi-card min-h-[94px] px-3 py-3", cardToneClass)}>
+      <div className="flex items-center gap-2.5">
+        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm", iconBgMap[tone])}>
+          <KindIcon className={cn("h-4 w-4", iconColorMap[tone])} />
         </div>
         <p className="text-sm font-semibold leading-none text-foreground">{label}</p>
       </div>
-      <p className="mt-1.5 whitespace-nowrap text-lg font-semibold leading-tight tracking-tight sm:text-xl">
+      <p className={cn("mt-2 whitespace-nowrap text-xl font-bold leading-tight tracking-tight sm:text-2xl", valueColorMap[tone])}>
         {normalizedValueText}
       </p>
       <div className="mt-1.5 min-w-0">
@@ -1639,35 +1646,35 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
 function TransferKpiCard({ icon: Icon, label, value, subtitle, tone }: TransferKpiCardProps) {
   const toneMap = {
     primary: {
-      cardClassName: "border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background",
-      iconClassName: "text-primary",
-      valueClassName: "text-foreground",
+      cardClass: "kpi-card kpi-card-primary",
+      iconClassName: "text-primary bg-primary/12",
+      valueClassName: "text-primary",
     },
     accent: {
-      cardClassName: "border-destructive/20 bg-gradient-to-br from-destructive/5 via-card to-background",
-      iconClassName: "text-destructive",
+      cardClass: "kpi-card kpi-card-destructive",
+      iconClassName: "text-destructive bg-destructive/10",
       valueClassName: "text-destructive",
     },
     success: {
-      cardClassName: "border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 via-card to-background",
-      iconClassName: "text-emerald-600",
-      valueClassName: "text-emerald-700",
+      cardClass: "kpi-card kpi-card-success",
+      iconClassName: "text-success bg-success/10",
+      valueClassName: "text-success",
     },
   } as const;
 
   const toneConfig = toneMap[tone];
 
   return (
-    <div className={cn("rounded-xl border px-3 py-2 shadow-sm", toneConfig.cardClassName)}>
+    <div className={cn("min-h-[80px] px-3 py-2.5", toneConfig.cardClass)}>
       <div className="flex items-start gap-2.5">
-        <div className={cn("mt-0.5 rounded-lg bg-background/80 p-1.5 shadow-sm", toneConfig.iconClassName)}>
-          <Icon className="h-3.5 w-3.5" />
+        <div className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm", toneConfig.iconClassName)}>
+          <Icon className="h-4 w-4" />
         </div>
         <div className="min-w-0">
           <p className="text-xs leading-snug text-muted-foreground">{label}</p>
           <p
             className={cn(
-              "mt-0.5 text-lg font-semibold leading-tight tracking-tight xl:text-xl",
+              "mt-0.5 text-xl font-bold leading-tight tracking-tight xl:text-2xl",
               toneConfig.valueClassName,
             )}
           >
@@ -2187,42 +2194,34 @@ function LoanPrimaryKpiCard({ value }: { value: number }) {
   const roundedValue = roundMoneyDisplayAmount(value);
   const positive = roundedValue >= 0;
   const statusText = roundedValue > 0 ? "Ресторан должен" : roundedValue < 0 ? "Ресторан донор" : "Позиция нулевая";
+  const cardClass = positive ? "kpi-card kpi-card-primary" : "kpi-card kpi-card-destructive";
 
   return (
-    <Card
-      className={cn(
-        "min-h-[80px] h-full overflow-hidden border shadow-sm",
-        positive
-          ? "border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background"
-          : "border-destructive/20 bg-gradient-to-br from-destructive/5 via-card to-background",
-      )}
-    >
-      <CardContent className="px-2.5 py-2.5">
-        <div className="flex items-start gap-3">
-          <div
+    <div className={cn("min-h-[80px] h-full px-3 py-2.5", cardClass)}>
+      <div className="flex items-start gap-3">
+        <div
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-sm",
+            positive ? "bg-primary/12 text-primary" : "bg-destructive/10 text-destructive",
+          )}
+        >
+          <TrendingUp className="h-4.5 w-4.5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold leading-tight whitespace-nowrap text-foreground">Чистая позиция</p>
+          <p className="mt-0.5 text-[11px] font-medium whitespace-nowrap text-muted-foreground">{statusText}</p>
+          <p
             className={cn(
-              "rounded-xl bg-background/90 p-1.5 shadow-sm",
+              "mt-1 text-xl font-bold leading-tight tracking-tight whitespace-nowrap",
               positive ? "text-primary" : "text-destructive",
             )}
           >
-            <TrendingUp className="h-4.5 w-4.5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold leading-tight whitespace-nowrap text-foreground">Чистая позиция</p>
-            <p className="mt-0.5 text-[11px] font-medium whitespace-nowrap text-muted-foreground">{statusText}</p>
-            <p
-              className={cn(
-                "mt-1 text-xl font-semibold leading-tight tracking-tight whitespace-nowrap",
-                positive ? "text-primary" : "text-destructive",
-              )}
-            >
-              {formatRoundedMoneyText(value)}
-            </p>
-            <p className="mt-0.5 text-[11px] whitespace-nowrap text-muted-foreground">на конец периода</p>
-          </div>
+            {formatRoundedMoneyText(value)}
+          </p>
+          <p className="mt-0.5 text-[11px] whitespace-nowrap text-muted-foreground">на конец периода</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -2239,19 +2238,19 @@ function LoanMetricCard({
 }) {
   const toneMap = {
     primary: {
-      cardClassName: "border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background",
-      iconClassName: "text-primary",
-      valueClassName: "text-foreground",
+      cardClass: "kpi-card kpi-card-primary",
+      iconClassName: "text-primary bg-primary/12",
+      valueClassName: "text-primary",
     },
     accent: {
-      cardClassName: "border-destructive/20 bg-gradient-to-br from-destructive/5 via-card to-background",
-      iconClassName: "text-destructive",
+      cardClass: "kpi-card kpi-card-destructive",
+      iconClassName: "text-destructive bg-destructive/10",
       valueClassName: "text-destructive",
     },
     success: {
-      cardClassName: "border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 via-card to-background",
-      iconClassName: "text-emerald-600",
-      valueClassName: "text-emerald-700",
+      cardClass: "kpi-card kpi-card-success",
+      iconClassName: "text-success bg-success/10",
+      valueClassName: "text-success",
     },
   } as const;
 
@@ -2259,22 +2258,20 @@ function LoanMetricCard({
   const valueText = formatRoundedMoneyText(value);
 
   return (
-    <Card className={cn("min-h-[80px] h-full overflow-hidden border shadow-sm", toneConfig.cardClassName)}>
-      <CardContent className="px-2.5 py-2.5">
-        <div className="flex items-start gap-3">
-          <div className={cn("rounded-xl bg-background/90 p-1.5 shadow-sm", toneConfig.iconClassName)}>
-            <Icon className="h-4 w-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold leading-tight whitespace-nowrap text-foreground sm:text-sm">{label}</p>
-            <p className={cn("mt-0.5 text-lg font-semibold leading-tight tracking-tight whitespace-nowrap", toneConfig.valueClassName)}>
-              {valueText}
-            </p>
-            <p className="mt-0.5 text-[11px] whitespace-nowrap text-muted-foreground">за период</p>
-          </div>
+    <div className={cn("min-h-[80px] h-full px-3 py-2.5", toneConfig.cardClass)}>
+      <div className="flex items-start gap-3">
+        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm", toneConfig.iconClassName)}>
+          <Icon className="h-4 w-4" />
         </div>
-      </CardContent>
-    </Card>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold leading-tight whitespace-nowrap text-foreground sm:text-sm">{label}</p>
+          <p className={cn("mt-0.5 text-lg font-bold leading-tight tracking-tight whitespace-nowrap", toneConfig.valueClassName)}>
+            {valueText}
+          </p>
+          <p className="mt-0.5 text-[11px] whitespace-nowrap text-muted-foreground">за период</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -4114,21 +4111,41 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </div>
 
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-            <div className="kpi-card kpi-card-primary px-2.5 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на начало</p>
-              <p className="mt-1 text-base font-semibold leading-none text-primary">{formatOwnersWholeCurrency(totals.opening)} ₽</p>
+            <div className="kpi-card kpi-card-primary px-3 py-2.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/12 shadow-sm">
+                  <Wallet className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на начало</p>
+              </div>
+              <p className="text-lg font-bold leading-none text-primary">{formatOwnersWholeCurrency(totals.opening)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-sky px-2.5 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Начислено</p>
-              <p className="mt-1 text-base font-semibold leading-none text-sky">{formatOwnersWholeCurrency(totals.accrued)} ₽</p>
+            <div className="kpi-card kpi-card-success px-3 py-2.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-success/10 shadow-sm">
+                  <ArrowDown className="h-3.5 w-3.5 text-success" />
+                </div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Начислено</p>
+              </div>
+              <p className="text-lg font-bold leading-none text-success">{formatOwnersWholeCurrency(totals.accrued)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-accent px-2.5 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Выплачено</p>
-              <p className="mt-1 text-base font-semibold leading-none text-accent">{formatOwnersWholeCurrency(totals.paid)} ₽</p>
+            <div className="kpi-card kpi-card-destructive px-3 py-2.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-destructive/10 shadow-sm">
+                  <ArrowUp className="h-3.5 w-3.5 text-destructive" />
+                </div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Выплачено</p>
+              </div>
+              <p className="text-lg font-bold leading-none text-destructive">{formatOwnersWholeCurrency(totals.paid)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-muted px-2.5 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на конец</p>
-              <p className="mt-1 text-base font-semibold leading-none">{formatOwnersWholeCurrency(totals.closing)} ₽</p>
+            <div className="kpi-card kpi-card-sky px-3 py-2.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sky-light shadow-sm">
+                  <PiggyBank className="h-3.5 w-3.5 text-sky" />
+                </div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на конец</p>
+              </div>
+              <p className={cn("text-lg font-bold leading-none", totals.closing < 0 ? "text-destructive" : "text-sky")}>{formatOwnersWholeCurrency(totals.closing)} ₽</p>
             </div>
           </div>
         </CardContent>

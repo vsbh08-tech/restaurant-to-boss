@@ -135,38 +135,85 @@
   .kpi-card {
     @apply rounded-xl border bg-card;
     background-repeat: no-repeat;
+    position: relative;
+    overflow: hidden;
     box-shadow:
-      inset 0 1px 0 hsl(0 0% 100% / 0.6),
-      0 1px 3px hsl(0 0% 0% / 0.04),
-      0 8px 24px -12px hsl(var(--kpi-shadow) / 0.18);
+      inset 0 1px 0 hsl(0 0% 100% / 0.7),
+      0 1px 3px hsl(0 0% 0% / 0.05),
+      0 10px 28px -12px hsl(var(--kpi-shadow) / 0.22);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  .kpi-card:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.7),
+      0 2px 6px hsl(0 0% 0% / 0.06),
+      0 14px 32px -10px hsl(var(--kpi-shadow) / 0.28);
+  }
+  .kpi-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: 0.75rem 0.75rem 0 0;
+    background: linear-gradient(90deg, hsl(var(--kpi-accent-from)), hsl(var(--kpi-accent-to)));
+    opacity: 0.85;
   }
   .kpi-card-primary {
     --kpi-shadow: var(--primary);
-    border-color: hsl(var(--primary) / 0.15);
+    --kpi-accent-from: var(--primary);
+    --kpi-accent-to: 250 55% 58%;
+    border-color: hsl(var(--primary) / 0.18);
     background-image:
-      linear-gradient(180deg, hsl(0 0% 100% / 0.6), transparent 60%),
-      linear-gradient(145deg, hsl(var(--primary) / 0.06), hsl(var(--primary) / 0.01));
+      linear-gradient(180deg, hsl(var(--primary) / 0.06), transparent 50%),
+      linear-gradient(135deg, hsl(var(--primary) / 0.04), hsl(250 55% 58% / 0.02));
   }
   .kpi-card-sky {
     --kpi-shadow: var(--sky);
-    border-color: hsl(var(--sky) / 0.15);
+    --kpi-accent-from: var(--sky);
+    --kpi-accent-to: 200 60% 50%;
+    border-color: hsl(var(--sky) / 0.18);
     background-image:
-      linear-gradient(180deg, hsl(0 0% 100% / 0.6), transparent 60%),
-      linear-gradient(145deg, hsl(var(--sky) / 0.06), hsl(var(--sky) / 0.01));
+      linear-gradient(180deg, hsl(var(--sky) / 0.06), transparent 50%),
+      linear-gradient(135deg, hsl(var(--sky) / 0.04), hsl(200 60% 50% / 0.02));
   }
   .kpi-card-accent {
     --kpi-shadow: var(--accent);
-    border-color: hsl(var(--accent) / 0.15);
+    --kpi-accent-from: var(--coral);
+    --kpi-accent-to: var(--accent);
+    border-color: hsl(var(--accent) / 0.18);
     background-image:
-      linear-gradient(180deg, hsl(0 0% 100% / 0.6), transparent 60%),
-      linear-gradient(145deg, hsl(var(--accent) / 0.06), hsl(var(--accent) / 0.01));
+      linear-gradient(180deg, hsl(var(--accent) / 0.06), transparent 50%),
+      linear-gradient(135deg, hsl(var(--coral) / 0.04), hsl(var(--accent) / 0.02));
   }
   .kpi-card-muted {
     --kpi-shadow: var(--foreground);
+    --kpi-accent-from: 228 12% 58%;
+    --kpi-accent-to: 228 12% 42%;
     border-color: hsl(var(--border));
     background-image:
-      linear-gradient(180deg, hsl(0 0% 100% / 0.4), transparent 60%),
-      linear-gradient(145deg, hsl(var(--muted) / 0.5), hsl(var(--muted) / 0.2));
+      linear-gradient(180deg, hsl(var(--muted) / 0.4), transparent 50%),
+      linear-gradient(135deg, hsl(var(--muted) / 0.3), hsl(var(--muted) / 0.1));
+  }
+  .kpi-card-success {
+    --kpi-shadow: var(--success);
+    --kpi-accent-from: var(--success);
+    --kpi-accent-to: 140 45% 42%;
+    border-color: hsl(var(--success) / 0.18);
+    background-image:
+      linear-gradient(180deg, hsl(var(--success) / 0.06), transparent 50%),
+      linear-gradient(135deg, hsl(var(--success) / 0.04), hsl(140 45% 42% / 0.02));
+  }
+  .kpi-card-destructive {
+    --kpi-shadow: var(--destructive);
+    --kpi-accent-from: var(--destructive);
+    --kpi-accent-to: 15 60% 50%;
+    border-color: hsl(var(--destructive) / 0.18);
+    background-image:
+      linear-gradient(180deg, hsl(var(--destructive) / 0.06), transparent 50%),
+      linear-gradient(135deg, hsl(var(--destructive) / 0.04), hsl(15 60% 50% / 0.02));
   }
   .stat-card {
     @apply bg-card rounded-xl border p-5 shadow-sm transition-shadow hover:shadow-md;
