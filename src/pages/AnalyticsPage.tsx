@@ -2948,7 +2948,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     },
     {
       label: "Рентабельность",
-      kind: "profit",
+      kind: "rentability",
       valueText: `${Math.round(currentRentability)}%`,
       changePct:
         hasComparisonData && previousMetrics.income !== 0 ? currentRentability - previousRentability : null,
