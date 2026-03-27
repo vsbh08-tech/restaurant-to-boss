@@ -385,7 +385,7 @@ const CASH_OWNER_WITHDRAWAL_GROUP_ALIASES = ["снятие с р/с", "снят�
 const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные"];
 const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные"];
 const LOAN_GENERIC_ARTICLE_ALIASES = ["займы"];
-const LOAN_RENT_ARTICLE_ALIASES = ["аренда", "аренда(долг)", "аренда (долг)"];
+const LOAN_RENT_ARTICLE_ALIASES = ["аренда"];
 
 function makePeriodKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
