@@ -19,14 +19,18 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { ANALYTICS_ROUTE_PATHS, ANALYTICS_SIDEBAR_ITEMS } from "@/lib/analytics-navigation";
 import { roleLabels, useRole } from "@/lib/roles";
 
-const allItems = [
+const topLevelItems = [
   { title: "Предоплаты", url: "/prepayments", icon: CreditCard, section: "prepayments" as const },
   { title: "Бар", url: "/bar", icon: Wine, section: "bar" as const },
-  { title: "Аналитика", url: "/analytics", icon: BarChart3, section: "analytics" as const },
+  { title: "Аналитика", url: ANALYTICS_ROUTE_PATHS.root, icon: BarChart3, section: "analytics" as const },
 ];
 
 function getUserBadgeText(name: string | null, roleLabel: string) {
@@ -40,23 +44,31 @@ function getUserBadgeText(name: string | null, roleLabel: string) {
 }
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { role, userName, userEmail, signOut, canAccess } = useRole();
 
-  const visibleItems = allItems.filter((item) => canAccess(item.section));
+  const visibleItems = topLevelItems.filter((item) => canAccess(item.section));
+  const analyticsVisible = visibleItems.some((item) => item.section === "analytics");
+  const analyticsActive = location.pathname.startsWith(ANALYTICS_ROUTE_PATHS.root);
   const roleLabel = role ? roleLabels[role] : "Пользователь";
+
+  const handleSidebarItemClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
       <SidebarContent className="pt-4">
-        <div className={`px-4 mb-6 ${collapsed ? "px-2" : ""}`}>
+        <div className={`mb-6 px-4 ${collapsed ? "px-2" : ""}`}>
           {collapsed ? (
-            <span className="block text-center text-lg font-bold text-sidebar-primary font-serif">R</span>
+            <span className="block text-center font-serif text-lg font-bold text-sidebar-primary">R</span>
           ) : (
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-sidebar-primary font-serif">RestaurantOS</h1>
+              <h1 className="font-serif text-lg font-bold tracking-tight text-sidebar-primary">RestaurantOS</h1>
               <div className="mt-1 h-0.5 w-10 rounded-full bg-sidebar-primary/60" />
             </div>
           )}
@@ -67,10 +79,14 @@ export function AppSidebar() {
             <SidebarMenu>
               {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={item.section === "analytics" ? analyticsActive : location.pathname === item.url}
+                  >
                     <NavLink
-                      to={item.url}
-                      end
+                      to={item.section === "analytics" ? ANALYTICS_ROUTE_PATHS.financial : item.url}
+                      end={item.section !== "analytics"}
+                      onClick={handleSidebarItemClick}
                       className="hover:bg-sidebar-accent/60"
                       activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                     >
@@ -78,6 +94,26 @@ export function AppSidebar() {
                       {!collapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
+
+                  {item.section === "analytics" && analyticsVisible && !collapsed ? (
+                    <SidebarMenuSub>
+                      {ANALYTICS_SIDEBAR_ITEMS.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.url}>
+                          <SidebarMenuSubButton asChild isActive={location.pathname === subItem.url}>
+                            <NavLink
+                              to={subItem.url}
+                              end
+                              onClick={handleSidebarItemClick}
+                              className="hover:bg-sidebar-accent/60"
+                              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                            >
+                              <span>{subItem.title}</span>
+                            </NavLink>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  ) : null}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

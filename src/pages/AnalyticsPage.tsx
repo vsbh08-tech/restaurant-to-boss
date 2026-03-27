@@ -1,8 +1,24 @@
 ﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDownLeft, ArrowDownRight, ArrowLeftRight, ArrowUpRight, Download, Minus } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowDownRight,
+  ArrowLeftRight,
+  ArrowUp,
+  ArrowUpRight,
+  Download,
+  Minus,
+  RefreshCcw,
+  TrendingUp,
+} from "lucide-react";
+import { Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  ANALYTICS_ROUTE_PATHS,
+  ANALYTICS_WORKSPACE_META,
+  getAnalyticsWorkspaceView,
+} from "@/lib/analytics-navigation";
 import { formatCurrency, parsePeriodDate, parseTextNumeric } from "@/lib/supabase-helpers";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,8 +27,17 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AnalyticsImportDialog } from "@/components/AnalyticsImportDialog";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/roles";
+import { Area, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts";
 
 type FinanceFlow = {
   id: string;
@@ -146,6 +171,8 @@ type TransferMatrixSummary = {
   grandTotal: number;
   topRecipient: TransferLeader;
   topDonor: TransferLeader;
+  topRepayer: TransferLeader;
+  topReturnReceiver: TransferLeader;
   maxMagnitude: number;
 };
 
@@ -162,6 +189,51 @@ type TransferMatrixCardProps = {
   periodLabel: string;
   summary: TransferMatrixSummary;
   description?: string;
+};
+
+type TransferNetChartDatum = {
+  restaurant: string;
+  net: number;
+};
+
+type TransferTimelineDatum = {
+  periodKey: string;
+  label: string;
+  fullLabel: string;
+  amount: number;
+};
+
+type OwnersTimelineDatum = {
+  periodKey: string;
+  label: string;
+  fullLabel: string;
+  closing: number;
+  accrued: number;
+  paid: number;
+};
+
+type LoanFactRow = {
+  id: string;
+  restaurant: string;
+  counterparty: string;
+  periodDate: Date;
+  periodKey: string;
+  delta: number;
+};
+
+type LoanCounterpartyRow = {
+  counterparty: string;
+  opening: number;
+  received: number;
+  issued: number;
+  closing: number;
+};
+
+type LoanTimelineDatum = {
+  periodKey: string;
+  label: string;
+  fullLabel: string;
+  position: number;
 };
 
 type SaveFilePickerWindow = Window & {
@@ -192,6 +264,29 @@ type MetricSummary = {
   profit: number;
 };
 
+type CashBreakdownRow = {
+  label: string;
+  amount: number;
+  noteLabel?: string;
+  noteAmount?: number;
+};
+
+type CashArticleGroup = {
+  label: string;
+  aliases: string[];
+};
+
+type CashWaterfallDatum = {
+  key: string;
+  label: string;
+  fullLabel: string;
+  offset: number;
+  value: number;
+  delta: number;
+  total: number;
+  kind: "total" | "positive" | "negative";
+};
+
 type MetricKind = "income" | "expense" | "profit";
 
 type FilterChipGroupProps<T extends string | number> = {
@@ -214,6 +309,7 @@ type PeriodSelectorProps = {
   options: PeriodOption[];
   refsMap: React.MutableRefObject<Record<string, HTMLButtonElement | null>>;
   compact?: boolean;
+  allowSelectAll?: boolean;
 };
 
 type PeriodRangeSelectorProps = {
@@ -272,6 +368,24 @@ const FILTER_CHIP_BASE_CLASS =
   "h-7 rounded-md border border-border px-2.5 text-xs hover:border-primary hover:bg-primary/5 hover:text-primary";
 const FILTER_CHIP_ACTIVE_CLASS =
   "border-primary bg-primary text-primary-foreground font-semibold shadow-sm hover:border-primary hover:bg-primary hover:text-primary-foreground";
+const CASH_ACCOUNT_GROUPS: CashArticleGroup[] = [
+  { label: "Касса", aliases: ["касса", "хранение"] },
+  { label: "Расчетный счет", aliases: ["расчетный счет", "расчетный счёт"] },
+  { label: "Деньги в пути", aliases: ["деньги в пути"] },
+  { label: "Снятие с р/с", aliases: ["снятие с р/с"] },
+];
+const CASH_REQUIRED_PAYMENT_GROUPS: CashArticleGroup[] = [
+  { label: "ЗП начисленная", aliases: ["зп начисленная", "зп нач", "зп. нач"] },
+  { label: "Комиссия начисленная", aliases: ["комиссия начисленная", "комиссия нач"] },
+];
+const CASH_DIVIDEND_ARTICLE_ALIASES = ["доли"];
+const CASH_EXPLICIT_OTHER_INFLOW_ALIASES = ["займы полученные", "предоплата", "предоплаты"];
+const CASH_EXPLICIT_OTHER_OUTFLOW_ALIASES = ["п/о суммы", "расходы будущих периодов", "займы выданные"];
+const CASH_OWNER_WITHDRAWAL_GROUP_ALIASES = ["снятие с р/с", "снятие с р\\с"];
+const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные"];
+const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные"];
+const LOAN_GENERIC_ARTICLE_ALIASES = ["займы"];
+const LOAN_RENT_ARTICLE_ALIASES = ["аренда"];
 
 function makePeriodKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -285,12 +399,47 @@ function formatPeriodRangeLabel(date: Date) {
   return `${String(date.getMonth() + 1).padStart(2, "0")}.${date.getFullYear()}`;
 }
 
+function formatShortMonthYear(date: Date) {
+  const monthNames = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+  return `${monthNames[date.getMonth()]} ${String(date.getFullYear()).slice(-2)}`;
+}
+
 function normalizeFileNamePart(value: string) {
   return value.trim().replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, "_");
 }
 
 function normalizeLookupText(value: string | null | undefined) {
   return (value ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("ru-RU");
+}
+
+function matchesArticleAlias(article: string, aliases: string[]) {
+  const normalizedArticle = normalizeLookupText(article);
+  return aliases.includes(normalizedArticle);
+}
+
+function normalizeBalanceArticle(article: string) {
+  if (matchesArticleAlias(article, ["хранение"])) {
+    return "Касса";
+  }
+
+  if (matchesArticleAlias(article, ["авансы", "зп нач", "зп. нач"])) {
+    return "ЗП нач";
+  }
+
+  return article;
+}
+
+function sumAmountsByArticleAliases<T extends { article: string; amount: number }>(rows: T[], aliases: string[]) {
+  return rows
+    .filter((row) => matchesArticleAlias(row.article, aliases))
+    .reduce((sum, row) => sum + row.amount, 0);
+}
+
+function buildCashBreakdownRows(rows: BalanceFactRow[], groups: CashArticleGroup[]) {
+  return groups.map((group) => ({
+    label: group.label,
+    amount: sumAmountsByArticleAliases(rows, group.aliases),
+  }));
 }
 
 function getUniqueValues<T extends string | number>(values: T[]) {
@@ -345,10 +494,6 @@ function getNextSelection<T extends string | number>(selection: T[], value: T, i
   return [...selection, value];
 }
 
-function getMonthDistance(previous: Date, next: Date) {
-  return (next.getFullYear() - previous.getFullYear()) * 12 + (next.getMonth() - previous.getMonth());
-}
-
 function enumerateMonths(from: Date, to: Date) {
   const months: Date[] = [];
   const cursor = new Date(from.getFullYear(), from.getMonth(), 1);
@@ -366,7 +511,7 @@ function isNearlyZero(value: number, precision = 0.005) {
   return Math.abs(value) < precision;
 }
 
-function getPreviousPeriodKeys(selectedKeys: string[], periodOptions: PeriodOption[]) {
+function getPreviousYearPeriodKeys(selectedKeys: string[], periodOptions: PeriodOption[]) {
   if (selectedKeys.length === 0) return null;
 
   const selected = periodOptions
@@ -377,26 +522,23 @@ function getPreviousPeriodKeys(selectedKeys: string[], periodOptions: PeriodOpti
     return null;
   }
 
-  for (let index = 1; index < selected.length; index += 1) {
-    if (getMonthDistance(selected[index - 1].date, selected[index].date) !== 1) {
-      return null;
-    }
-  }
-
   const periodKeySet = new Set(periodOptions.map((option) => option.key));
-  const previousKeys: string[] = [];
-
-  for (let offset = selected.length; offset >= 1; offset -= 1) {
-    const previousDate = new Date(selected[0].date.getFullYear(), selected[0].date.getMonth() - offset, 1);
+  const previousKeys = selected.map((option) => {
+    const previousDate = new Date(option.date.getFullYear() - 1, option.date.getMonth(), 1);
     const previousKey = makePeriodKey(previousDate);
+
     if (!periodKeySet.has(previousKey)) {
       return null;
     }
 
-    previousKeys.push(previousKey);
+    return previousKey;
+  });
+
+  if (previousKeys.some((key) => key === null)) {
+    return null;
   }
 
-  return previousKeys;
+  return previousKeys as string[];
 }
 
 function getChangePercent(currentValue: number, previousValue: number) {
@@ -404,10 +546,32 @@ function getChangePercent(currentValue: number, previousValue: number) {
   return ((currentValue - previousValue) / Math.abs(previousValue)) * 100;
 }
 
-function getComparisonLabel(periodCount: number) {
-  if (periodCount <= 0) return "сравнение недоступно";
-  if (periodCount === 1) return "к пред. мес.";
-  return `к пред. ${periodCount} мес.`;
+function formatComparisonMonthYear(date: Date) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    month: "short",
+    year: "numeric",
+  })
+    .format(date)
+    .replace(/\./g, "")
+    .replace(/\u00A0/g, " ");
+}
+
+function getYearComparisonLabel(selectedKeys: string[], periodOptions: PeriodOption[]) {
+  const selected = periodOptions
+    .filter((option) => selectedKeys.includes(option.key))
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  if (selected.length === 0) {
+    return "к прошлому году";
+  }
+
+  const shiftedDates = selected.map((option) => new Date(option.date.getFullYear() - 1, option.date.getMonth(), 1));
+
+  if (shiftedDates.length === 1) {
+    return `к ${formatComparisonMonthYear(shiftedDates[0])}`;
+  }
+
+  return `к ${formatComparisonMonthYear(shiftedDates[0])} - ${formatComparisonMonthYear(shiftedDates[shiftedDates.length - 1])}`;
 }
 
 function buildPeriodOptions(dates: Date[]) {
@@ -574,7 +738,7 @@ function buildStructureRows(
     .sort((a, b) => b.magnitude - a.magnitude);
 }
 
-function pickTransferLeader(items: Array<{ restaurant: string; amount: number }>) {
+function pickPositiveTransferLeader(items: Array<{ restaurant: string; amount: number }>) {
   return items.reduce<TransferLeader>(
     (best, item) => {
       if (item.amount <= 0) {
@@ -590,6 +754,27 @@ function pickTransferLeader(items: Array<{ restaurant: string; amount: number }>
         best.restaurant !== null &&
         item.restaurant.localeCompare(best.restaurant, "ru") < 0
       ) {
+        return item;
+      }
+
+      return best;
+    },
+    { restaurant: null, amount: 0 },
+  );
+}
+
+function pickNegativeTransferLeader(items: Array<{ restaurant: string; amount: number }>) {
+  return items.reduce<TransferLeader>(
+    (best, item) => {
+      if (item.amount >= 0) {
+        return best;
+      }
+
+      if (best.restaurant === null || item.amount < best.amount) {
+        return item;
+      }
+
+      if (item.amount === best.amount && item.restaurant.localeCompare(best.restaurant, "ru") < 0) {
         return item;
       }
 
@@ -638,27 +823,415 @@ function buildTransferMatrix(rows: IntragroupTransferRow[], restaurants: string[
     rows: matrixRows,
     columnTotals,
     grandTotal,
-    topDonor: pickTransferLeader(matrixRows.map((row) => ({ restaurant: row.restaurant, amount: row.totalOut }))),
-    topRecipient: pickTransferLeader(
+    topDonor: pickPositiveTransferLeader(matrixRows.map((row) => ({ restaurant: row.restaurant, amount: row.totalOut }))),
+    topRecipient: pickPositiveTransferLeader(
       restaurants.map((restaurant, index) => ({ restaurant, amount: columnTotals[index] ?? 0 })),
+    ),
+    topRepayer: pickNegativeTransferLeader(
+      restaurants.map((restaurant, index) => ({ restaurant, amount: columnTotals[index] ?? 0 })),
+    ),
+    topReturnReceiver: pickNegativeTransferLeader(
+      matrixRows.map((row) => ({ restaurant: row.restaurant, amount: row.totalOut })),
     ),
     maxMagnitude,
   };
 }
 
-function getTransferCellStyle(amount: number, maxMagnitude: number) {
-  if (amount === 0 || maxMagnitude === 0) {
+function roundTransferDisplayAmount(amount: number) {
+  const roundedAmount = Math.round(amount);
+  return Object.is(roundedAmount, -0) ? 0 : roundedAmount;
+}
+
+function roundMoneyDisplayAmount(amount: number) {
+  const roundedAmount = Math.round(amount);
+  return Object.is(roundedAmount, -0) ? 0 : roundedAmount;
+}
+
+function formatRoundedMoneyText(amount: number) {
+  return `${formatCurrency(roundMoneyDisplayAmount(amount))} ₽`;
+}
+
+function formatOutflowMoneyText(amount: number) {
+  const roundedAmount = roundMoneyDisplayAmount(Math.abs(amount));
+  return roundedAmount === 0 ? "0 ₽" : `-${formatCurrency(roundedAmount)} ₽`;
+}
+
+const transferNetChartConfig = {
+  net: {
+    label: "Чистое движение",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
+
+const transferTimelineChartConfig = {
+  amount: {
+    label: "Внутригрупповое движение",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
+
+const ownersTimelineChartConfig = {
+  closing: {
+    label: "Баланс на конец месяца",
+    color: "#2563eb",
+  },
+  paid: {
+    label: "Выплаты за месяц",
+    color: "#f97316",
+  },
+  accrued: {
+    label: "Начисления за месяц",
+    color: "#16a34a",
+  },
+} satisfies ChartConfig;
+
+const cashWaterfallChartConfig = {
+  offset: {
+    label: "База",
+    color: "transparent",
+  },
+  value: {
+    label: "Движение денег",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig;
+
+const loanPositionChartConfig = {
+  position: {
+    label: "Чистая позиция",
+    color: "#2563eb",
+  },
+} satisfies ChartConfig;
+
+function buildTransferNetChartData(summary: TransferMatrixSummary): TransferNetChartDatum[] {
+  return summary.restaurants.map((restaurant, index) => {
+    const totalReceived = summary.columnTotals[index] ?? 0;
+    const totalIssued = summary.rows[index]?.totalOut ?? 0;
+
     return {
-      className: "bg-muted/20 text-muted-foreground",
+      restaurant,
+      net: roundTransferDisplayAmount(totalReceived - totalIssued),
+    };
+  });
+}
+
+function buildTransferTimelineData(
+  rows: IntragroupTransferRow[],
+  selectedPeriodDate: Date | null,
+  mode: "monthly" | "cumulative",
+  limit = 6,
+): TransferTimelineDatum[] {
+  if (!selectedPeriodDate) {
+    return [];
+  }
+
+  const windowOptions = Array.from({ length: limit }, (_, index) => {
+    const offset = limit - index - 1;
+    const date = new Date(selectedPeriodDate.getFullYear(), selectedPeriodDate.getMonth() - offset, 1);
+    const key = makePeriodKey(date);
+
+    return {
+      key,
+      label: formatPeriodChip(date),
+      date,
+    };
+  });
+
+  return windowOptions.map((option) => {
+    const amount = rows
+      .filter((row) =>
+        mode === "monthly"
+          ? row.periodKey === option.key
+          : row.periodDate.getTime() <= option.date.getTime(),
+      )
+      .reduce((sum, row) => sum + row.amount, 0);
+
+    return {
+      periodKey: option.key,
+      label: formatShortMonthYear(option.date),
+      fullLabel: option.label,
+      amount: roundTransferDisplayAmount(amount),
+    };
+  });
+}
+
+function buildOwnersTimelineData(
+  rows: OwnersFactRow[],
+  selectedPeriodDate: Date | null,
+  limit = 6,
+): OwnersTimelineDatum[] {
+  if (!selectedPeriodDate) {
+    return [];
+  }
+
+  const windowOptions = Array.from({ length: limit }, (_, index) => {
+    const offset = limit - index - 1;
+    const date = new Date(selectedPeriodDate.getFullYear(), selectedPeriodDate.getMonth() - offset, 1);
+    const key = makePeriodKey(date);
+
+    return {
+      key,
+      label: formatShortMonthYear(date),
+      fullLabel: formatPeriodChip(date),
+      date,
+    };
+  });
+
+  return windowOptions.map((option) => {
+    const opening = rows
+      .filter((row) => row.periodDate.getTime() < option.date.getTime())
+      .reduce((sum, row) => sum + row.net, 0);
+    const periodRows = rows.filter((row) => row.periodKey === option.key);
+    const accrued = periodRows.reduce((sum, row) => sum + row.accrued, 0);
+    const paid = periodRows.reduce((sum, row) => sum + row.paid, 0);
+    const net = periodRows.reduce((sum, row) => sum + row.net, 0);
+
+    return {
+      periodKey: option.key,
+      label: option.label,
+      fullLabel: option.fullLabel,
+      closing: Math.round(opening + net),
+      accrued: Math.round(accrued),
+      paid: Math.round(paid),
+    };
+  });
+}
+
+function isLoanReceivedArticle(article: string) {
+  return matchesArticleAlias(article, LOAN_RECEIVED_ARTICLE_ALIASES);
+}
+
+function isLoanIssuedArticle(article: string) {
+  return matchesArticleAlias(article, LOAN_ISSUED_ARTICLE_ALIASES);
+}
+
+function isGenericLoanArticle(article: string) {
+  return matchesArticleAlias(article, LOAN_GENERIC_ARTICLE_ALIASES);
+}
+
+function isRentLoanArticle(article: string) {
+  return matchesArticleAlias(article, LOAN_RENT_ARTICLE_ALIASES);
+}
+
+function buildLoanCounterpartyRows(rows: LoanFactRow[], selectedPeriodDate: Date | null) {
+  if (!selectedPeriodDate) {
+    return {
+      rows: [] as LoanCounterpartyRow[],
+      totals: { opening: 0, received: 0, issued: 0, closing: 0 },
+    };
+  }
+
+  const selectedMonthStart = new Date(selectedPeriodDate.getFullYear(), selectedPeriodDate.getMonth(), 1);
+  const selectedPeriodKey = makePeriodKey(selectedMonthStart);
+  const grouped = new Map<string, LoanCounterpartyRow>();
+
+  rows.forEach((row) => {
+    const current =
+      grouped.get(row.counterparty) ??
+      {
+        counterparty: row.counterparty,
+        opening: 0,
+        periodNet: 0,
+        received: 0,
+        issued: 0,
+        closing: 0,
+      };
+
+    if (row.periodDate.getTime() < selectedMonthStart.getTime()) {
+      current.opening += row.delta;
+    }
+
+    if (row.periodKey === selectedPeriodKey) {
+      current.periodNet += row.delta;
+    }
+
+    grouped.set(row.counterparty, current);
+  });
+
+  const preparedRows = Array.from(grouped.values())
+    .map((row) => {
+      const received = row.periodNet > 0 ? row.periodNet : 0;
+      const issued = row.periodNet < 0 ? Math.abs(row.periodNet) : 0;
+
+      return {
+        counterparty: row.counterparty,
+        opening: row.opening,
+        received,
+        issued,
+        closing: row.opening + row.periodNet,
+      };
+    })
+    .filter(
+      (row) =>
+        !isNearlyZero(row.opening) ||
+        !isNearlyZero(row.received) ||
+        !isNearlyZero(row.issued) ||
+        !isNearlyZero(row.closing),
+    )
+    .sort((a, b) => Math.abs(b.closing) - Math.abs(a.closing) || Math.abs(b.received - b.issued) - Math.abs(a.received - a.issued));
+
+  const totals = preparedRows.reduce(
+    (acc, row) => ({
+      opening: acc.opening + row.opening,
+      received: acc.received + row.received,
+      issued: acc.issued + row.issued,
+      closing: acc.closing + row.closing,
+    }),
+    { opening: 0, received: 0, issued: 0, closing: 0 },
+  );
+
+  return {
+    rows: preparedRows,
+    totals,
+  };
+}
+
+function buildLoanPositionTimelineData(rows: LoanFactRow[], selectedPeriodDate: Date | null, limit = 6): LoanTimelineDatum[] {
+  if (!selectedPeriodDate) {
+    return [];
+  }
+
+  const windowOptions = Array.from({ length: limit }, (_, index) => {
+    const offset = limit - index - 1;
+    const date = new Date(selectedPeriodDate.getFullYear(), selectedPeriodDate.getMonth() - offset, 1);
+    const key = makePeriodKey(date);
+
+    return {
+      key,
+      label: formatShortMonthYear(date),
+      fullLabel: formatPeriodChip(date),
+      date,
+    };
+  });
+
+  return windowOptions.map((option) => {
+    const position = rows.reduce((sum, row) => {
+      if (row.periodDate.getTime() > option.date.getTime()) {
+        return sum;
+      }
+
+      return sum + row.delta;
+    }, 0);
+
+    return {
+      periodKey: option.key,
+      label: option.label,
+      fullLabel: option.fullLabel,
+      position: roundMoneyDisplayAmount(position),
+    };
+  });
+}
+
+function buildCashWaterfallData({
+  openingTotal,
+  income,
+  expense,
+  dividends,
+  otherInflows,
+  otherOutflows,
+  closingTotal,
+}: {
+  openingTotal: number;
+  income: number;
+  expense: number;
+  dividends: number;
+  otherInflows: number;
+  otherOutflows: number;
+  closingTotal: number;
+}) {
+  const normalizedExpense = expense === 0 ? 0 : -Math.abs(expense);
+  const steps = [
+    {
+      key: "income",
+      label: "Доход",
+      fullLabel: "Поступления (Доход)",
+      delta: income,
+    },
+    {
+      key: "expense",
+      label: "Расход",
+      fullLabel: "Выплаты (Расход)",
+      delta: normalizedExpense,
+    },
+    {
+      key: "dividends",
+      label: "Доли",
+      fullLabel: "Доли",
+      delta: dividends,
+    },
+    {
+      key: "otherInflows",
+      label: "Прочие +",
+      fullLabel: "Прочие поступления",
+      delta: otherInflows,
+    },
+    {
+      key: "otherOutflows",
+      label: "Прочие -",
+      fullLabel: "Прочие выплаты",
+      delta: otherOutflows,
+    },
+  ];
+
+  const data: CashWaterfallDatum[] = [
+    {
+      key: "opening",
+      label: "Начало",
+      fullLabel: "Остаток денег на начало",
+      offset: Math.min(0, openingTotal),
+      value: Math.abs(openingTotal),
+      delta: openingTotal,
+      total: openingTotal,
+      kind: "total",
+    },
+  ];
+
+  let runningTotal = openingTotal;
+
+  steps.forEach((step) => {
+    const nextTotal = runningTotal + step.delta;
+    data.push({
+      key: step.key,
+      label: step.label,
+      fullLabel: step.fullLabel,
+      offset: Math.min(runningTotal, nextTotal),
+      value: Math.abs(step.delta),
+      delta: step.delta,
+      total: nextTotal,
+      kind: step.delta >= 0 ? "positive" : "negative",
+    });
+    runningTotal = nextTotal;
+  });
+
+  data.push({
+    key: "closing",
+    label: "Конец",
+    fullLabel: "Остаток денег на конец",
+    offset: Math.min(0, closingTotal),
+    value: Math.abs(closingTotal),
+    delta: closingTotal,
+    total: closingTotal,
+    kind: "total",
+  });
+
+  return data;
+}
+
+function getTransferCellStyle(amount: number, maxMagnitude: number) {
+  const roundedAmount = roundTransferDisplayAmount(amount);
+
+  if (roundedAmount === 0 || maxMagnitude === 0) {
+    return {
+      className: "text-muted-foreground",
       style: undefined,
     };
   }
 
   const intensity = Math.min(0.78, 0.16 + (Math.abs(amount) / maxMagnitude) * 0.48);
-  const rgb = amount > 0 ? "239, 68, 68" : "59, 130, 246";
+  const rgb = roundedAmount > 0 ? "239, 68, 68" : "59, 130, 246";
 
   return {
-    className: amount > 0 ? "text-white" : "text-foreground",
+    className: roundedAmount > 0 ? "text-white" : "text-foreground",
     style: {
       backgroundColor: `rgba(${rgb}, ${intensity})`,
     } as const,
@@ -905,7 +1478,14 @@ function PeriodRangeSelector({
   );
 }
 
-function PeriodSelector({ selection, onChange, options, refsMap, compact = false }: PeriodSelectorProps) {
+function PeriodSelector({
+  selection,
+  onChange,
+  options,
+  refsMap,
+  compact = false,
+  allowSelectAll = true,
+}: PeriodSelectorProps) {
   const allSelected = options.length > 0 && selection.length === options.length;
 
   return (
@@ -913,7 +1493,7 @@ function PeriodSelector({ selection, onChange, options, refsMap, compact = false
       <div className={cn("flex items-center justify-between gap-2", compact ? "mb-1" : "mb-1.5")}>
         <p className={cn("font-semibold", compact ? "text-xs" : "text-sm")}>Период</p>
         <div className="flex items-center gap-1">
-          {options.length > 0 && (
+          {allowSelectAll && options.length > 0 && (
             <Button
               type="button"
               size="sm"
@@ -1042,18 +1622,53 @@ function TransferKpiCard({ icon: Icon, label, value, subtitle, tone }: TransferK
   const toneConfig = toneMap[tone];
 
   return (
-    <div className={cn("rounded-2xl border px-4 py-3 shadow-sm", toneConfig.cardClassName)}>
-      <div className="flex items-start gap-3">
-        <div className={cn("mt-0.5 rounded-xl bg-background/80 p-2 shadow-sm", toneConfig.iconClassName)}>
-          <Icon className="h-4 w-4" />
+    <div className={cn("rounded-xl border px-3 py-2 shadow-sm", toneConfig.cardClassName)}>
+      <div className="flex items-start gap-2.5">
+        <div className={cn("mt-0.5 rounded-lg bg-background/80 p-1.5 shadow-sm", toneConfig.iconClassName)}>
+          <Icon className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm leading-snug text-muted-foreground">{label}</p>
-          <p className={cn("mt-1 text-2xl font-semibold leading-none tracking-tight", toneConfig.valueClassName)}>
+          <p className="text-xs leading-snug text-muted-foreground">{label}</p>
+          <p
+            className={cn(
+              "mt-0.5 text-lg font-semibold leading-tight tracking-tight xl:text-xl",
+              toneConfig.valueClassName,
+            )}
+          >
             {value}
           </p>
-          {subtitle ? <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p> : null}
+          {subtitle ? <p className="mt-0.5 text-[11px] text-muted-foreground">{subtitle}</p> : null}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TransferPeriodCard({
+  selectedPeriodKey,
+  options,
+  onChange,
+}: {
+  selectedPeriodKey: string | null;
+  options: PeriodOption[];
+  onChange: (next: string[]) => void;
+}) {
+  return (
+    <div className="h-full rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background px-2.5 py-1.5 shadow-sm">
+      <div className="flex h-full min-h-[72px] flex-col justify-center gap-1">
+        <p className="text-[11px] leading-snug text-muted-foreground">Период</p>
+        <Select value={selectedPeriodKey ?? undefined} onValueChange={(value) => onChange([value])}>
+          <SelectTrigger className="h-8 w-full bg-background/90 text-left text-sm">
+            <SelectValue placeholder="Выберите период" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.key} value={option.key}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
@@ -1061,92 +1676,754 @@ function TransferKpiCard({ icon: Icon, label, value, subtitle, tone }: TransferK
 
 function TransferMatrixCard({ title, periodLabel, summary, description }: TransferMatrixCardProps) {
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-2.5">
         <div>
-          <CardTitle className="text-base font-serif">{title}</CardTitle>
-          {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
+          <CardTitle className="text-sm font-serif">{title}</CardTitle>
+          {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
         </div>
-        <div className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
+        <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
           Период: {periodLabel}
         </div>
       </CardHeader>
 
       <CardContent className="px-0 pt-0">
-        <ScrollArea className="w-full whitespace-nowrap">
-          <Table>
+        <Table className="min-w-[594px] table-fixed sm:min-w-max">
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky left-0 z-20 min-w-[160px] bg-background px-4 text-sm font-semibold text-foreground">
-                  Откуда / Куда
+                <TableHead
+                  rowSpan={2}
+                  className="sticky left-0 z-40 w-[128px] min-w-[128px] border-r border-border bg-muted px-3 py-2 text-left text-xs font-semibold leading-tight text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
+                >
+                  Откуда ↓
                 </TableHead>
+                <TableHead
+                  colSpan={summary.restaurants.length}
+                  className="bg-muted px-2 py-2 text-center text-xs font-semibold text-foreground sm:py-2.5 sm:text-sm"
+                >
+                  Куда →
+                </TableHead>
+                <TableHead
+                  rowSpan={2}
+                  className="w-[112px] min-w-[112px] bg-muted px-2 py-2 text-right text-xs font-semibold leading-tight text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
+                >
+                  Итого выдано
+                </TableHead>
+              </TableRow>
+              <TableRow>
                 {summary.restaurants.map((restaurant) => (
-                  <TableHead key={restaurant} className="min-w-[132px] px-3 text-center text-sm font-semibold">
+                  <TableHead
+                    key={restaurant}
+                    className="w-[118px] min-w-[118px] bg-muted px-2 py-2 text-center text-[10px] font-semibold leading-tight whitespace-nowrap text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
+                  >
                     {restaurant}
                   </TableHead>
                 ))}
-                <TableHead className="min-w-[132px] px-3 text-right text-sm font-semibold">Итого выдано</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {summary.rows.map((row) => (
                 <TableRow key={row.restaurant}>
-                  <TableCell className="sticky left-0 z-10 bg-background px-4 py-3 text-sm font-semibold">
+                  <TableCell className="sticky left-0 z-30 w-[128px] min-w-[128px] overflow-hidden border-r border-border bg-muted px-3 py-2 text-xs font-semibold leading-tight shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm">
                     {row.restaurant}
                   </TableCell>
                   {row.cells.map((cell) => {
                     const cellStyle = getTransferCellStyle(cell.amount, summary.maxMagnitude);
+                    const displayAmount = roundTransferDisplayAmount(cell.amount);
 
                     return (
                       <TableCell
                         key={[row.restaurant, cell.restaurant].join("::")}
-                        className={cn("px-3 py-3 text-right text-sm font-mono", cellStyle.className)}
+                        className={cn("w-[118px] min-w-[118px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs", cellStyle.className)}
                         style={cellStyle.style}
                       >
-                        {formatCurrency(Math.round(cell.amount))} ₽
+                        {formatCurrency(displayAmount)} ₽
                       </TableCell>
                     );
                   })}
                   <TableCell
                     className={cn(
-                      "px-3 py-3 text-right text-sm font-mono font-semibold",
-                      row.totalOut < 0 ? "text-destructive" : "text-foreground",
+                      "w-[112px] min-w-[112px] bg-muted/20 px-2 py-2 text-right text-[10px] font-mono font-semibold whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs",
+                      roundTransferDisplayAmount(row.totalOut) < 0 ? "text-destructive" : "text-foreground",
                     )}
                   >
-                    {formatCurrency(Math.round(row.totalOut))} ₽
+                    {formatCurrency(roundTransferDisplayAmount(row.totalOut))} ₽
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
             <TableFooter>
-              <TableRow className="hover:bg-muted/50">
-                <TableCell className="sticky left-0 z-10 bg-muted/50 px-4 py-3 text-sm font-bold">
+              <TableRow className="bg-muted/20 hover:bg-muted/30">
+                <TableCell className="sticky left-0 z-40 w-[128px] min-w-[128px] overflow-hidden border-r border-border bg-muted px-3 py-2 text-xs font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm">
                   Итого получено
                 </TableCell>
                 {summary.columnTotals.map((amount, index) => (
                   <TableCell
                     key={summary.restaurants[index]}
                     className={cn(
-                      "px-3 py-3 text-right text-sm font-mono font-bold",
-                      amount < 0 ? "text-destructive" : "text-foreground",
+                      "w-[118px] min-w-[118px] bg-muted/20 px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs",
+                      roundTransferDisplayAmount(amount) < 0 ? "text-destructive" : "text-foreground",
                     )}
                   >
-                    {formatCurrency(Math.round(amount))} ₽
+                    {formatCurrency(roundTransferDisplayAmount(amount))} ₽
                   </TableCell>
                 ))}
                 <TableCell
                   className={cn(
-                    "px-3 py-3 text-right text-sm font-mono font-bold",
-                    summary.grandTotal < 0 ? "text-destructive" : "text-foreground",
+                    "w-[112px] min-w-[112px] bg-muted/30 px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-xs",
+                    roundTransferDisplayAmount(summary.grandTotal) < 0 ? "text-destructive" : "text-foreground",
                   )}
                 >
-                  {formatCurrency(Math.round(summary.grandTotal))} ₽
+                  {formatCurrency(roundTransferDisplayAmount(summary.grandTotal))} ₽
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TransferTimelineChartCard({
+  title,
+  description,
+  data,
+}: {
+  title: string;
+  description?: string;
+  data: TransferTimelineDatum[];
+}) {
+  const hasData = data.some((item) => item.amount !== 0);
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="px-4 py-3">
+        <CardTitle className="text-sm font-serif">{title}</CardTitle>
+        {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
+      </CardHeader>
+
+      <CardContent className="px-4 pb-4 pt-0">
+        {hasData ? (
+          <ChartContainer config={transferTimelineChartConfig} className="h-[220px] w-full sm:h-[260px]">
+            <BarChart data={data} margin={{ top: 4, right: 8, bottom: 4, left: -12 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="label"
+                type="category"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 10 }}
+                interval={0}
+                tickMargin={6}
+              />
+              <YAxis
+                type="number"
+                tickLine={false}
+                axisLine={false}
+                width={56}
+                tick={{ fontSize: 10 }}
+                tickFormatter={(value) => formatCurrency(Math.abs(Number(value)))}
+              />
+              <ReferenceLine y={0} stroke="hsl(var(--border))" />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    hideIndicator
+                    labelFormatter={(_, payload) =>
+                      payload?.[0] && "payload" in payload[0]
+                        ? (payload[0] as { payload?: { fullLabel?: string } }).payload?.fullLabel ?? ""
+                        : ""
+                    }
+                    formatter={(value) => {
+                      const numericValue = Number(value);
+                      const amountText = `${formatCurrency(Math.abs(numericValue))} ₽`;
+
+                      if (numericValue > 0) {
+                        return [amountText, "Чисто получено"];
+                      }
+
+                      if (numericValue < 0) {
+                        return [amountText, "Чисто отдано"];
+                      }
+
+                      return [amountText, "Без движения"];
+                    }}
+                  />
+                }
+              />
+              <Bar dataKey="amount" radius={6}>
+                {data.map((entry) => (
+                  <Cell
+                    key={entry.periodKey}
+                    fill={entry.amount >= 0 ? "rgba(37, 99, 235, 0.8)" : "rgba(239, 68, 68, 0.8)"}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex h-[260px] items-center justify-center text-sm text-muted-foreground">
+            Нет движений за выбранный период.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function OwnersTimelineChartCard({
+  data,
+}: {
+  data: OwnersTimelineDatum[];
+}) {
+  const hasData = data.some((item) => item.closing !== 0 || item.accrued !== 0 || item.paid !== 0);
+
+  return (
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="px-4 py-3">
+        <CardTitle className="text-sm font-serif">Динамика расчетов с собственниками</CardTitle>
+        <p className="mt-0.5 text-xs text-muted-foreground">Последние 6 месяцев до выбранного периода.</p>
+      </CardHeader>
+
+      <CardContent className="px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
+        {hasData ? (
+          <ChartContainer config={ownersTimelineChartConfig} className="h-[190px] w-full sm:h-[280px]">
+            <LineChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 10 }}
+                tickMargin={6}
+                interval={0}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                width={74}
+                tick={{ fontSize: 10 }}
+                tickFormatter={(value) => formatCurrency(roundMoneyDisplayAmount(Number(value)))}
+              />
+              <ChartLegend content={<ChartLegendContent />} />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(_, payload) =>
+                      payload?.[0] && "payload" in payload[0]
+                        ? (payload[0] as { payload?: { fullLabel?: string } }).payload?.fullLabel ?? ""
+                        : ""
+                    }
+                    formatter={(value, name) => {
+                      const label =
+                        typeof name === "string"
+                          ? ownersTimelineChartConfig[name as keyof typeof ownersTimelineChartConfig]?.label ?? name
+                          : String(name);
+
+                      return [`${formatCurrency(roundMoneyDisplayAmount(Number(value)))} ₽`, String(label)];
+                    }}
+                  />
+                }
+              />
+              <ReferenceLine y={0} stroke="hsl(var(--border))" />
+              <Line
+                type="monotone"
+                dataKey="closing"
+                stroke="var(--color-closing)"
+                strokeWidth={2.5}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="paid"
+                stroke="var(--color-paid)"
+                strokeWidth={2}
+                dot={{ r: 2.5 }}
+                activeDot={{ r: 4 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="accrued"
+                stroke="var(--color-accrued)"
+                strokeWidth={2}
+                dot={{ r: 2.5 }}
+                activeDot={{ r: 4 }}
+              />
+            </LineChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+            Нет данных за выбранный период.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CashBreakdownCard({
+  title,
+  rows,
+  total,
+  footerNoteLabel,
+  footerNoteAmount,
+}: {
+  title: string;
+  rows: CashBreakdownRow[];
+  total: number;
+  footerNoteLabel?: string;
+  footerNoteAmount?: number;
+}) {
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="px-4 py-3">
+        <CardTitle className="text-sm font-serif">{title}</CardTitle>
+      </CardHeader>
+
+      <CardContent className="px-0 pt-0">
+        <Table>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={row.label}>
+                <TableCell className="px-4 py-2.5 text-sm">
+                  <div>{row.label}</div>
+                  {row.noteLabel ? (
+                    <div className="mt-0.5 text-xs text-muted-foreground">{row.noteLabel}</div>
+                  ) : null}
+                </TableCell>
+                <TableCell
+                  className={cn(
+                    "px-4 py-2.5 text-right text-sm font-mono font-medium whitespace-nowrap",
+                    row.amount < 0 ? "text-destructive" : "text-foreground",
+                  )}
+                >
+                  <div>{formatCurrency(roundMoneyDisplayAmount(row.amount))} ₽</div>
+                  {typeof row.noteAmount === "number" ? (
+                    <div
+                      className={cn(
+                        "mt-0.5 text-xs text-muted-foreground",
+                        row.noteAmount < 0 && "text-destructive",
+                      )}
+                    >
+                      {formatCurrency(roundMoneyDisplayAmount(row.noteAmount))} ₽
+                    </div>
+                  ) : null}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow className="hover:bg-muted/50">
+              <TableCell className="px-4 py-2.5 text-sm font-bold">Итого</TableCell>
+              <TableCell
+                className={cn(
+                  "px-4 py-2.5 text-right text-sm font-mono font-bold whitespace-nowrap",
+                  total < 0 ? "text-destructive" : "text-foreground",
+                )}
+              >
+                {formatCurrency(roundMoneyDisplayAmount(total))} ₽
+              </TableCell>
+            </TableRow>
+            {footerNoteLabel && typeof footerNoteAmount === "number" ? (
+              <TableRow className="hover:bg-muted/30">
+                <TableCell className="px-4 py-2 text-xs text-muted-foreground">{footerNoteLabel}</TableCell>
+                <TableCell
+                  className={cn(
+                    "px-4 py-2 text-right text-xs font-mono whitespace-nowrap text-muted-foreground",
+                    footerNoteAmount < 0 && "text-destructive",
+                  )}
+                >
+                  {formatCurrency(roundMoneyDisplayAmount(footerNoteAmount))} ₽
+                </TableCell>
+              </TableRow>
+            ) : null}
+          </TableFooter>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CashWaterfallChartCard({
+  data,
+  periodLabel,
+}: {
+  data: CashWaterfallDatum[];
+  periodLabel: string;
+}) {
+  const hasMovement = data.some((item) => item.kind !== "total" && item.value !== 0);
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="px-4 py-3">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <CardTitle className="text-sm font-serif">Движение денег</CardTitle>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Из чего изменился остаток денег за выбранный период.
+            </p>
+          </div>
+          <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+            Период: {periodLabel}
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
+        <ChartContainer config={cashWaterfallChartConfig} className="h-[260px] w-full sm:h-[320px]">
+          <BarChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontSize: 10 }}
+              tickMargin={6}
+              interval={0}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              width={78}
+              tick={{ fontSize: 10 }}
+              tickFormatter={(value) => formatCurrency(roundMoneyDisplayAmount(Number(value)))}
+            />
+            <ReferenceLine y={0} stroke="hsl(var(--border))" />
+            <ChartTooltip
+              cursor={false}
+              content={
+                <ChartTooltipContent
+                  indicator="dot"
+                  hideLabel={false}
+                  labelFormatter={(_, payload) =>
+                    payload?.[0] && "payload" in payload[0]
+                      ? (payload[0] as { payload?: { fullLabel?: string } }).payload?.fullLabel ?? ""
+                      : ""
+                  }
+                  formatter={(_, __, item) => {
+                    const payload = item?.payload as CashWaterfallDatum | undefined;
+
+                    if (!payload) {
+                      return ["—", "Значение"];
+                    }
+
+                    if (payload.kind === "total") {
+                      return [`${formatCurrency(roundMoneyDisplayAmount(payload.total))} ₽`, "Остаток"];
+                    }
+
+                    const roundedDelta = roundMoneyDisplayAmount(payload.delta);
+                    const amountText = `${roundedDelta > 0 ? "+" : ""}${formatCurrency(roundedDelta)} ₽`;
+                    return [amountText, "Изменение"];
+                  }}
+                />
+              }
+            />
+            <Bar dataKey="offset" stackId="cash-waterfall" fill="transparent" isAnimationActive={false} />
+            <Bar dataKey="value" stackId="cash-waterfall" radius={6} isAnimationActive={false}>
+              {data.map((entry) => {
+                const fill =
+                  entry.kind === "total"
+                    ? "rgba(37, 99, 235, 0.8)"
+                    : entry.kind === "positive"
+                      ? "rgba(22, 163, 74, 0.78)"
+                      : "rgba(239, 68, 68, 0.8)";
+
+                return <Cell key={entry.key} fill={fill} />;
+              })}
+            </Bar>
+          </BarChart>
+        </ChartContainer>
+
+        {!hasMovement ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            За выбранный период нет движений, которые меняли денежный остаток.
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LoanPrimaryKpiCard({ value }: { value: number }) {
+  const roundedValue = roundMoneyDisplayAmount(value);
+  const positive = roundedValue >= 0;
+  const statusText = roundedValue > 0 ? "Ресторан должен" : roundedValue < 0 ? "Ресторан донор" : "Позиция нулевая";
+
+  return (
+    <Card
+      className={cn(
+        "min-h-[80px] h-full overflow-hidden border shadow-sm",
+        positive
+          ? "border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background"
+          : "border-destructive/20 bg-gradient-to-br from-destructive/5 via-card to-background",
+      )}
+    >
+      <CardContent className="px-2.5 py-2.5">
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "rounded-xl bg-background/90 p-1.5 shadow-sm",
+              positive ? "text-primary" : "text-destructive",
+            )}
+          >
+            <TrendingUp className="h-4.5 w-4.5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold leading-tight whitespace-nowrap text-foreground">Чистая позиция</p>
+            <p className="mt-0.5 text-[11px] font-medium whitespace-nowrap text-muted-foreground">{statusText}</p>
+            <p
+              className={cn(
+                "mt-1 text-xl font-semibold leading-tight tracking-tight whitespace-nowrap",
+                positive ? "text-primary" : "text-destructive",
+              )}
+            >
+              {formatRoundedMoneyText(value)}
+            </p>
+            <p className="mt-0.5 text-[11px] whitespace-nowrap text-muted-foreground">на конец периода</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LoanMetricCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: any;
+  label: string;
+  value: number;
+  tone: "success" | "accent" | "primary";
+}) {
+  const toneMap = {
+    primary: {
+      cardClassName: "border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background",
+      iconClassName: "text-primary",
+      valueClassName: "text-foreground",
+    },
+    accent: {
+      cardClassName: "border-destructive/20 bg-gradient-to-br from-destructive/5 via-card to-background",
+      iconClassName: "text-destructive",
+      valueClassName: "text-destructive",
+    },
+    success: {
+      cardClassName: "border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 via-card to-background",
+      iconClassName: "text-emerald-600",
+      valueClassName: "text-emerald-700",
+    },
+  } as const;
+
+  const toneConfig = toneMap[tone];
+  const valueText = formatRoundedMoneyText(value);
+
+  return (
+    <Card className={cn("min-h-[80px] h-full overflow-hidden border shadow-sm", toneConfig.cardClassName)}>
+      <CardContent className="px-2.5 py-2.5">
+        <div className="flex items-start gap-3">
+          <div className={cn("rounded-xl bg-background/90 p-1.5 shadow-sm", toneConfig.iconClassName)}>
+            <Icon className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold leading-tight whitespace-nowrap text-foreground sm:text-sm">{label}</p>
+            <p className={cn("mt-0.5 text-lg font-semibold leading-tight tracking-tight whitespace-nowrap", toneConfig.valueClassName)}>
+              {valueText}
+            </p>
+            <p className="mt-0.5 text-[11px] whitespace-nowrap text-muted-foreground">за период</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LoanCounterpartyTableCard({
+  periodLabel,
+  rows,
+  totals,
+}: {
+  periodLabel: string;
+  rows: LoanCounterpartyRow[];
+  totals: { opening: number; received: number; issued: number; closing: number };
+}) {
+  return (
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
+        <div>
+          <CardTitle className="text-sm font-serif">Позиция по займам</CardTitle>
+          <p className="mt-0.5 text-xs text-muted-foreground">По контрагентам за выбранный период.</p>
+        </div>
+        <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+          Период: {periodLabel}
+        </div>
+      </CardHeader>
+
+      <CardContent className="px-0 pt-0">
+        <div className="overflow-x-auto">
+          <Table className="min-w-[548px] table-fixed sm:min-w-max">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="sticky left-0 z-20 w-[148px] min-w-[148px] border-r border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground sm:text-sm">
+                  Контрагент
+                </TableHead>
+                <TableHead className="w-[104px] min-w-[104px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                  Остаток на начало
+                </TableHead>
+                <TableHead className="w-[88px] min-w-[88px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                  Получено
+                </TableHead>
+                <TableHead className="w-[88px] min-w-[88px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                  Выдано
+                </TableHead>
+                <TableHead className="w-[104px] min-w-[104px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                  Остаток на конец
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row) => (
+                <TableRow key={row.counterparty}>
+                  <TableCell className="sticky left-0 z-10 border-r border-border bg-muted px-3 py-2 text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "inline-block h-2 w-2 rounded-full",
+                          row.closing > 0
+                            ? "bg-emerald-500"
+                            : row.closing < 0
+                              ? "bg-destructive"
+                              : "bg-muted-foreground/40",
+                        )}
+                      />
+                      <span>{row.counterparty}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell
+                    className={cn(
+                      "px-3 py-2 text-right text-sm font-mono whitespace-nowrap",
+                      row.opening > 0 ? "text-emerald-700" : row.opening < 0 ? "text-destructive" : "text-foreground",
+                    )}
+                  >
+                    {formatRoundedMoneyText(row.opening)}
+                  </TableCell>
+                  <TableCell className="px-3 py-2 text-right text-sm font-mono whitespace-nowrap text-emerald-700">
+                    {formatRoundedMoneyText(row.received)}
+                  </TableCell>
+                  <TableCell className="px-3 py-2 text-right text-sm font-mono whitespace-nowrap text-destructive">
+                    {formatRoundedMoneyText(row.issued)}
+                  </TableCell>
+                  <TableCell
+                    className={cn(
+                      "px-3 py-2 text-right text-sm font-mono font-semibold whitespace-nowrap",
+                      row.closing > 0 ? "text-emerald-700" : row.closing < 0 ? "text-destructive" : "text-foreground",
+                    )}
+                  >
+                    {formatRoundedMoneyText(row.closing)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow className="bg-muted/20 hover:bg-muted/30">
+                <TableCell className="sticky left-0 z-20 border-r border-border bg-muted px-3 py-2 text-sm font-bold">
+                  Итого
+                </TableCell>
+                <TableCell
+                  className={cn(
+                    "px-3 py-2 text-right text-sm font-mono font-bold whitespace-nowrap",
+                    totals.opening > 0 ? "text-emerald-700" : totals.opening < 0 ? "text-destructive" : "text-foreground",
+                  )}
+                >
+                  {formatRoundedMoneyText(totals.opening)}
+                </TableCell>
+                <TableCell className="px-3 py-2 text-right text-sm font-mono font-bold whitespace-nowrap text-emerald-700">
+                  {formatRoundedMoneyText(totals.received)}
+                </TableCell>
+                <TableCell className="px-3 py-2 text-right text-sm font-mono font-bold whitespace-nowrap text-destructive">
+                  {formatRoundedMoneyText(totals.issued)}
+                </TableCell>
+                <TableCell
+                  className={cn(
+                    "px-3 py-2 text-right text-sm font-mono font-bold whitespace-nowrap",
+                    totals.closing > 0 ? "text-emerald-700" : totals.closing < 0 ? "text-destructive" : "text-foreground",
+                  )}
+                >
+                  {formatRoundedMoneyText(totals.closing)}
                 </TableCell>
               </TableRow>
             </TableFooter>
           </Table>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LoanPositionChartCard({ data }: { data: LoanTimelineDatum[] }) {
+  const hasData = data.some((item) => item.position !== 0);
+
+  return (
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="px-4 py-3">
+        <CardTitle className="text-sm font-serif">Чистая позиция за 6 месяцев</CardTitle>
+        <p className="mt-0.5 text-xs text-muted-foreground">На конец каждого месяца до выбранного периода.</p>
+      </CardHeader>
+
+      <CardContent className="px-3 pb-3 pt-0 sm:px-4 sm:pb-4">
+        {hasData ? (
+          <ChartContainer config={loanPositionChartConfig} className="h-[220px] w-full sm:h-[280px]">
+            <LineChart data={data} margin={{ top: 8, right: 8, bottom: 4, left: 8 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 10 }}
+                tickMargin={6}
+                interval={0}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                width={70}
+                tick={{ fontSize: 10 }}
+                tickFormatter={(value) => formatCurrency(roundMoneyDisplayAmount(Number(value)))}
+              />
+              <ReferenceLine y={0} stroke="hsl(var(--border))" />
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    labelFormatter={(_, payload) =>
+                      payload?.[0] && "payload" in payload[0]
+                        ? (payload[0] as { payload?: { fullLabel?: string } }).payload?.fullLabel ?? ""
+                        : ""
+                    }
+                    formatter={(value) => [formatRoundedMoneyText(Number(value)), "Чистая позиция"]}
+                  />
+                }
+              />
+              <Area type="monotone" dataKey="position" fill="var(--color-position)" fillOpacity={0.12} stroke="none" />
+              <Line
+                type="monotone"
+                dataKey="position"
+                stroke="var(--color-position)"
+                strokeWidth={2.5}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ChartContainer>
+        ) : (
+          <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+            Нет данных за выбранный период.
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -1197,7 +2474,7 @@ function StructureCard({
                     ) : null}
                     <div className="min-w-[112px] text-right text-sm">
                       <span className={cn("font-medium", row.value < 0 && "text-destructive")}>
-                        {formatCurrency(row.value)} ₽
+                        {formatCurrency(roundMoneyDisplayAmount(row.value))} ₽
                       </span>
                       {showShare ? <span className="ml-2 text-xs text-muted-foreground">{Math.round(row.share)}%</span> : null}
                     </div>
@@ -1210,7 +2487,7 @@ function StructureCard({
             {typeof footerValue === "number" && footerLabel ? (
               <div className="mt-2 flex items-center justify-between border-t pt-2 text-sm font-semibold">
                 <span>{footerLabel}</span>
-                <span>{formatCurrency(footerValue)} ₽</span>
+                <span>{formatCurrency(roundMoneyDisplayAmount(footerValue))} ₽</span>
               </div>
             ) : null}
           </>
@@ -1465,7 +2742,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             periodDate,
             periodKey: makePeriodKey(periodDate),
             balanceType: row["БалансТип"] || "",
-            article: row["СтатьяKey"] || "Без статьи",
+            article: normalizeBalanceArticle(row["СтатьяKey"] || "Без статьи"),
             amount: parseTextNumeric(row["Сумма"]),
           };
         })
@@ -1538,7 +2815,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
   }, [activeRestaurants, balanceRows, balanceSnapshotDate]);
 
   const comparisonPeriodKeys = useMemo(
-    () => getPreviousPeriodKeys(selectedPeriods, periodOptions),
+    () => getPreviousYearPeriodKeys(selectedPeriods, periodOptions),
     [periodOptions, selectedPeriods],
   );
 
@@ -1554,20 +2831,28 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
   const previousMetrics = useMemo(() => summarizeFinancialMetrics(previousFlowRows), [previousFlowRows]);
   const currentRentability = useMemo(() => calculateRentability(currentMetrics), [currentMetrics]);
   const previousRentability = useMemo(() => calculateRentability(previousMetrics), [previousMetrics]);
+  const hasComparisonData = comparisonPeriodKeys !== null && previousFlowRows.length > 0;
 
   const comparisonText = useMemo(() => {
     if (selectedPeriods.length === 0) return "выберите период";
-    if (!comparisonPeriodKeys) return "для непрерывного диапазона";
-    return getComparisonLabel(comparisonPeriodKeys.length);
-  }, [comparisonPeriodKeys, selectedPeriods.length]);
+    return getYearComparisonLabel(selectedPeriods, periodOptions);
+  }, [periodOptions, selectedPeriods]);
 
-  const assetRows = useMemo(
+  const assetRowsRaw = useMemo(
     () => buildStructureRows(accumulatedBalanceRows.filter((row) => row.balanceType === "Актив")),
     [accumulatedBalanceRows],
   );
-  const liabilityRows = useMemo(
+  const liabilityRowsRaw = useMemo(
     () => buildStructureRows(accumulatedBalanceRows.filter((row) => row.balanceType === "Обязательство")),
     [accumulatedBalanceRows],
+  );
+  const assetRows = useMemo(
+    () => assetRowsRaw.filter((row) => row.magnitude >= 50),
+    [assetRowsRaw],
+  );
+  const liabilityRows = useMemo(
+    () => liabilityRowsRaw.filter((row) => row.magnitude >= 50),
+    [liabilityRowsRaw],
   );
   const expenseStructureRows = useMemo(
     () =>
@@ -1585,12 +2870,12 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     [expenseStructureRows],
   );
   const assetStructureTotal = useMemo(
-    () => assetRows.reduce((sum, row) => sum + row.value, 0),
-    [assetRows],
+    () => assetRowsRaw.reduce((sum, row) => sum + row.value, 0),
+    [assetRowsRaw],
   );
   const liabilityStructureTotal = useMemo(
-    () => liabilityRows.reduce((sum, row) => sum + row.value, 0),
-    [liabilityRows],
+    () => liabilityRowsRaw.reduce((sum, row) => sum + row.value, 0),
+    [liabilityRowsRaw],
   );
 
   const kpiCards: Array<{
@@ -1604,34 +2889,40 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     {
       label: "Доход",
       kind: "income",
-      valueText: `${formatCurrency(currentMetrics.income)} ₽`,
-      changePct: getChangePercent(currentMetrics.income, previousMetrics.income),
+      valueText: `${formatCurrency(roundMoneyDisplayAmount(currentMetrics.income))} ₽`,
+      changePct: hasComparisonData ? getChangePercent(currentMetrics.income, previousMetrics.income) : null,
+      changeText: hasComparisonData ? undefined : "нет данных",
       tone: "primary",
     },
     {
       label: "Расход",
       kind: "expense",
-      valueText: `${formatCurrency(currentMetrics.expense)} ₽`,
-      changePct: getChangePercent(currentMetrics.expense, previousMetrics.expense),
+      valueText: `${formatCurrency(roundMoneyDisplayAmount(currentMetrics.expense))} ₽`,
+      changePct: hasComparisonData ? getChangePercent(currentMetrics.expense, previousMetrics.expense) : null,
+      changeText: hasComparisonData ? undefined : "нет данных",
       tone: "accent",
     },
     {
       label: "Прибыль",
       kind: "profit",
-      valueText: `${formatCurrency(currentMetrics.profit)} ₽`,
-      changePct: getChangePercent(currentMetrics.profit, previousMetrics.profit),
+      valueText: `${formatCurrency(roundMoneyDisplayAmount(currentMetrics.profit))} ₽`,
+      changePct: hasComparisonData ? getChangePercent(currentMetrics.profit, previousMetrics.profit) : null,
+      changeText: hasComparisonData ? undefined : "нет данных",
       tone: "secondary",
     },
     {
       label: "Рентабельность",
       kind: "profit",
-      valueText: `${currentRentability.toFixed(1)}%`,
-      changePct: previousMetrics.income === 0 ? null : currentRentability - previousRentability,
+      valueText: `${Math.round(currentRentability)}%`,
+      changePct:
+        hasComparisonData && previousMetrics.income !== 0 ? currentRentability - previousRentability : null,
       tone: "muted",
       changeText:
-        previousMetrics.income === 0
-          ? undefined
-          : `${currentRentability - previousRentability > 0 ? "+" : ""}${(currentRentability - previousRentability).toFixed(1)} п.п.`,
+        !hasComparisonData
+          ? "нет данных"
+          : previousMetrics.income === 0
+            ? "нет данных"
+          : `${currentRentability - previousRentability > 0 ? "+" : ""}${Math.round(currentRentability - previousRentability)} п.п.`,
     },
   ];
 
@@ -1671,7 +2962,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
               valueText={metric.valueText}
               kind={metric.kind}
               changePct={metric.changePct}
-              comparisonText={metric.changePct === null ? "нет базы сравнения" : comparisonText}
+              comparisonText={comparisonText}
               changeText={metric.changeText}
               tone={metric.tone}
             />
@@ -1716,6 +3007,628 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             showBars
             showShare
           />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
+  const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
+  const {
+    accessibleRestaurantNames,
+    accessibleRestaurantNameSet,
+    preferredRestaurantSelection,
+    fixedRestaurantNames,
+  } = useAnalyticsAccess(scope);
+
+  const { data: flows = [], isLoading: flowsLoading } = useQuery({
+    queryKey: ["finance_flows"],
+    queryFn: async () => {
+      return fetchAllRows<FinanceFlow>("finance_flows");
+    },
+  });
+
+  const { data: balances = [], isLoading: balancesLoading } = useQuery({
+    queryKey: ["balance_fact"],
+    queryFn: async () => {
+      return fetchAllRows<BalanceFact>("balance_fact");
+    },
+  });
+  const { data: owners = [], isLoading: ownersLoading } = useQuery({
+    queryKey: ["owners_fact"],
+    queryFn: async () => {
+      return fetchAllRows<OwnersFact>("owners_fact");
+    },
+  });
+
+  const flowRows = useMemo<FinancialFlowRow[]>(
+    () =>
+      flows
+        .map((row) => {
+          const periodDate = parsePeriodDate(row["Период"]);
+          if (!periodDate) return null;
+
+          return {
+            id: row.id,
+            restaurant: row["Ресторан"] || "Без ресторана",
+            periodDate,
+            periodKey: makePeriodKey(periodDate),
+            flowType: row["Поток"] || "",
+            finType: row["ФинТип"] || "",
+            article: row["СтатьяKey"] || "Без статьи",
+            amount: parseTextNumeric(row["Сумма"]),
+            isOperationalExpense: row["IsOpExp"] === "1",
+          };
+        })
+        .filter((row): row is FinancialFlowRow => row !== null)
+        .filter((row) => accessibleRestaurantNameSet.has(row.restaurant)),
+    [accessibleRestaurantNameSet, flows],
+  );
+
+  const ownerRows = useMemo(
+    () =>
+      owners
+        .map((row) => {
+          const periodDate = parsePeriodDate(row["Период"]);
+          const restaurant = row["Ресторан"]?.trim() ?? "";
+          const owner = row["Псевдо"]?.trim() ?? "";
+          const article = row["Группа"]?.trim() ?? "";
+
+          if (!periodDate || !restaurant || !owner || !article) {
+            return null;
+          }
+
+          return {
+            id: row.id,
+            restaurant,
+            owner,
+            article,
+            periodDate,
+            periodKey: makePeriodKey(periodDate),
+            amount: parseTextNumeric(row["Движение"]),
+          };
+        })
+        .filter(
+          (
+            row,
+          ): row is {
+            id: string;
+            restaurant: string;
+            owner: string;
+            article: string;
+            periodDate: Date;
+            periodKey: string;
+            amount: number;
+          } => row !== null && accessibleRestaurantNameSet.has(row.restaurant),
+        ),
+    [accessibleRestaurantNameSet, owners],
+  );
+
+  const balanceRows = useMemo<BalanceFactRow[]>(
+    () =>
+      balances
+        .map((row) => {
+          const periodDate = parsePeriodDate(row["Период"]);
+          if (!periodDate) return null;
+
+          return {
+            id: row.id,
+            restaurant: row["Ресторан"] || "Без ресторана",
+            periodDate,
+            periodKey: makePeriodKey(periodDate),
+            balanceType: row["БалансТип"] || "",
+            article: normalizeBalanceArticle(row["СтатьяKey"] || "Без статьи"),
+            amount: parseTextNumeric(row["Сумма"]),
+          };
+        })
+        .filter((row): row is BalanceFactRow => row !== null)
+        .filter((row) => accessibleRestaurantNameSet.has(row.restaurant)),
+    [accessibleRestaurantNameSet, balances],
+  );
+
+  const restaurantOptions = useMemo(
+    () =>
+      getUniqueValues([
+        ...accessibleRestaurantNames,
+        ...flowRows.map((row) => row.restaurant),
+        ...balanceRows.map((row) => row.restaurant),
+      ]).sort((a, b) => a.localeCompare(b, "ru")),
+    [accessibleRestaurantNames, balanceRows, flowRows],
+  );
+
+  const periodOptions = useMemo(
+    () => buildPeriodOptions([...flowRows.map((row) => row.periodDate), ...balanceRows.map((row) => row.periodDate)]),
+    [balanceRows, flowRows],
+  );
+
+  useInitializeSingleSelection({
+    selection: selectedRestaurants,
+    options: restaurantOptions,
+    onChange: setSelectedRestaurants,
+    preferredOption: preferredRestaurantSelection[0] ?? null,
+  });
+
+  const { selectedPeriods, setSelectedPeriods, activePeriods, periodRefs } = usePeriodSelection(periodOptions);
+  const activeRestaurants = useMemo(
+    () => resolveScopedSelection(selectedRestaurants, restaurantOptions, fixedRestaurantNames),
+    [fixedRestaurantNames, restaurantOptions, selectedRestaurants],
+  );
+
+  const filteredFlowRows = useMemo(
+    () =>
+      flowRows.filter(
+        (row) => activeRestaurants.includes(row.restaurant) && activePeriods.includes(row.periodKey),
+      ),
+    [activePeriods, activeRestaurants, flowRows],
+  );
+
+  const selectedRangeOptions = useMemo(
+    () =>
+      periodOptions
+        .filter((option) => activePeriods.includes(option.key))
+        .sort((a, b) => a.date.getTime() - b.date.getTime()),
+    [activePeriods, periodOptions],
+  );
+
+  const rangeLabel = useMemo(() => {
+    if (selectedRangeOptions.length === 0) return "—";
+    if (selectedRangeOptions.length === 1) return selectedRangeOptions[0].label;
+    return `${selectedRangeOptions[0].label} - ${selectedRangeOptions[selectedRangeOptions.length - 1].label}`;
+  }, [selectedRangeOptions]);
+
+  const rangeStartDate = selectedRangeOptions[0]?.date ?? null;
+  const rangeEndDate = selectedRangeOptions[selectedRangeOptions.length - 1]?.date ?? null;
+  const endingPeriodLabel = selectedRangeOptions[selectedRangeOptions.length - 1]?.label ?? rangeLabel;
+
+  const openingBalanceRows = useMemo(() => {
+    if (!rangeStartDate) return [];
+
+    return balanceRows.filter(
+      (row) => activeRestaurants.includes(row.restaurant) && row.periodDate.getTime() < rangeStartDate.getTime(),
+    );
+  }, [activeRestaurants, balanceRows, rangeStartDate]);
+
+  const closingBalanceRows = useMemo(() => {
+    if (!rangeEndDate) return [];
+
+    const nextMonthStart = new Date(rangeEndDate.getFullYear(), rangeEndDate.getMonth() + 1, 1);
+    return balanceRows.filter(
+      (row) =>
+        activeRestaurants.includes(row.restaurant) &&
+        row.periodDate.getTime() < nextMonthStart.getTime(),
+    );
+  }, [activeRestaurants, balanceRows, rangeEndDate]);
+
+  const openingCashRows = useMemo(
+    () => buildCashBreakdownRows(openingBalanceRows, CASH_ACCOUNT_GROUPS),
+    [openingBalanceRows],
+  );
+  const closingCashRows = useMemo(
+    () => buildCashBreakdownRows(closingBalanceRows, CASH_ACCOUNT_GROUPS),
+    [closingBalanceRows],
+  );
+  const requiredPaymentRows = useMemo(
+    () =>
+      buildCashBreakdownRows(
+        closingBalanceRows.filter((row) => row.balanceType === "Обязательство"),
+        CASH_REQUIRED_PAYMENT_GROUPS,
+      ),
+    [closingBalanceRows],
+  );
+
+  const openingCashTotal = useMemo(
+    () => openingCashRows.reduce((sum, row) => sum + row.amount, 0),
+    [openingCashRows],
+  );
+  const closingCashTotal = useMemo(
+    () => closingCashRows.reduce((sum, row) => sum + row.amount, 0),
+    [closingCashRows],
+  );
+  const requiredPaymentTotal = useMemo(
+    () => requiredPaymentRows.reduce((sum, row) => sum + row.amount, 0),
+    [requiredPaymentRows],
+  );
+  const remainingAfterPayments = closingCashTotal - requiredPaymentTotal;
+  const ownerNames = useMemo(() => OWNER_OPTIONS.map((owner) => normalizeLookupText(owner)), []);
+  const ownerWithdrawalTotal = useMemo(() => {
+    if (!rangeEndDate) return 0;
+
+    const nextMonthStart = new Date(rangeEndDate.getFullYear(), rangeEndDate.getMonth() + 1, 1);
+
+    return ownerRows
+      .filter(
+        (row) =>
+          activeRestaurants.includes(row.restaurant) &&
+          row.periodDate.getTime() < nextMonthStart.getTime() &&
+          matchesArticleAlias(row.article, CASH_OWNER_WITHDRAWAL_GROUP_ALIASES) &&
+          ownerNames.includes(normalizeLookupText(row.owner)),
+      )
+      .reduce((sum, row) => sum + row.amount, 0);
+  }, [activeRestaurants, ownerNames, ownerRows, rangeEndDate]);
+  const closingCashRowsWithOwnerNote = useMemo(
+    () =>
+      closingCashRows.map((row) =>
+        row.label === "Снятие с р/с"
+          ? {
+              ...row,
+              noteLabel: "в т.ч перевели собственникам",
+              noteAmount: ownerWithdrawalTotal,
+            }
+          : row,
+      ),
+    [closingCashRows, ownerWithdrawalTotal],
+  );
+  const visibleClosingCashRows = useMemo(
+    () => closingCashRowsWithOwnerNote.filter((row) => Math.abs(row.amount) >= 50),
+    [closingCashRowsWithOwnerNote],
+  );
+  const closingCashTotalWithoutOwners = closingCashTotal - ownerWithdrawalTotal;
+
+  const cashMovementBreakdown = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    let dividends = 0;
+    let otherInflows = 0;
+    let otherOutflows = 0;
+
+    filteredFlowRows.forEach((row) => {
+      if (matchesArticleAlias(row.article, CASH_DIVIDEND_ARTICLE_ALIASES)) {
+        dividends += row.amount;
+        return;
+      }
+
+      if (row.finType === "Операционная" && row.flowType === "Поступления") {
+        income += row.amount;
+        return;
+      }
+
+      if (row.finType === "Операционная" && row.flowType === "Платежи") {
+        expense += Math.abs(row.amount);
+        return;
+      }
+
+      if (matchesArticleAlias(row.article, CASH_EXPLICIT_OTHER_INFLOW_ALIASES)) {
+        otherInflows += row.amount;
+        return;
+      }
+
+      if (matchesArticleAlias(row.article, CASH_EXPLICIT_OTHER_OUTFLOW_ALIASES)) {
+        otherOutflows += row.amount;
+        return;
+      }
+
+      if (row.amount > 0) {
+        otherInflows += row.amount;
+      } else if (row.amount < 0) {
+        otherOutflows += row.amount;
+      }
+    });
+
+    const classifiedDelta = income - expense + dividends + otherInflows + otherOutflows;
+    const targetDelta = closingCashTotal - openingCashTotal;
+    const residualDelta = targetDelta - classifiedDelta;
+
+    if (!isNearlyZero(residualDelta)) {
+      if (residualDelta > 0) {
+        otherInflows += residualDelta;
+      } else {
+        otherOutflows += residualDelta;
+      }
+    }
+
+    return {
+      income,
+      expense,
+      dividends,
+      otherInflows,
+      otherOutflows,
+    };
+  }, [closingCashTotal, filteredFlowRows, openingCashTotal]);
+
+  const waterfallData = useMemo(
+    () =>
+      buildCashWaterfallData({
+        openingTotal: openingCashTotal,
+        closingTotal: closingCashTotal,
+        income: cashMovementBreakdown.income,
+        expense: cashMovementBreakdown.expense,
+        dividends: cashMovementBreakdown.dividends,
+        otherInflows: cashMovementBreakdown.otherInflows,
+        otherOutflows: cashMovementBreakdown.otherOutflows,
+      }),
+    [cashMovementBreakdown, closingCashTotal, openingCashTotal],
+  );
+
+  const isLoading = flowsLoading || balancesLoading || ownersLoading;
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center text-sm text-muted-foreground">Загрузка...</CardContent>
+      </Card>
+    );
+  }
+
+  if (flowRows.length === 0 && balanceRows.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center text-sm text-muted-foreground">
+          Нет данных для построения отчета по движению денег.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
+        <CardContent className="space-y-3 px-3 py-3">
+          <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,1fr)]">
+            <div className="flex flex-wrap items-start gap-2">
+              {!scope?.hideRestaurantFilter && (
+                <FilterChipGroup
+                  label="Рестораны"
+                  options={restaurantOptions}
+                  selection={selectedRestaurants}
+                  onChange={setSelectedRestaurants}
+                  matchPeriodHeight
+                  allowSelectAll
+                  compact
+                />
+              )}
+              <PeriodSelector
+                selection={selectedPeriods}
+                onChange={setSelectedPeriods}
+                options={periodOptions}
+                refsMap={periodRefs}
+                compact
+                allowSelectAll={false}
+              />
+            </div>
+
+            <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-3">
+              <TransferKpiCard
+                icon={ArrowLeftRight}
+                label="Денег всего"
+                value={`${formatCurrency(roundMoneyDisplayAmount(closingCashTotal))} ₽`}
+                subtitle={`на конец ${endingPeriodLabel}`}
+                tone="primary"
+              />
+              <TransferKpiCard
+                icon={ArrowDownRight}
+                label="Нужно заплатить"
+                value={`${formatCurrency(roundMoneyDisplayAmount(requiredPaymentTotal))} ₽`}
+                subtitle="обязательные выплаты"
+                tone={requiredPaymentTotal > 0 ? "accent" : "success"}
+              />
+              <TransferKpiCard
+                icon={ArrowUpRight}
+                label="Остаток после выплат"
+                value={`${formatCurrency(roundMoneyDisplayAmount(remainingAfterPayments))} ₽`}
+                tone={remainingAfterPayments < 0 ? "accent" : "success"}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
+        <div className="grid gap-3">
+          <CashBreakdownCard
+            title={`Денег всего на конец ${endingPeriodLabel}`}
+            rows={visibleClosingCashRows}
+            total={closingCashTotal}
+            footerNoteLabel="без учета собственников"
+            footerNoteAmount={closingCashTotalWithoutOwners}
+          />
+          <CashBreakdownCard
+            title="Обязательные выплаты"
+            rows={requiredPaymentRows}
+            total={requiredPaymentTotal}
+          />
+        </div>
+
+        <CashWaterfallChartCard data={waterfallData} periodLabel={rangeLabel} />
+      </div>
+    </div>
+  );
+}
+
+function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
+  const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
+  const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | null>(null);
+  const {
+    accessibleRestaurantNames,
+    accessibleRestaurantNameSet,
+    preferredRestaurantSelection,
+    fixedRestaurantNames,
+  } = useAnalyticsAccess(scope);
+
+  const { data: owners = [], isLoading } = useQuery({
+    queryKey: ["owners_fact"],
+    queryFn: async () => {
+      return fetchAllRows<OwnersFact>("owners_fact");
+    },
+  });
+
+  const loanRows = useMemo<LoanFactRow[]>(
+    () =>
+      owners
+        .map((row) => {
+          const periodDate = parsePeriodDate(row["Период"]);
+          const restaurant = row["Ресторан"]?.trim() ?? "";
+          const baseCounterparty = row["Псевдо"]?.trim() ?? "Без контрагента";
+          const article = row["Группа"] || "";
+
+          if (!periodDate || !restaurant) {
+            return null;
+          }
+
+          const rawMovement = parseTextNumeric(row["Движение"]);
+          let delta: number | null = null;
+          let counterparty = baseCounterparty;
+
+          if (isLoanReceivedArticle(article)) {
+            delta = rawMovement;
+          } else if (isLoanIssuedArticle(article)) {
+            delta = rawMovement * -1;
+          } else if (isGenericLoanArticle(article)) {
+            delta = rawMovement;
+          } else if (isRentLoanArticle(article)) {
+            delta = rawMovement;
+            counterparty = `${baseCounterparty} ар`;
+          }
+
+          if (delta === null) {
+            return null;
+          }
+
+          return {
+            id: row.id,
+            restaurant,
+            counterparty,
+            periodDate,
+            periodKey: makePeriodKey(periodDate),
+            delta,
+          };
+        })
+        .filter((row): row is LoanFactRow => row !== null)
+        .filter((row) => accessibleRestaurantNameSet.has(row.restaurant)),
+    [accessibleRestaurantNameSet, owners],
+  );
+
+  const restaurantOptions = useMemo(
+    () => getUniqueValues([...accessibleRestaurantNames, ...loanRows.map((row) => row.restaurant)]).sort((a, b) => a.localeCompare(b, "ru")),
+    [accessibleRestaurantNames, loanRows],
+  );
+  const preferredLoanRestaurant = useMemo(
+    () =>
+      resolvePreferredOption(
+        restaurantOptions.filter((option) => loanRows.some((row) => row.restaurant === option)),
+        preferredRestaurantSelection[0] ?? null,
+      ),
+    [loanRows, preferredRestaurantSelection, restaurantOptions],
+  );
+
+  useInitializeSingleSelection({
+    selection: selectedRestaurants,
+    options: restaurantOptions,
+    onChange: setSelectedRestaurants,
+    preferredOption: preferredLoanRestaurant,
+  });
+
+  const activeRestaurants = useMemo(
+    () => resolveScopedSelection(selectedRestaurants, restaurantOptions, fixedRestaurantNames),
+    [fixedRestaurantNames, restaurantOptions, selectedRestaurants],
+  );
+  const restaurantScopedRows = useMemo(
+    () => loanRows.filter((row) => activeRestaurants.includes(row.restaurant)),
+    [activeRestaurants, loanRows],
+  );
+  const periodOptions = useMemo(() => buildPeriodOptions(restaurantScopedRows.map((row) => row.periodDate)), [restaurantScopedRows]);
+  const periodKeys = useMemo(() => periodOptions.map((option) => option.key), [periodOptions]);
+  const defaultPeriodKey = useMemo(() => {
+    const now = new Date();
+    const previousMonthKey = makePeriodKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    return periodKeys.includes(previousMonthKey) ? previousMonthKey : periodKeys[0] ?? null;
+  }, [periodKeys]);
+
+  useEffect(() => {
+    if (periodKeys.length === 0) {
+      setSelectedPeriodKey(null);
+      return;
+    }
+
+    setSelectedPeriodKey((current) => (current && periodKeys.includes(current) ? current : defaultPeriodKey));
+  }, [defaultPeriodKey, periodKeys]);
+
+  const selectedPeriodOption = useMemo(
+    () => periodOptions.find((option) => option.key === selectedPeriodKey) ?? null,
+    [periodOptions, selectedPeriodKey],
+  );
+  const loanSummary = useMemo(
+    () => buildLoanCounterpartyRows(restaurantScopedRows, selectedPeriodOption?.date ?? null),
+    [restaurantScopedRows, selectedPeriodOption],
+  );
+  const receivedTotal = loanSummary.totals.received;
+  const issuedTotal = loanSummary.totals.issued;
+  const periodChange = receivedTotal - issuedTotal;
+  const closingPosition = loanSummary.totals.closing;
+  const timelineData = useMemo(
+    () => buildLoanPositionTimelineData(restaurantScopedRows, selectedPeriodOption?.date ?? null),
+    [restaurantScopedRows, selectedPeriodOption],
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="grid items-start gap-2 xl:grid-cols-[minmax(420px,0.82fr)_minmax(0,1.18fr)]">
+        <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
+          <CardContent className="grid items-start gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_150px]">
+            {!scope?.hideRestaurantFilter && (
+              <FilterChipGroup
+                label="Рестораны"
+                options={restaurantOptions}
+                selection={selectedRestaurants}
+                onChange={setSelectedRestaurants}
+                matchPeriodHeight
+                allowSelectAll
+                compact
+              />
+            )}
+            <div className="min-w-0">
+              <TransferPeriodCard
+                selectedPeriodKey={selectedPeriodKey}
+                options={periodOptions}
+                onChange={(next) => setSelectedPeriodKey(next[0] ?? null)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-[minmax(0,1.08fr)_repeat(3,minmax(0,1fr))]">
+          <LoanPrimaryKpiCard value={closingPosition} />
+          <LoanMetricCard icon={ArrowDown} label="Получено" value={receivedTotal} tone="success" />
+          <LoanMetricCard icon={ArrowUp} label="Выдано" value={issuedTotal} tone="accent" />
+          <LoanMetricCard
+            icon={RefreshCcw}
+            label="Изменение"
+            value={periodChange}
+            tone={periodChange < 0 ? "accent" : periodChange > 0 ? "success" : "primary"}
+          />
+        </div>
+      </div>
+
+      {isLoading ? (
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">Загрузка...</CardContent>
+        </Card>
+      ) : loanRows.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+            Нет данных по займам. Добавьте строки в `owners_fact` с группами `Займы полученные` и `Займы выданные`.
+          </CardContent>
+        </Card>
+      ) : activeRestaurants.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            Выберите ресторан для просмотра займов.
+          </CardContent>
+        </Card>
+      ) : !selectedPeriodOption ? (
+        <Card>
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            Для выбранного ресторана нет доступных периодов по займам.
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+          <LoanCounterpartyTableCard
+            periodLabel={selectedPeriodOption.label}
+            rows={loanSummary.rows}
+            totals={loanSummary.totals}
+          />
+          <LoanPositionChartCard data={timelineData} />
         </div>
       )}
     </div>
@@ -1843,6 +3756,18 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     () => buildTransferMatrix(accumulatedRows, restaurants),
     [accumulatedRows, restaurants],
   );
+  const monthlyTimelineData = useMemo(
+    () => buildTransferTimelineData(transferRows, selectedPeriodOption?.date ?? null, "monthly"),
+    [selectedPeriodOption, transferRows],
+  );
+  const accumulatedTimelineData = useMemo(
+    () => buildTransferTimelineData(transferRows, selectedPeriodOption?.date ?? null, "cumulative"),
+    [selectedPeriodOption, transferRows],
+  );
+  const monthlyGrandTotalDisplay = useMemo(
+    () => `${formatCurrency(roundTransferDisplayAmount(monthlySummary.grandTotal))} ₽`,
+    [monthlySummary.grandTotal],
+  );
 
   if (isLoading) {
     return (
@@ -1867,51 +3792,19 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     <div className="space-y-3">
       <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
         <CardContent className="space-y-3 px-4 py-4">
-          <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)]">
-            <FilterChipGroup
-              label="Период"
-              options={periodKeys}
-              selection={selectedPeriods}
+          <div className="grid gap-2 xl:grid-cols-[220px_minmax(0,1fr)]">
+            <TransferPeriodCard
+              selectedPeriodKey={selectedPeriodKey}
+              options={periodOptions}
               onChange={setSelectedPeriods}
-              renderOption={(periodKey) =>
-                periodOptions.find((option) => option.key === periodKey)?.label ?? periodKey
-              }
-              singleSelect
-              compact
-              matchPeriodHeight
             />
-
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              <TransferKpiCard
-                icon={ArrowLeftRight}
-                label="Внутригрупповые переводы"
-                value={`${formatCurrency(Math.round(monthlySummary.grandTotal))} ₽`}
-                subtitle={selectedPeriodOption ? `за ${selectedPeriodOption.label}` : undefined}
-                tone="primary"
-              />
-              <TransferKpiCard
-                icon={ArrowDownLeft}
-                label="Основной получатель"
-                value={monthlySummary.topRecipient.restaurant ?? "Нет данных"}
-                subtitle={
-                  monthlySummary.topRecipient.restaurant
-                    ? `получено ${formatCurrency(Math.round(monthlySummary.topRecipient.amount))} ₽`
-                    : "в выбранном месяце нет переводов"
-                }
-                tone="accent"
-              />
-              <TransferKpiCard
-                icon={ArrowUpRight}
-                label="Основной донор"
-                value={monthlySummary.topDonor.restaurant ?? "Нет данных"}
-                subtitle={
-                  monthlySummary.topDonor.restaurant
-                    ? `выдано ${formatCurrency(Math.round(monthlySummary.topDonor.amount))} ₽`
-                    : "в выбранном месяце нет переводов"
-                }
-                tone="success"
-              />
-            </div>
+            <TransferKpiCard
+              icon={ArrowLeftRight}
+              label="Чистое внутригрупповое движение"
+              value={monthlyGrandTotalDisplay}
+              subtitle={selectedPeriodOption ? `за ${selectedPeriodOption.label}` : undefined}
+              tone="primary"
+            />
           </div>
 
           {usingLegacyTransferGroup ? (
@@ -1923,19 +3816,33 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         </CardContent>
       </Card>
 
-      <TransferMatrixCard
-        title="Внутригрупповое финансирование"
-        periodLabel={selectedPeriodOption?.label ?? "—"}
-        summary={monthlySummary}
-        description="Кто кого финансировал за выбранный месяц."
-      />
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_340px] 2xl:grid-cols-[minmax(0,1.35fr)_380px]">
+        <TransferMatrixCard
+          title="Внутригрупповое финансирование"
+          periodLabel={selectedPeriodOption?.label ?? "—"}
+          summary={monthlySummary}
+          description="Кто кого финансировал за выбранный месяц."
+        />
+        <TransferTimelineChartCard
+          title="Динамика внутригруппового движения"
+          data={monthlyTimelineData}
+          description="Последние 6 месяцев до выбранного периода."
+        />
+      </div>
 
-      <TransferMatrixCard
-        title="Накопленный итог внутригруппового финансирования"
-        periodLabel={selectedPeriodOption ? `на конец ${selectedPeriodOption.label}` : "—"}
-        summary={accumulatedSummary}
-        description="Сколько всего вложено в рестораны на выбранный момент."
-      />
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_340px] 2xl:grid-cols-[minmax(0,1.35fr)_380px]">
+        <TransferMatrixCard
+          title="Накопленный итог внутригруппового финансирования"
+          periodLabel={selectedPeriodOption ? `на конец ${selectedPeriodOption.label}` : "—"}
+          summary={accumulatedSummary}
+          description="Сколько всего вложено в рестораны на выбранный момент."
+        />
+        <TransferTimelineChartCard
+          title="Накопленная динамика"
+          data={accumulatedTimelineData}
+          description="Нарастающий итог на конец каждого месяца."
+        />
+      </div>
     </div>
   );
 }
@@ -2115,6 +4022,22 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       ),
     [reportRows],
   );
+  const chartAnchorDate = useMemo(() => {
+    const selectedOptions = periodOptions.filter((option) => selectedPeriods.includes(option.key));
+
+    if (selectedOptions.length === 0) {
+      return periodOptions[0]?.date ?? null;
+    }
+
+    return selectedOptions.reduce(
+      (latest, option) => (option.date.getTime() > latest.getTime() ? option.date : latest),
+      selectedOptions[0].date,
+    );
+  }, [periodOptions, selectedPeriods]);
+  const ownersTimelineData = useMemo(
+    () => buildOwnersTimelineData(scopeRows, chartAnchorDate),
+    [chartAnchorDate, scopeRows],
+  );
 
   return (
     <div className="space-y-3">
@@ -2150,25 +4073,26 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
               onChange={setSelectedPeriods}
               options={periodOptions}
               refsMap={periodRefs}
+              allowSelectAll={false}
             />
           </div>
 
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-            <div className="kpi-card kpi-card-primary px-3 py-2">
+            <div className="kpi-card kpi-card-primary px-2.5 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на начало</p>
-              <p className="mt-1 text-lg font-semibold leading-none text-primary">{formatOwnersWholeCurrency(totals.opening)} ₽</p>
+              <p className="mt-1 text-base font-semibold leading-none text-primary">{formatOwnersWholeCurrency(totals.opening)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-sky px-3 py-2">
+            <div className="kpi-card kpi-card-sky px-2.5 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Начислено</p>
-              <p className="mt-1 text-lg font-semibold leading-none text-sky">{formatOwnersWholeCurrency(totals.accrued)} ₽</p>
+              <p className="mt-1 text-base font-semibold leading-none text-sky">{formatOwnersWholeCurrency(totals.accrued)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-accent px-3 py-2">
+            <div className="kpi-card kpi-card-accent px-2.5 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Выплачено</p>
-              <p className="mt-1 text-lg font-semibold leading-none text-accent">{formatOwnersWholeCurrency(totals.paid)} ₽</p>
+              <p className="mt-1 text-base font-semibold leading-none text-accent">{formatOwnersWholeCurrency(totals.paid)} ₽</p>
             </div>
-            <div className="kpi-card kpi-card-muted px-3 py-2">
+            <div className="kpi-card kpi-card-muted px-2.5 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на конец</p>
-              <p className="mt-1 text-lg font-semibold leading-none">{formatOwnersWholeCurrency(totals.closing)} ₽</p>
+              <p className="mt-1 text-base font-semibold leading-none">{formatOwnersWholeCurrency(totals.closing)} ₽</p>
             </div>
           </div>
         </CardContent>
@@ -2191,87 +4115,109 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader className="px-4 py-3">
-            <CardTitle className="text-base font-serif">Отчет</CardTitle>
-          </CardHeader>
+        <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.45fr)_360px] 2xl:grid-cols-[minmax(0,1.35fr)_420px]">
+          <Card className="min-w-0 overflow-hidden">
+            <CardHeader className="px-4 py-3">
+              <CardTitle className="text-base font-serif">Отчет</CardTitle>
+            </CardHeader>
 
-          <CardContent className="px-0 pt-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="h-10 px-3 text-xs">Статья</TableHead>
-                  <TableHead className="h-10 px-3 text-right text-xs">Остаток на начало</TableHead>
-                  <TableHead className="h-10 px-3 text-right text-xs">Начислено / получено / в пути</TableHead>
-                  <TableHead className="h-10 px-3 text-right text-xs">Выплачено / возврат</TableHead>
-                  <TableHead className="h-10 px-3 text-right text-xs">Остаток на конец</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reportRows.map((row) => (
-                  <TableRow key={row.article}>
-                    <TableCell className="px-3 py-2 text-sm font-medium">{row.article}</TableCell>
-                    <TableCell
-                      className={cn(
-                        "px-3 py-2 text-right text-sm font-mono",
-                        row.opening < 0 ? "text-destructive" : "text-foreground",
-                      )}
-                    >
-                      {formatOwnersWholeCurrency(row.opening)} ₽
-                    </TableCell>
-                    <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatOwnersWholeCurrency(row.accrued)} ₽</TableCell>
-                    <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatOwnersWholeCurrency(row.paid)} ₽</TableCell>
-                    <TableCell
-                      className={cn(
-                        "px-3 py-2 text-right text-sm font-mono",
-                        row.closing < 0 ? "text-destructive" : "text-foreground",
-                      )}
-                    >
-                      {formatOwnersWholeCurrency(row.closing)} ₽
-                    </TableCell>
+            <CardContent className="px-0 pt-0">
+                <Table className="min-w-[462px] table-fixed sm:min-w-max">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="sticky left-0 z-30 w-[106px] min-w-[106px] bg-card px-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                      Статья
+                    </TableHead>
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
+                      <span className="sm:hidden">Ост. нач.</span>
+                      <span className="hidden sm:inline">Остаток на начало</span>
+                    </TableHead>
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
+                      <span className="sm:hidden">Начисл.</span>
+                      <span className="hidden sm:inline">Начислено / получено / в пути</span>
+                    </TableHead>
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
+                      <span className="sm:hidden">Выплата</span>
+                      <span className="hidden sm:inline">Выплачено / возврат</span>
+                    </TableHead>
+                    <TableHead className="h-9 w-[92px] min-w-[92px] px-2 text-right text-[10px] sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
+                      <span className="sm:hidden">Ост. кон.</span>
+                      <span className="hidden sm:inline">Остаток на конец</span>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow className="font-bold hover:bg-muted/50">
-                  <TableCell className="px-3 py-2 text-sm font-bold">Общий итог</TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2 text-right text-sm font-mono font-bold",
-                      totals.opening < 0 ? "text-destructive" : "text-foreground",
-                    )}
-                  >
-                    {formatOwnersWholeCurrency(totals.opening)} ₽
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2 text-right text-sm font-mono font-bold",
-                      totals.accrued < 0 ? "text-destructive" : "text-foreground",
-                    )}
-                  >
-                    {formatOwnersWholeCurrency(totals.accrued)} ₽
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2 text-right text-sm font-mono font-bold",
-                      totals.paid < 0 ? "text-destructive" : "text-foreground",
-                    )}
-                  >
-                    {formatOwnersWholeCurrency(totals.paid)} ₽
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2 text-right text-sm font-mono font-bold",
-                      totals.closing < 0 ? "text-destructive" : "text-foreground",
-                    )}
-                  >
-                    {formatOwnersWholeCurrency(totals.closing)} ₽
-                  </TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </CardContent>
-        </Card>
+                </TableHeader>
+                <TableBody>
+                  {reportRows.map((row) => (
+                    <TableRow key={row.article}>
+                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] bg-background px-2 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                        {row.article}
+                      </TableCell>
+                        <TableCell
+                          className={cn(
+                            "w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
+                            row.opening < 0 ? "text-destructive" : "text-foreground",
+                          )}
+                        >
+                          {formatOwnersWholeCurrency(row.opening)} ₽
+                        </TableCell>
+                        <TableCell className="w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">{formatOwnersWholeCurrency(row.accrued)} ₽</TableCell>
+                        <TableCell className="w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">{formatOwnersWholeCurrency(row.paid)} ₽</TableCell>
+                        <TableCell
+                          className={cn(
+                            "w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
+                            row.closing < 0 ? "text-destructive" : "text-foreground",
+                          )}
+                        >
+                          {formatOwnersWholeCurrency(row.closing)} ₽
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow className="font-bold hover:bg-muted/50">
+                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] bg-muted px-2 py-2 text-[10px] font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                        Общий итог
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
+                          totals.opening < 0 ? "text-destructive" : "text-foreground",
+                        )}
+                      >
+                        {formatOwnersWholeCurrency(totals.opening)} ₽
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs",
+                          totals.accrued < 0 ? "text-destructive" : "text-foreground",
+                        )}
+                      >
+                        {formatOwnersWholeCurrency(totals.accrued)} ₽
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs",
+                          totals.paid < 0 ? "text-destructive" : "text-foreground",
+                        )}
+                      >
+                        {formatOwnersWholeCurrency(totals.paid)} ₽
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
+                          totals.closing < 0 ? "text-destructive" : "text-foreground",
+                        )}
+                      >
+                        {formatOwnersWholeCurrency(totals.closing)} ₽
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+            </CardContent>
+          </Card>
+
+          <OwnersTimelineChartCard data={ownersTimelineData} />
+        </div>
       )}
     </div>
   );
@@ -2656,52 +4602,62 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardHeader>
 
           <CardContent className="px-0 pt-0">
-            <ScrollArea className="w-full whitespace-nowrap">
-              <Table>
+              <Table className="min-w-[520px] table-fixed sm:min-w-max">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="h-10 px-3 text-xs">Дата</TableHead>
-                    <TableHead className="h-10 px-3 text-xs">Статья</TableHead>
-                    <TableHead className="h-10 px-3 text-right text-xs">Остаток на начало</TableHead>
-                    <TableHead className="h-10 px-3 text-right text-xs">Начислено</TableHead>
-                    <TableHead className="h-10 px-3 text-right text-xs">Выплачено</TableHead>
-                    <TableHead className="h-10 px-3 text-right text-xs">Остаток на конец</TableHead>
+                    <TableHead className="sticky left-0 z-40 w-[58px] min-w-[58px] border-r border-border bg-muted px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-[11px]">
+                      Дата
+                    </TableHead>
+                    <TableHead className="sticky left-[58px] z-40 w-[88px] min-w-[88px] border-r border-border bg-muted px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-[11px]">
+                      Статья
+                    </TableHead>
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
+                      <span className="sm:hidden">Ост. нач.</span>
+                      <span className="hidden sm:inline">Остаток на начало</span>
+                    </TableHead>
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Начислено</TableHead>
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Выплачено</TableHead>
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
+                      <span className="sm:hidden">Ост. кон.</span>
+                      <span className="hidden sm:inline">Остаток на конец</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {visibleRows.map((row) => (
-                    <TableRow
-                      key={[row.periodKey, row.article].join("::")}
-                      className={cn(row.isSyntheticGap && "bg-muted/20")}
-                    >
-                      <TableCell className="px-3 py-2 text-sm font-medium">
+                    <TableRow key={[row.periodKey, row.article].join("::")}>
+                      <TableCell
+                        className="sticky left-0 z-30 w-[58px] min-w-[58px] overflow-hidden border-r border-border bg-muted px-1.5 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-xs"
+                      >
                         {formatPeriodRangeLabel(row.periodDate)}
                       </TableCell>
-                      <TableCell className="px-3 py-2 text-sm">{row.article}</TableCell>
+                      <TableCell
+                        className="sticky left-[58px] z-30 w-[88px] min-w-[88px] overflow-hidden truncate border-r border-border bg-muted px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-xs"
+                      >
+                        {row.article}
+                      </TableCell>
                       <TableCell
                         className={cn(
-                          "px-3 py-2 text-right text-sm font-mono",
+                          "w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]",
                           row.opening < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
-                        {formatCurrency(row.opening)} ₽
+                        {formatCurrency(roundMoneyDisplayAmount(row.opening))} ₽
                       </TableCell>
-                      <TableCell className="px-3 py-2 text-right text-sm font-mono text-sky">{formatCurrency(row.accrued)} ₽</TableCell>
-                      <TableCell className="px-3 py-2 text-right text-sm font-mono text-accent">{formatCurrency(row.paid)} ₽</TableCell>
+                      <TableCell className="w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap text-sky sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">{formatCurrency(roundMoneyDisplayAmount(row.accrued))} ₽</TableCell>
+                      <TableCell className="w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap text-accent sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">{formatCurrency(roundMoneyDisplayAmount(row.paid))} ₽</TableCell>
                       <TableCell
                         className={cn(
-                          "px-3 py-2 text-right text-sm font-mono font-semibold",
+                          "w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono font-semibold whitespace-nowrap sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]",
                           row.closing < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
-                        {formatCurrency(row.closing)} ₽
+                        {formatCurrency(roundMoneyDisplayAmount(row.closing))} ₽
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
           </CardContent>
         </Card>
       )}
@@ -2931,11 +4887,11 @@ function OwnersVerificationTab() {
                         <TableCell className="px-3 py-2 text-sm">{row.owner}</TableCell>
                         <TableCell className="px-3 py-2 text-sm">{row.article}</TableCell>
                         <TableCell className="px-3 py-2 text-sm font-medium">{row.periodKey}</TableCell>
-                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(row.opening)} ₽</TableCell>
-                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(row.accrued)} ₽</TableCell>
-                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(row.paid)} ₽</TableCell>
+                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(roundMoneyDisplayAmount(row.opening))} ₽</TableCell>
+                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(roundMoneyDisplayAmount(row.accrued))} ₽</TableCell>
+                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(roundMoneyDisplayAmount(row.paid))} ₽</TableCell>
                         <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(row.sourceNet)} ₽</TableCell>
-                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(row.closing)} ₽</TableCell>
+                        <TableCell className="px-3 py-2 text-right text-sm font-mono">{formatCurrency(roundMoneyDisplayAmount(row.closing))} ₽</TableCell>
                         <TableCell
                           className={cn(
                             "px-3 py-2 text-right text-sm font-mono font-semibold",
@@ -2972,7 +4928,84 @@ function OwnersVerificationTab() {
   );
 }
 
-export default function AnalyticsPage({ scope }: AnalyticsPageProps) {
+function AnalyticsPlaceholderSection({
+  title,
+  description,
+}: {
+  title: string;
+  description?: string;
+}) {
+  return (
+    <Card>
+      <CardHeader className="px-4 py-3">
+        <CardTitle className="text-base font-serif">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 pb-4 pt-0">
+        <div className="rounded-lg border border-dashed px-4 py-8 text-sm text-muted-foreground">
+          {description ?? "Раздел в разработке."}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AnalyticsOwnersSection({ scope }: { scope?: AnalyticsScopeConfig }) {
+  return (
+    <Tabs defaultValue="report" className="space-y-4">
+      <TabsList className="h-auto justify-start gap-1 bg-muted">
+        <TabsTrigger
+          value="report"
+          className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+        >
+          Общий отчет
+        </TabsTrigger>
+        <TabsTrigger
+          value="detail"
+          className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+        >
+          Детализация
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="report">
+        <OwnersReportTab scope={scope} />
+      </TabsContent>
+      <TabsContent value="detail">
+        <OwnersDetailTab scope={scope} />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+function AnalyticsWorkspacePage() {
+  const location = useLocation();
+  const view = getAnalyticsWorkspaceView(location.pathname);
+
+  if (!view) {
+    return <Navigate to={ANALYTICS_ROUTE_PATHS.financial} replace />;
+  }
+
+  const meta = ANALYTICS_WORKSPACE_META[view];
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold font-serif">{meta.title}</h1>
+          {meta.description ? <p className="text-sm text-muted-foreground">{meta.description}</p> : null}
+        </div>
+        {view === "financial" ? <AnalyticsImportDialog /> : null}
+      </div>
+
+      {view === "financial" ? <FinancialResultTab /> : null}
+      {view === "owners" ? <AnalyticsOwnersSection /> : null}
+      {view === "transfers" ? <TransfersTab /> : null}
+      {view === "cashMovement" ? <CashMovementTab /> : null}
+      {view === "loans" ? <LoansTab /> : null}
+    </div>
+  );
+}
+
+function AnalyticsTabbedPage({ scope }: AnalyticsPageProps) {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -2995,7 +5028,7 @@ export default function AnalyticsPage({ scope }: AnalyticsPageProps) {
               value="owners"
               className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
             >
-              Отчет Собственников
+              Общий отчет
             </TabsTrigger>
             <TabsTrigger
               value="detail"
@@ -3044,4 +5077,12 @@ export default function AnalyticsPage({ scope }: AnalyticsPageProps) {
       </Tabs>
     </div>
   );
+}
+
+export default function AnalyticsPage({ scope }: AnalyticsPageProps) {
+  if (scope) {
+    return <AnalyticsTabbedPage scope={scope} />;
+  }
+
+  return <AnalyticsWorkspacePage />;
 }

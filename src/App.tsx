@@ -71,7 +71,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/analytics"
+          path="/analytics/*"
           element={
             <RoleGuard section="analytics">
               <AnalyticsPage />
