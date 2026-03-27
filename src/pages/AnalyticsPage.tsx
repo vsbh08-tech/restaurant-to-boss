@@ -1646,35 +1646,35 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
 function TransferKpiCard({ icon: Icon, label, value, subtitle, tone }: TransferKpiCardProps) {
   const toneMap = {
     primary: {
-      cardClassName: "border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background",
-      iconClassName: "text-primary",
-      valueClassName: "text-foreground",
+      cardClass: "kpi-card kpi-card-primary",
+      iconClassName: "text-primary bg-primary/12",
+      valueClassName: "text-primary",
     },
     accent: {
-      cardClassName: "border-destructive/20 bg-gradient-to-br from-destructive/5 via-card to-background",
-      iconClassName: "text-destructive",
+      cardClass: "kpi-card kpi-card-destructive",
+      iconClassName: "text-destructive bg-destructive/10",
       valueClassName: "text-destructive",
     },
     success: {
-      cardClassName: "border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 via-card to-background",
-      iconClassName: "text-emerald-600",
-      valueClassName: "text-emerald-700",
+      cardClass: "kpi-card kpi-card-success",
+      iconClassName: "text-success bg-success/10",
+      valueClassName: "text-success",
     },
   } as const;
 
   const toneConfig = toneMap[tone];
 
   return (
-    <div className={cn("rounded-xl border px-3 py-2 shadow-sm", toneConfig.cardClassName)}>
+    <div className={cn("min-h-[80px] px-3 py-2.5", toneConfig.cardClass)}>
       <div className="flex items-start gap-2.5">
-        <div className={cn("mt-0.5 rounded-lg bg-background/80 p-1.5 shadow-sm", toneConfig.iconClassName)}>
-          <Icon className="h-3.5 w-3.5" />
+        <div className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm", toneConfig.iconClassName)}>
+          <Icon className="h-4 w-4" />
         </div>
         <div className="min-w-0">
           <p className="text-xs leading-snug text-muted-foreground">{label}</p>
           <p
             className={cn(
-              "mt-0.5 text-lg font-semibold leading-tight tracking-tight xl:text-xl",
+              "mt-0.5 text-xl font-bold leading-tight tracking-tight xl:text-2xl",
               toneConfig.valueClassName,
             )}
           >
