@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { CalendarIcon, Columns3, Plus, Search } from "lucide-react";
+import { CalendarIcon, CheckCircle2, Columns3, DollarSign, Plus, RotateCcw, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
