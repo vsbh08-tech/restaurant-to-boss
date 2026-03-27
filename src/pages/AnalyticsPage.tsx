@@ -1576,23 +1576,30 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
 
   const cardToneMap = {
     primary: "kpi-card-primary",
-    accent: "kpi-card-accent",
+    accent: "kpi-card-destructive",
     muted: "kpi-card-muted",
-    secondary: "kpi-card-sky",
+    secondary: "kpi-card-success",
   };
 
   const iconBgMap = {
-    primary: "bg-primary/10",
-    accent: "bg-coral-light",
+    primary: "bg-primary/12",
+    accent: "bg-destructive/10",
     muted: "bg-muted",
-    secondary: "bg-sky-light",
+    secondary: "bg-success/10",
   };
 
   const iconColorMap = {
     primary: "text-primary",
-    accent: "text-accent",
+    accent: "text-destructive",
     muted: "text-muted-foreground",
-    secondary: "text-sky",
+    secondary: "text-success",
+  };
+
+  const valueColorMap = {
+    primary: "text-primary",
+    accent: "text-destructive",
+    muted: "text-foreground",
+    secondary: "text-success",
   };
 
   const kindIconMap: Record<MetricKind, typeof TrendingUp> = {
@@ -1606,14 +1613,14 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
   const cardToneClass = cardToneMap[tone];
 
   return (
-    <div className={cn("kpi-card min-h-[94px] px-2.5 py-2.5", cardToneClass)}>
-      <div className="flex items-center gap-2">
-        <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", iconBgMap[tone])}>
-          <KindIcon className={cn("h-3.5 w-3.5", iconColorMap[tone])} />
+    <div className={cn("kpi-card min-h-[94px] px-3 py-3", cardToneClass)}>
+      <div className="flex items-center gap-2.5">
+        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm", iconBgMap[tone])}>
+          <KindIcon className={cn("h-4 w-4", iconColorMap[tone])} />
         </div>
         <p className="text-sm font-semibold leading-none text-foreground">{label}</p>
       </div>
-      <p className="mt-1.5 whitespace-nowrap text-lg font-semibold leading-tight tracking-tight sm:text-xl">
+      <p className={cn("mt-2 whitespace-nowrap text-xl font-bold leading-tight tracking-tight sm:text-2xl", valueColorMap[tone])}>
         {normalizedValueText}
       </p>
       <div className="mt-1.5 min-w-0">
