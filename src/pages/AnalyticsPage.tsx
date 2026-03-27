@@ -1043,7 +1043,7 @@ function buildLoanCounterpartyRows(rows: LoanFactRow[], selectedPeriodDate: Date
     }
 
     if (row.periodKey === selectedPeriodKey) {
-      current.periodNet += row.delta;
+      current.periodNet = (current.periodNet ?? 0) + row.delta;
     }
 
     grouped.set(row.counterparty, current);
