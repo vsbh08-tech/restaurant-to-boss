@@ -10,11 +10,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <AppSidebar />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-14 shrink-0 items-center border-b border-border/60 bg-card/80 px-4 backdrop-blur-sm">
+          <header className="flex h-12 shrink-0 items-center border-b border-border/40 bg-card/60 px-4 backdrop-blur-md">
             <SidebarTrigger />
           </header>
 
-          <main className="flex-1 overflow-auto p-6">{children}</main>
+          <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
         </div>
       </div>
     </SidebarProvider>
