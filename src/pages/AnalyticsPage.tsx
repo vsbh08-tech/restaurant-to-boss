@@ -4201,9 +4201,12 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         </Card>
       ) : (
         <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.45fr)_360px] 2xl:grid-cols-[minmax(0,1.35fr)_420px]">
-          <Card className="min-w-0 overflow-hidden">
-            <CardHeader className="px-4 py-3">
-              <CardTitle className="text-base font-serif">Отчет</CardTitle>
+          <Card className="min-w-0 overflow-hidden border-0 shadow-md">
+            <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+              <CardTitle className="text-sm font-serif flex items-center gap-2">
+                <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
+                Отчет
+              </CardTitle>
             </CardHeader>
 
             <CardContent className="px-0 pt-0">
