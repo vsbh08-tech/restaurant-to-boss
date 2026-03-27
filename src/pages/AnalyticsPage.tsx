@@ -2020,71 +2020,92 @@ function CashBreakdownCard({
   footerNoteLabel?: string;
   footerNoteAmount?: number;
 }) {
+  const maxAmount = rows.reduce((max, row) => Math.max(max, Math.abs(row.amount)), 0);
+
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="px-4 py-3">
-        <CardTitle className="text-sm font-serif">{title}</CardTitle>
+    <Card className="overflow-hidden border-0 shadow-md">
+      <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <CardTitle className="text-sm font-serif flex items-center gap-2">
+          <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
+          {title}
+        </CardTitle>
       </CardHeader>
 
       <CardContent className="px-0 pt-0">
-        <Table>
-          <TableBody>
-            {rows.map((row) => (
-              <TableRow key={row.label}>
-                <TableCell className="px-4 py-2.5 text-sm">
-                  <div>{row.label}</div>
-                  {row.noteLabel ? (
-                    <div className="mt-0.5 text-xs text-muted-foreground">{row.noteLabel}</div>
-                  ) : null}
-                </TableCell>
-                <TableCell
-                  className={cn(
-                    "px-4 py-2.5 text-right text-sm font-mono font-medium whitespace-nowrap",
-                    row.amount < 0 ? "text-destructive" : "text-foreground",
-                  )}
-                >
-                  <div>{formatCurrency(roundMoneyDisplayAmount(row.amount))} ₽</div>
-                  {typeof row.noteAmount === "number" ? (
-                    <div
+        <div className="divide-y divide-border/40">
+          {rows.map((row) => {
+            const barWidth = maxAmount === 0 ? 0 : Math.max((Math.abs(row.amount) / maxAmount) * 100, 6);
+            const isNeg = row.amount < 0;
+            return (
+              <div key={row.label} className="group relative px-4 py-3 hover:bg-muted/30 transition-colors">
+                <div className="absolute bottom-0 left-4 right-4 h-[3px] rounded-full bg-muted/60 overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      isNeg ? "bg-destructive/40" : "bg-primary/30",
+                    )}
+                    style={{ width: `${barWidth}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between mb-1">
+                  <div>
+                    <span className="text-sm">{row.label}</span>
+                    {row.noteLabel ? (
+                      <div className="mt-0.5 text-xs text-muted-foreground">{row.noteLabel}</div>
+                    ) : null}
+                  </div>
+                  <div className="text-right">
+                    <span
                       className={cn(
-                        "mt-0.5 text-xs text-muted-foreground",
-                        row.noteAmount < 0 && "text-destructive",
+                        "text-sm font-mono font-semibold whitespace-nowrap",
+                        isNeg ? "text-destructive" : "text-foreground",
                       )}
                     >
-                      {formatCurrency(roundMoneyDisplayAmount(row.noteAmount))} ₽
-                    </div>
-                  ) : null}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-          <TableFooter>
-            <TableRow className="hover:bg-muted/50">
-              <TableCell className="px-4 py-2.5 text-sm font-bold">Итого</TableCell>
-              <TableCell
+                      {formatCurrency(roundMoneyDisplayAmount(row.amount))} ₽
+                    </span>
+                    {typeof row.noteAmount === "number" ? (
+                      <div
+                        className={cn(
+                          "mt-0.5 text-xs font-mono text-muted-foreground",
+                          row.noteAmount < 0 && "text-destructive",
+                        )}
+                      >
+                        {formatCurrency(roundMoneyDisplayAmount(row.noteAmount))} ₽
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mx-4 mt-1 border-t-2 border-primary/20">
+          <div className="flex items-center justify-between py-3">
+            <span className="text-sm font-bold">Итого</span>
+            <span
+              className={cn(
+                "text-sm font-mono font-bold whitespace-nowrap",
+                total < 0 ? "text-destructive" : "text-primary",
+              )}
+            >
+              {formatCurrency(roundMoneyDisplayAmount(total))} ₽
+            </span>
+          </div>
+          {footerNoteLabel && typeof footerNoteAmount === "number" ? (
+            <div className="flex items-center justify-between pb-2 -mt-1">
+              <span className="text-xs text-muted-foreground">{footerNoteLabel}</span>
+              <span
                 className={cn(
-                  "px-4 py-2.5 text-right text-sm font-mono font-bold whitespace-nowrap",
-                  total < 0 ? "text-destructive" : "text-foreground",
+                  "text-xs font-mono whitespace-nowrap text-muted-foreground",
+                  footerNoteAmount < 0 && "text-destructive",
                 )}
               >
-                {formatCurrency(roundMoneyDisplayAmount(total))} ₽
-              </TableCell>
-            </TableRow>
-            {footerNoteLabel && typeof footerNoteAmount === "number" ? (
-              <TableRow className="hover:bg-muted/30">
-                <TableCell className="px-4 py-2 text-xs text-muted-foreground">{footerNoteLabel}</TableCell>
-                <TableCell
-                  className={cn(
-                    "px-4 py-2 text-right text-xs font-mono whitespace-nowrap text-muted-foreground",
-                    footerNoteAmount < 0 && "text-destructive",
-                  )}
-                >
-                  {formatCurrency(roundMoneyDisplayAmount(footerNoteAmount))} ₽
-                </TableCell>
-              </TableRow>
-            ) : null}
-          </TableFooter>
-        </Table>
+                {formatCurrency(roundMoneyDisplayAmount(footerNoteAmount))} ₽
+              </span>
+            </div>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );
@@ -2472,55 +2493,67 @@ function StructureCard({
   showShare = false,
 }: StructureCardProps) {
   const maxMagnitude = rows.reduce((max, row) => Math.max(max, row.magnitude), 0);
+  const totalValue = rows.reduce((sum, row) => sum + Math.abs(row.value), 0);
 
   return (
-    <Card>
-      <CardHeader className="px-3 py-2.5">
-        <CardTitle className="text-sm font-serif">{title}</CardTitle>
+    <Card className="overflow-hidden border-0 shadow-md">
+      <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <CardTitle className="text-sm font-serif flex items-center gap-2">
+          <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
+          {title}
+        </CardTitle>
       </CardHeader>
 
-      <CardContent className="px-3 pb-3 pt-0">
+      <CardContent className="px-4 pb-4 pt-0">
         {rows.length === 0 ? (
           <div className="py-6 text-sm text-muted-foreground">Нет данных по выбранному срезу.</div>
         ) : (
           <>
-            <ScrollArea className="h-[220px] pr-3">
-              <div className="space-y-2 pr-2">
-                {rows.map((row) => (
-                  <div
-                    key={row.article}
-                    className={cn(
-                      "items-center gap-2",
-                      showBars
-                        ? "grid grid-cols-[minmax(0,1.45fr)_minmax(80px,1fr)_auto]"
-                        : "grid grid-cols-[minmax(0,1fr)_auto]",
-                    )}
-                  >
-                    <p className="truncate text-sm">{row.article}</p>
-                    {showBars ? (
-                      <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className={cn("h-full rounded-full", barClassName)}
-                          style={{ width: `${maxMagnitude === 0 ? 0 : Math.max((row.magnitude / maxMagnitude) * 100, 4)}%` }}
-                        />
+            <ScrollArea className="h-[220px] pr-1">
+              <div className="divide-y divide-border/30">
+                {rows.map((row, idx) => {
+                  const barWidth = maxMagnitude === 0 ? 0 : Math.max((row.magnitude / maxMagnitude) * 100, 4);
+                  const sharePercent = totalValue === 0 ? 0 : Math.round((Math.abs(row.value) / totalValue) * 100);
+
+                  return (
+                    <div
+                      key={row.article}
+                      className="py-2.5 group hover:bg-muted/20 transition-colors -mx-1 px-1 rounded"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="truncate text-sm flex-1">{row.article}</p>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={cn("text-sm font-mono font-medium whitespace-nowrap", row.value < 0 && "text-destructive")}>
+                            {formatCurrency(roundMoneyDisplayAmount(row.value))} ₽
+                          </span>
+                          {showShare ? (
+                            <span className="inline-flex items-center justify-center min-w-[38px] rounded-full bg-primary/10 text-primary text-[10px] font-semibold px-1.5 py-0.5">
+                              {Math.round(row.share)}%
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
-                    ) : null}
-                    <div className="min-w-[112px] text-right text-sm">
-                      <span className={cn("font-medium", row.value < 0 && "text-destructive")}>
-                        {formatCurrency(roundMoneyDisplayAmount(row.value))} ₽
-                      </span>
-                      {showShare ? <span className="ml-2 text-xs text-muted-foreground">{Math.round(row.share)}%</span> : null}
+                      {showBars ? (
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted/70">
+                          <div
+                            className={cn("h-full rounded-full transition-all duration-500", barClassName)}
+                            style={{ width: `${barWidth}%` }}
+                          />
+                        </div>
+                      ) : null}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <ScrollBar />
             </ScrollArea>
 
             {typeof footerValue === "number" && footerLabel ? (
-              <div className="mt-2 flex items-center justify-between border-t pt-2 text-sm font-semibold">
+              <div className="mt-2 flex items-center justify-between border-t-2 border-primary/20 pt-3 text-sm font-bold">
                 <span>{footerLabel}</span>
-                <span>{formatCurrency(roundMoneyDisplayAmount(footerValue))} ₽</span>
+                <span className={cn("font-mono", footerValue < 0 ? "text-destructive" : "text-primary")}>
+                  {formatCurrency(roundMoneyDisplayAmount(footerValue))} ₽
+                </span>
               </div>
             ) : null}
           </>
