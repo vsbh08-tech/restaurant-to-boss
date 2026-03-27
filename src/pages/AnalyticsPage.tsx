@@ -1654,8 +1654,8 @@ function TransferPeriodCard({
   onChange: (next: string[]) => void;
 }) {
   return (
-    <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background px-3 py-1.5 shadow-sm">
-      <div className="flex h-full min-h-[60px] flex-col justify-center gap-1.5">
+    <div className="h-full rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background px-3 py-2 shadow-sm">
+      <div className="flex h-full min-h-[74px] flex-col justify-center gap-1.5">
         <p className="text-[11px] leading-snug text-muted-foreground">Период</p>
         <Select value={selectedPeriodKey ?? undefined} onValueChange={(value) => onChange([value])}>
           <SelectTrigger className="h-8 w-full bg-background/90 text-left text-sm">
@@ -2155,13 +2155,13 @@ function LoanPrimaryKpiCard({ value }: { value: number }) {
   return (
     <Card
       className={cn(
-        "overflow-hidden border shadow-sm",
+        "h-full overflow-hidden border shadow-sm",
         positive
           ? "border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background"
           : "border-destructive/20 bg-gradient-to-br from-destructive/5 via-card to-background",
       )}
     >
-      <CardContent className="px-4 py-4">
+      <CardContent className="px-3 py-3">
         <div className="flex items-start gap-3">
           <div
             className={cn(
@@ -2172,11 +2172,11 @@ function LoanPrimaryKpiCard({ value }: { value: number }) {
             <TrendingUp className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-base font-semibold leading-tight text-foreground">Чистая позиция</p>
+            <p className="text-sm font-semibold leading-tight text-foreground">Чистая позиция</p>
             <p className="mt-1 text-xs font-medium text-muted-foreground">{statusText}</p>
             <p
               className={cn(
-                "mt-2 text-2xl font-semibold leading-tight tracking-tight xl:text-3xl",
+                "mt-2 text-xl font-semibold leading-tight tracking-tight xl:text-2xl",
                 positive ? "text-primary" : "text-destructive",
               )}
             >
@@ -2223,15 +2223,15 @@ function LoanMetricCard({
   const valueText = formatRoundedMoneyText(value);
 
   return (
-    <Card className={cn("overflow-hidden border shadow-sm", toneConfig.cardClassName)}>
-      <CardContent className="px-4 py-4">
+    <Card className={cn("h-full overflow-hidden border shadow-sm", toneConfig.cardClassName)}>
+      <CardContent className="px-3 py-3">
         <div className="flex items-start gap-3">
           <div className={cn("rounded-xl bg-background/90 p-2 shadow-sm", toneConfig.iconClassName)}>
-            <Icon className="h-5 w-5" />
+            <Icon className="h-4.5 w-4.5" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold leading-tight text-foreground">{label}</p>
-            <p className={cn("mt-2 text-xl font-semibold leading-tight tracking-tight", toneConfig.valueClassName)}>
+            <p className="text-xs font-semibold leading-tight text-foreground sm:text-sm">{label}</p>
+            <p className={cn("mt-1.5 text-lg font-semibold leading-tight tracking-tight xl:text-xl", toneConfig.valueClassName)}>
               {valueText}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">за период</p>
@@ -2265,22 +2265,22 @@ function LoanCounterpartyTableCard({
 
       <CardContent className="px-0 pt-0">
         <div className="overflow-x-auto">
-          <Table className="min-w-[596px] table-fixed sm:min-w-max">
+          <Table className="min-w-[690px] table-fixed sm:min-w-max">
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky left-0 z-20 w-[136px] min-w-[136px] border-r border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="sticky left-0 z-20 w-[190px] min-w-[190px] border-r border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground sm:text-sm">
                   Контрагент
                 </TableHead>
-                <TableHead className="w-[108px] min-w-[108px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[120px] min-w-[120px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Остаток на начало
                 </TableHead>
-                <TableHead className="w-[96px] min-w-[96px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[110px] min-w-[110px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Получено
                 </TableHead>
-                <TableHead className="w-[96px] min-w-[96px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[110px] min-w-[110px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Выдано
                 </TableHead>
-                <TableHead className="w-[108px] min-w-[108px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[120px] min-w-[120px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Остаток на конец
                 </TableHead>
               </TableRow>
@@ -3564,27 +3564,30 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     <div className="space-y-3">
       <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
         <CardContent className="space-y-3 px-3 py-3">
-          <div className="flex flex-wrap items-start gap-2">
+          <div className="grid items-stretch gap-2 lg:grid-cols-7 xl:grid-cols-8">
             {!scope?.hideRestaurantFilter && (
-              <FilterChipGroup
-                label="Рестораны"
-                options={restaurantOptions}
-                selection={selectedRestaurants}
-                onChange={setSelectedRestaurants}
-                matchPeriodHeight
-                allowSelectAll
-                compact
-              />
+              <div className="lg:col-span-2 xl:col-span-2">
+                <FilterChipGroup
+                  label="Рестораны"
+                  options={restaurantOptions}
+                  selection={selectedRestaurants}
+                  onChange={setSelectedRestaurants}
+                  matchPeriodHeight
+                  allowSelectAll
+                  compact
+                />
+              </div>
             )}
-            <TransferPeriodCard
-              selectedPeriodKey={selectedPeriodKey}
-              options={periodOptions}
-              onChange={(next) => setSelectedPeriodKey(next[0] ?? null)}
-            />
-          </div>
-
-          <div className="grid gap-2 xl:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))]">
-            <LoanPrimaryKpiCard value={closingPosition} />
+            <div className="lg:col-span-1 xl:col-span-1">
+              <TransferPeriodCard
+                selectedPeriodKey={selectedPeriodKey}
+                options={periodOptions}
+                onChange={(next) => setSelectedPeriodKey(next[0] ?? null)}
+              />
+            </div>
+            <div className="lg:col-span-1 xl:col-span-2">
+              <LoanPrimaryKpiCard value={closingPosition} />
+            </div>
             <LoanMetricCard icon={ArrowDown} label="Получено" value={receivedTotal} tone="success" />
             <LoanMetricCard icon={ArrowUp} label="Выдано" value={issuedTotal} tone="accent" />
             <LoanMetricCard
@@ -3620,7 +3623,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,0.95fr)_minmax(400px,1fr)]">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] 2xl:grid-cols-[minmax(0,0.9fr)_minmax(460px,1.1fr)]">
           <LoanCounterpartyTableCard
             periodLabel={selectedPeriodOption.label}
             rows={loanSummary.rows}
