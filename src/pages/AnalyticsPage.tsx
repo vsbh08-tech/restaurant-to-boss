@@ -4666,10 +4666,11 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardHeader className="px-4 py-3">
+        <Card className="overflow-hidden border-0 shadow-md">
+          <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="text-base font-serif">
+              <CardTitle className="text-sm font-serif flex items-center gap-2">
+                <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
                 Детализация
                 <span className="ml-2 text-sm font-sans font-normal text-muted-foreground">
                   {selectedRestaurant} • {activeSelectedOwner}
