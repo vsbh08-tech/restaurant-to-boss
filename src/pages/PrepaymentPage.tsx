@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { CalendarIcon, Columns3, Plus, Search } from "lucide-react";
+import { CalendarIcon, CheckCircle2, Columns3, DollarSign, Plus, RotateCcw, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -809,35 +809,55 @@ const upsertMutation = useMutation({
          </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         <Card className="kpi-card kpi-card-muted">
           <CardContent className="pb-4 pt-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Всего</p>
-            <p className="mt-1 text-2xl font-bold">{formatCurrency(stats.totalSum)} ₽</p>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Всего</p>
+            </div>
+            <p className="mt-2 text-2xl font-bold">{formatCurrency(stats.totalSum)} ₽</p>
             <p className="text-sm text-muted-foreground">{stats.totalCount} шт.</p>
           </CardContent>
         </Card>
 
         <Card className="kpi-card kpi-card-primary">
           <CardContent className="pb-4 pt-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Открытые</p>
-            <p className="mt-1 text-2xl font-bold text-primary">{formatCurrency(stats.openSum)} ₽</p>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <DollarSign className="h-4 w-4 text-primary" />
+              </div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Открытые</p>
+            </div>
+            <p className="mt-2 text-2xl font-bold text-primary">{formatCurrency(stats.openSum)} ₽</p>
             <p className="text-sm text-primary/70">{stats.openCount} шт.</p>
           </CardContent>
         </Card>
 
         <Card className="kpi-card kpi-card-sky">
           <CardContent className="pb-4 pt-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Закрытые</p>
-            <p className="mt-1 text-2xl font-bold text-sky">{formatCurrency(stats.closedSum)} ₽</p>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-light">
+                <CheckCircle2 className="h-4 w-4 text-sky" />
+              </div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Закрытые</p>
+            </div>
+            <p className="mt-2 text-2xl font-bold text-sky">{formatCurrency(stats.closedSum)} ₽</p>
             <p className="text-sm text-sky/70">{stats.closedCount} шт.</p>
           </CardContent>
         </Card>
 
         <Card className="kpi-card kpi-card-accent">
           <CardContent className="pb-4 pt-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Возвраты</p>
-            <p className="mt-1 text-2xl font-bold text-accent">{formatCurrency(stats.refundSum)} ₽</p>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-coral-light">
+                <RotateCcw className="h-4 w-4 text-accent" />
+              </div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Возвраты</p>
+            </div>
+            <p className="mt-2 text-2xl font-bold text-accent">{formatCurrency(stats.refundSum)} ₽</p>
             <p className="text-sm text-accent/70">{stats.refundCount} шт.</p>
           </CardContent>
         </Card>

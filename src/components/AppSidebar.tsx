@@ -70,7 +70,7 @@ export function AppSidebar() {
             <div className="flex items-center gap-2.5">
               <span className="text-2xl">🍽️</span>
               <div>
-                <h1 className="font-serif text-base font-bold tracking-tight text-sidebar-primary">RestaurantOS</h1>
+                <h1 className="font-serif text-base font-bold tracking-tight text-sidebar-primary-foreground">RestaurantOS</h1>
                 <div className="mt-0.5 h-px w-8 rounded-full bg-sidebar-primary/40" />
               </div>
             </div>
