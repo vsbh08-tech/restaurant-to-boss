@@ -1574,11 +1574,38 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
     muted: "kpi-card-muted",
     secondary: "kpi-card-sky",
   };
+
+  const iconBgMap = {
+    primary: "bg-primary/10",
+    accent: "bg-coral-light",
+    muted: "bg-muted",
+    secondary: "bg-sky-light",
+  };
+
+  const iconColorMap = {
+    primary: "text-primary",
+    accent: "text-accent",
+    muted: "text-muted-foreground",
+    secondary: "text-sky",
+  };
+
+  const kindIconMap: Record<MetricKind, typeof TrendingUp> = {
+    income: ArrowUpRight,
+    expense: ArrowDownRight,
+    profit: TrendingUp,
+  };
+
+  const KindIcon = kindIconMap[kind];
   const cardToneClass = cardToneMap[tone];
 
   return (
     <div className={cn("kpi-card min-h-[94px] px-2.5 py-2.5", cardToneClass)}>
-      <p className="text-sm font-semibold leading-none text-foreground">{label}</p>
+      <div className="flex items-center gap-2">
+        <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", iconBgMap[tone])}>
+          <KindIcon className={cn("h-3.5 w-3.5", iconColorMap[tone])} />
+        </div>
+        <p className="text-sm font-semibold leading-none text-foreground">{label}</p>
+      </div>
       <p className="mt-1.5 whitespace-nowrap text-lg font-semibold leading-tight tracking-tight sm:text-xl">
         {normalizedValueText}
       </p>
