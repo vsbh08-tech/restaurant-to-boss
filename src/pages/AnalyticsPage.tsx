@@ -3425,21 +3425,21 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
             <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-3">
               <TransferKpiCard
-                icon={ArrowLeftRight}
+                icon={Wallet}
                 label="Денег всего"
                 value={`${formatCurrency(roundMoneyDisplayAmount(closingCashTotal))} ₽`}
                 subtitle={`на конец ${endingPeriodLabel}`}
                 tone="primary"
               />
               <TransferKpiCard
-                icon={ArrowDownRight}
+                icon={HandCoins}
                 label="Нужно заплатить"
                 value={`${formatCurrency(roundMoneyDisplayAmount(requiredPaymentTotal))} ₽`}
                 subtitle="обязательные выплаты"
                 tone={requiredPaymentTotal > 0 ? "accent" : "success"}
               />
               <TransferKpiCard
-                icon={ArrowUpRight}
+                icon={PiggyBank}
                 label="Остаток после выплат"
                 value={`${formatCurrency(roundMoneyDisplayAmount(remainingAfterPayments))} ₽`}
                 tone={remainingAfterPayments < 0 ? "accent" : "success"}
