@@ -224,6 +224,7 @@ type LoanFactRow = {
 type LoanCounterpartyRow = {
   counterparty: string;
   opening: number;
+  periodNet: number;
   received: number;
   issued: number;
   closing: number;
