@@ -6,10 +6,16 @@ import {
   ArrowLeftRight,
   ArrowUp,
   ArrowUpRight,
+  Banknote,
   Download,
+  Gauge,
+  HandCoins,
   Minus,
+  PiggyBank,
+  Receipt,
   RefreshCcw,
   TrendingUp,
+  Wallet,
 } from "lucide-react";
 import { Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
