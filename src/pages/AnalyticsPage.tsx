@@ -2155,7 +2155,7 @@ function LoanPrimaryKpiCard({ value }: { value: number }) {
   return (
     <Card
       className={cn(
-        "h-full overflow-hidden border shadow-sm",
+        "min-h-[88px] h-full overflow-hidden border shadow-sm",
         positive
           ? "border-primary/20 bg-gradient-to-br from-primary/5 via-card to-background"
           : "border-destructive/20 bg-gradient-to-br from-destructive/5 via-card to-background",
@@ -2176,7 +2176,7 @@ function LoanPrimaryKpiCard({ value }: { value: number }) {
             <p className="mt-1 text-xs font-medium text-muted-foreground">{statusText}</p>
             <p
               className={cn(
-                "mt-1.5 text-lg font-semibold leading-tight tracking-tight xl:text-xl",
+                "mt-1.5 text-lg font-semibold leading-tight tracking-tight",
                 positive ? "text-primary" : "text-destructive",
               )}
             >
@@ -2223,7 +2223,7 @@ function LoanMetricCard({
   const valueText = formatRoundedMoneyText(value);
 
   return (
-    <Card className={cn("h-full overflow-hidden border shadow-sm", toneConfig.cardClassName)}>
+    <Card className={cn("min-h-[88px] h-full overflow-hidden border shadow-sm", toneConfig.cardClassName)}>
       <CardContent className="px-3 py-2.5">
         <div className="flex items-start gap-3">
           <div className={cn("rounded-xl bg-background/90 p-1.5 shadow-sm", toneConfig.iconClassName)}>
@@ -2231,7 +2231,7 @@ function LoanMetricCard({
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold leading-tight text-foreground sm:text-sm">{label}</p>
-            <p className={cn("mt-1 text-base font-semibold leading-tight tracking-tight xl:text-lg", toneConfig.valueClassName)}>
+            <p className={cn("mt-1 text-lg font-semibold leading-tight tracking-tight", toneConfig.valueClassName)}>
               {valueText}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">за период</p>
@@ -2265,22 +2265,22 @@ function LoanCounterpartyTableCard({
 
       <CardContent className="px-0 pt-0">
         <div className="overflow-x-auto">
-          <Table className="min-w-[612px] table-fixed sm:min-w-max">
+          <Table className="min-w-[548px] table-fixed sm:min-w-max">
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky left-0 z-20 w-[168px] min-w-[168px] border-r border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="sticky left-0 z-20 w-[148px] min-w-[148px] border-r border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground sm:text-sm">
                   Контрагент
                 </TableHead>
-                <TableHead className="w-[108px] min-w-[108px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[104px] min-w-[104px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Остаток на начало
                 </TableHead>
-                <TableHead className="w-[84px] min-w-[84px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[88px] min-w-[88px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Получено
                 </TableHead>
-                <TableHead className="w-[84px] min-w-[84px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[88px] min-w-[88px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Выдано
                 </TableHead>
-                <TableHead className="w-[108px] min-w-[108px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[104px] min-w-[104px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Остаток на конец
                 </TableHead>
               </TableRow>
@@ -3562,43 +3562,42 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
   return (
     <div className="space-y-3">
-      <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
-        <CardContent className="space-y-3 px-3 py-3">
-          <div className="grid items-stretch gap-2 xl:grid-cols-[minmax(240px,1.5fr)_190px_minmax(170px,1.1fr)_repeat(3,minmax(150px,0.9fr))]">
+      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)]">
+        <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
+          <CardContent className="flex flex-wrap items-start gap-2 px-3 py-3">
             {!scope?.hideRestaurantFilter && (
-              <div>
-                <FilterChipGroup
-                  label="Рестораны"
-                  options={restaurantOptions}
-                  selection={selectedRestaurants}
-                  onChange={setSelectedRestaurants}
-                  matchPeriodHeight
-                  allowSelectAll
-                  compact
-                />
-              </div>
+              <FilterChipGroup
+                label="Рестораны"
+                options={restaurantOptions}
+                selection={selectedRestaurants}
+                onChange={setSelectedRestaurants}
+                matchPeriodHeight
+                allowSelectAll
+                compact
+              />
             )}
-            <div>
+            <div className="min-w-[188px] flex-1 xl:max-w-[210px]">
               <TransferPeriodCard
                 selectedPeriodKey={selectedPeriodKey}
                 options={periodOptions}
                 onChange={(next) => setSelectedPeriodKey(next[0] ?? null)}
               />
             </div>
-            <div>
-              <LoanPrimaryKpiCard value={closingPosition} />
-            </div>
-            <LoanMetricCard icon={ArrowDown} label="Получено" value={receivedTotal} tone="success" />
-            <LoanMetricCard icon={ArrowUp} label="Выдано" value={issuedTotal} tone="accent" />
-            <LoanMetricCard
-              icon={RefreshCcw}
-              label="Изменение"
-              value={periodChange}
-              tone={periodChange < 0 ? "accent" : periodChange > 0 ? "success" : "primary"}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-[minmax(0,1.08fr)_repeat(3,minmax(0,1fr))]">
+          <LoanPrimaryKpiCard value={closingPosition} />
+          <LoanMetricCard icon={ArrowDown} label="Получено" value={receivedTotal} tone="success" />
+          <LoanMetricCard icon={ArrowUp} label="Выдано" value={issuedTotal} tone="accent" />
+          <LoanMetricCard
+            icon={RefreshCcw}
+            label="Изменение"
+            value={periodChange}
+            tone={periodChange < 0 ? "accent" : periodChange > 0 ? "success" : "primary"}
+          />
+        </div>
+      </div>
 
       {isLoading ? (
         <Card>
@@ -3623,7 +3622,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
           <LoanCounterpartyTableCard
             periodLabel={selectedPeriodOption.label}
             rows={loanSummary.rows}
