@@ -830,18 +830,28 @@ export default function BarPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <Card className="kpi-card kpi-card-primary">
           <CardContent className="py-3">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">На начало {selectedDateLabel}</p>
-            <p className="mt-1 text-xl font-bold leading-none text-primary">{formatCurrency(openingBalance)} ₽</p>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <LogIn className="h-4 w-4 text-primary" />
+              </div>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">На начало {selectedDateLabel}</p>
+            </div>
+            <p className="mt-2 text-xl font-bold leading-none text-primary">{formatCurrency(openingBalance)} ₽</p>
           </CardContent>
         </Card>
 
         <Card className="kpi-card kpi-card-accent">
           <CardContent className="py-3">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">На конец {selectedDateLabel}</p>
-            <p className="mt-1 text-xl font-bold leading-none text-accent">{formatCurrency(closingBalance)} ₽</p>
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-coral-light">
+                <LogOutIcon className="h-4 w-4 text-accent" />
+              </div>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">На конец {selectedDateLabel}</p>
+            </div>
+            <p className="mt-2 text-xl font-bold leading-none text-accent">{formatCurrency(closingBalance)} ₽</p>
           </CardContent>
         </Card>
       </div>
