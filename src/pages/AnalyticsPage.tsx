@@ -2148,7 +2148,9 @@ function CashWaterfallChartCard({
 }
 
 function LoanPrimaryKpiCard({ value }: { value: number }) {
-  const positive = roundMoneyDisplayAmount(value) >= 0;
+  const roundedValue = roundMoneyDisplayAmount(value);
+  const positive = roundedValue >= 0;
+  const statusText = roundedValue > 0 ? "Ресторан должен" : roundedValue < 0 ? "Ресторан донор" : "Позиция нулевая";
 
   return (
     <Card
@@ -2171,6 +2173,7 @@ function LoanPrimaryKpiCard({ value }: { value: number }) {
           </div>
           <div className="min-w-0">
             <p className="text-base font-semibold leading-tight text-foreground">Чистая позиция</p>
+            <p className="mt-1 text-xs font-medium text-muted-foreground">{statusText}</p>
             <p
               className={cn(
                 "mt-2 text-2xl font-semibold leading-tight tracking-tight xl:text-3xl",
@@ -2179,6 +2182,7 @@ function LoanPrimaryKpiCard({ value }: { value: number }) {
             >
               {formatRoundedMoneyText(value)}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">на конец периода</p>
           </div>
         </div>
       </CardContent>
@@ -2230,6 +2234,7 @@ function LoanMetricCard({
             <p className={cn("mt-2 text-xl font-semibold leading-tight tracking-tight", toneConfig.valueClassName)}>
               {valueText}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">за период</p>
           </div>
         </div>
       </CardContent>
@@ -2260,22 +2265,22 @@ function LoanCounterpartyTableCard({
 
       <CardContent className="px-0 pt-0">
         <div className="overflow-x-auto">
-          <Table className="min-w-[640px] table-fixed sm:min-w-max">
+          <Table className="min-w-[596px] table-fixed sm:min-w-max">
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky left-0 z-20 w-[150px] min-w-[150px] border-r border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="sticky left-0 z-20 w-[136px] min-w-[136px] border-r border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground sm:text-sm">
                   Контрагент
                 </TableHead>
-                <TableHead className="w-[120px] min-w-[120px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[108px] min-w-[108px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Остаток на начало
                 </TableHead>
-                <TableHead className="w-[110px] min-w-[110px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[96px] min-w-[96px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Получено
                 </TableHead>
-                <TableHead className="w-[110px] min-w-[110px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[96px] min-w-[96px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Выдано
                 </TableHead>
-                <TableHead className="w-[120px] min-w-[120px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[108px] min-w-[108px] px-3 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
                   Остаток на конец
                 </TableHead>
               </TableRow>
@@ -2363,7 +2368,7 @@ function LoanPositionChartCard({ data }: { data: LoanTimelineDatum[] }) {
   const hasData = data.some((item) => item.position !== 0);
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="min-w-0 overflow-hidden">
       <CardHeader className="px-4 py-3">
         <CardTitle className="text-sm font-serif">Чистая позиция за 6 месяцев</CardTitle>
         <p className="mt-0.5 text-xs text-muted-foreground">На конец каждого месяца до выбранного периода.</p>
@@ -3517,10 +3522,9 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     () => resolveScopedSelection(selectedRestaurants, restaurantOptions, fixedRestaurantNames),
     [fixedRestaurantNames, restaurantOptions, selectedRestaurants],
   );
-  const selectedRestaurant = activeRestaurants[0] ?? null;
   const restaurantScopedRows = useMemo(
-    () => loanRows.filter((row) => (selectedRestaurant ? row.restaurant === selectedRestaurant : false)),
-    [loanRows, selectedRestaurant],
+    () => loanRows.filter((row) => activeRestaurants.includes(row.restaurant)),
+    [activeRestaurants, loanRows],
   );
   const periodOptions = useMemo(() => buildPeriodOptions(restaurantScopedRows.map((row) => row.periodDate)), [restaurantScopedRows]);
   const periodKeys = useMemo(() => periodOptions.map((option) => option.key), [periodOptions]);
@@ -3559,16 +3563,17 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
   return (
     <div className="space-y-3">
       <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
-        <CardContent className="space-y-3 px-4 py-4">
-          <div className="grid gap-2 xl:grid-cols-[minmax(0,1fr)_220px]">
+        <CardContent className="space-y-3 px-3 py-3">
+          <div className="flex flex-wrap items-start gap-2">
             {!scope?.hideRestaurantFilter && (
               <FilterChipGroup
-                label="Ресторан"
+                label="Рестораны"
                 options={restaurantOptions}
                 selection={selectedRestaurants}
                 onChange={setSelectedRestaurants}
                 matchPeriodHeight
-                singleSelect
+                allowSelectAll
+                compact
               />
             )}
             <TransferPeriodCard
@@ -3578,7 +3583,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             />
           </div>
 
-          <div className="grid gap-2 lg:grid-cols-[minmax(0,1.25fr)_repeat(3,minmax(0,1fr))]">
+          <div className="grid gap-2 xl:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))]">
             <LoanPrimaryKpiCard value={closingPosition} />
             <LoanMetricCard icon={ArrowDown} label="Получено" value={receivedTotal} tone="success" />
             <LoanMetricCard icon={ArrowUp} label="Выдано" value={issuedTotal} tone="accent" />
@@ -3602,10 +3607,10 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             Нет данных по займам. Добавьте строки в `owners_fact` с группами `Займы полученные` и `Займы выданные`.
           </CardContent>
         </Card>
-      ) : !selectedRestaurant ? (
+      ) : activeRestaurants.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            Выберите ресторан для просмотра займа.
+            Выберите ресторан для просмотра займов.
           </CardContent>
         </Card>
       ) : !selectedPeriodOption ? (
@@ -3615,7 +3620,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_340px] 2xl:grid-cols-[minmax(0,1.3fr)_380px]">
+        <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] 2xl:grid-cols-[minmax(0,0.95fr)_minmax(400px,1fr)]">
           <LoanCounterpartyTableCard
             periodLabel={selectedPeriodOption.label}
             rows={loanSummary.rows}
