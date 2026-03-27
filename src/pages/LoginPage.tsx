@@ -140,23 +140,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen px-4 py-10 relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="min-h-screen px-4 py-10 relative overflow-hidden bg-gradient-to-br from-primary/4 via-background to-accent/3">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-primary/10 blur-[100px]" />
-        <div className="absolute top-1/3 -left-40 w-[400px] h-[400px] rounded-full bg-accent/8 blur-[80px]" />
-        <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] rounded-full bg-sky/8 blur-[80px]" />
+        <div className="absolute -top-32 -right-32 w-[420px] h-[420px] rounded-full bg-primary/8 blur-[100px]" />
+        <div className="absolute top-1/2 -left-32 w-[320px] h-[320px] rounded-full bg-accent/6 blur-[80px]" />
       </div>
 
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl items-center justify-center relative z-10">
-        <Card className="w-full max-w-md border-border/60 shadow-2xl shadow-primary/10 overflow-hidden">
-          <div className="h-1.5 gradient-primary" />
+        <Card className="w-full max-w-md border-border/50 shadow-xl shadow-primary/5 overflow-hidden">
+          <div className="h-1 gradient-primary" />
 
-          <CardHeader className="pb-4 text-center pt-8">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary text-white font-serif text-2xl font-bold shadow-lg shadow-primary/30">
-              R
-            </div>
+          <CardHeader className="pb-4 text-center pt-10">
+            <div className="mx-auto mb-5 text-4xl">🍽️</div>
             <CardTitle className="text-2xl font-serif tracking-tight">RestaurantOS</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">Управление финансами ресторанной сети</p>
+            <p className="text-sm text-muted-foreground mt-1.5">Управление финансами ресторанной сети</p>
           </CardHeader>
 
           <CardContent className="space-y-4 pb-8">

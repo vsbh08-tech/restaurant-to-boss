@@ -62,14 +62,17 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarContent className="pt-4">
-        <div className={`mb-6 px-4 ${collapsed ? "px-2" : ""}`}>
+      <SidebarContent className="pt-5">
+        <div className={`mb-8 px-4 ${collapsed ? "px-2" : ""}`}>
           {collapsed ? (
-            <span className="block text-center font-serif text-lg font-bold text-sidebar-primary">R</span>
+            <span className="block text-center text-lg">🍽️</span>
           ) : (
-            <div>
-              <h1 className="font-serif text-lg font-bold tracking-tight text-sidebar-primary">RestaurantOS</h1>
-              <div className="mt-1 h-0.5 w-10 rounded-full bg-sidebar-primary/60" />
+            <div className="flex items-center gap-2.5">
+              <span className="text-2xl">🍽️</span>
+              <div>
+                <h1 className="font-serif text-base font-bold tracking-tight text-sidebar-primary">RestaurantOS</h1>
+                <div className="mt-0.5 h-px w-8 rounded-full bg-sidebar-primary/40" />
+              </div>
             </div>
           )}
         </div>
@@ -124,17 +127,17 @@ export function AppSidebar() {
       <SidebarFooter className="p-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">
+            <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary/20 text-xs font-semibold text-sidebar-primary">
                 {getUserBadgeText(userName, roleLabel)}
               </div>
               {!collapsed && (
                 <>
                   <div className="min-w-0 flex-1 text-left">
-                    <div className="truncate text-sm font-medium">{userName || "Пользователь"}</div>
-                    <div className="truncate text-xs text-sidebar-foreground/70">{roleLabel}</div>
+                    <div className="truncate text-sm font-medium text-sidebar-accent-foreground">{userName || "Пользователь"}</div>
+                    <div className="truncate text-xs text-sidebar-foreground/60">{roleLabel}</div>
                   </div>
-                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                  <ChevronDown className="h-3.5 w-3.5 opacity-40" />
                 </>
               )}
             </button>

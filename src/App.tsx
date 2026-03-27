@@ -20,8 +20,9 @@ const browserBasename = import.meta.env.BASE_URL === "/" ? undefined : import.me
 
 function FullPageLoader() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-sm text-muted-foreground">Загрузка...</div>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background gap-3">
+      <div className="text-3xl">🍽️</div>
+      <div className="text-sm text-muted-foreground font-medium">Загрузка...</div>
     </div>
   );
 }

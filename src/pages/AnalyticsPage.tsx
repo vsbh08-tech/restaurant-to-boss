@@ -224,6 +224,7 @@ type LoanFactRow = {
 type LoanCounterpartyRow = {
   counterparty: string;
   opening: number;
+  periodNet?: number;
   received: number;
   issued: number;
   closing: number;
@@ -1042,7 +1043,7 @@ function buildLoanCounterpartyRows(rows: LoanFactRow[], selectedPeriodDate: Date
     }
 
     if (row.periodKey === selectedPeriodKey) {
-      current.periodNet += row.delta;
+      current.periodNet = (current.periodNet ?? 0) + row.delta;
     }
 
     grouped.set(row.counterparty, current);
@@ -1050,15 +1051,16 @@ function buildLoanCounterpartyRows(rows: LoanFactRow[], selectedPeriodDate: Date
 
   const preparedRows = Array.from(grouped.values())
     .map((row) => {
-      const received = row.periodNet > 0 ? row.periodNet : 0;
-      const issued = row.periodNet < 0 ? Math.abs(row.periodNet) : 0;
+      const net = row.periodNet ?? 0;
+      const received = net > 0 ? net : 0;
+      const issued = net < 0 ? Math.abs(net) : 0;
 
       return {
         counterparty: row.counterparty,
         opening: row.opening,
         received,
         issued,
-        closing: row.opening + row.periodNet,
+        closing: row.opening + net,
       };
     })
     .filter(
