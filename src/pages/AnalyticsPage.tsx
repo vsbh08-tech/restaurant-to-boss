@@ -1719,11 +1719,14 @@ function TransferPeriodCard({
 
 function TransferMatrixCard({ title, periodLabel, summary, description }: TransferMatrixCardProps) {
   return (
-    <Card className="min-w-0 overflow-hidden">
-      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-2.5">
-        <div>
-          <CardTitle className="text-sm font-serif">{title}</CardTitle>
-          {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
+    <Card className="min-w-0 overflow-hidden border-0 shadow-md">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <div className="flex items-start gap-2">
+          <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent mt-0.5" />
+          <div>
+            <CardTitle className="text-sm font-serif">{title}</CardTitle>
+            {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
+          </div>
         </div>
         <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
           Период: {periodLabel}
