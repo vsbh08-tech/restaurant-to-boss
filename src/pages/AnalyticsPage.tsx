@@ -218,8 +218,7 @@ type LoanFactRow = {
   counterparty: string;
   periodDate: Date;
   periodKey: string;
-  kind: "received" | "issued";
-  amount: number;
+  delta: number;
 };
 
 type LoanCounterpartyRow = {
@@ -385,6 +384,7 @@ const CASH_EXPLICIT_OTHER_OUTFLOW_ALIASES = ["п/о суммы", "расходы
 const CASH_OWNER_WITHDRAWAL_GROUP_ALIASES = ["снятие с р/с", "снятие с р\\с"];
 const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные"];
 const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные"];
+const LOAN_GENERIC_ARTICLE_ALIASES = ["займы"];
 
 function makePeriodKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -1004,6 +1004,10 @@ function isLoanIssuedArticle(article: string) {
   return matchesArticleAlias(article, LOAN_ISSUED_ARTICLE_ALIASES);
 }
 
+function isGenericLoanArticle(article: string) {
+  return matchesArticleAlias(article, LOAN_GENERIC_ARTICLE_ALIASES);
+}
+
 function buildLoanCounterpartyRows(rows: LoanFactRow[], selectedPeriodDate: Date | null) {
   if (!selectedPeriodDate) {
     return {
@@ -1022,31 +1026,36 @@ function buildLoanCounterpartyRows(rows: LoanFactRow[], selectedPeriodDate: Date
       {
         counterparty: row.counterparty,
         opening: 0,
+        periodNet: 0,
         received: 0,
         issued: 0,
         closing: 0,
       };
 
     if (row.periodDate.getTime() < selectedMonthStart.getTime()) {
-      current.opening += row.kind === "received" ? row.amount : -row.amount;
+      current.opening += row.delta;
     }
 
     if (row.periodKey === selectedPeriodKey) {
-      if (row.kind === "received") {
-        current.received += row.amount;
-      } else {
-        current.issued += row.amount;
-      }
+      current.periodNet += row.delta;
     }
 
     grouped.set(row.counterparty, current);
   });
 
   const preparedRows = Array.from(grouped.values())
-    .map((row) => ({
-      ...row,
-      closing: row.opening + row.received - row.issued,
-    }))
+    .map((row) => {
+      const received = row.periodNet > 0 ? row.periodNet : 0;
+      const issued = row.periodNet < 0 ? Math.abs(row.periodNet) : 0;
+
+      return {
+        counterparty: row.counterparty,
+        opening: row.opening,
+        received,
+        issued,
+        closing: row.opening + row.periodNet,
+      };
+    })
     .filter(
       (row) =>
         !isNearlyZero(row.opening) ||
@@ -1096,7 +1105,7 @@ function buildLoanPositionTimelineData(rows: LoanFactRow[], selectedPeriodDate: 
         return sum;
       }
 
-      return sum + (row.kind === "received" ? row.amount : -row.amount);
+      return sum + row.delta;
     }, 0);
 
     return {
@@ -2177,13 +2186,11 @@ function LoanMetricCard({
   label,
   value,
   tone,
-  outflow = false,
 }: {
   icon: any;
   label: string;
   value: number;
   tone: "success" | "accent" | "primary";
-  outflow?: boolean;
 }) {
   const toneMap = {
     primary: {
@@ -2204,7 +2211,7 @@ function LoanMetricCard({
   } as const;
 
   const toneConfig = toneMap[tone];
-  const valueText = outflow ? formatOutflowMoneyText(value) : formatRoundedMoneyText(value);
+  const valueText = formatRoundedMoneyText(value);
 
   return (
     <Card className={cn("overflow-hidden border shadow-sm", toneConfig.cardClassName)}>
@@ -2298,7 +2305,7 @@ function LoanCounterpartyTableCard({
                     {formatRoundedMoneyText(row.received)}
                   </TableCell>
                   <TableCell className="px-3 py-2 text-right text-sm font-mono whitespace-nowrap text-destructive">
-                    {formatOutflowMoneyText(row.issued)}
+                    {formatRoundedMoneyText(row.issued)}
                   </TableCell>
                   <TableCell
                     className={cn(
@@ -2328,7 +2335,7 @@ function LoanCounterpartyTableCard({
                   {formatRoundedMoneyText(totals.received)}
                 </TableCell>
                 <TableCell className="px-3 py-2 text-right text-sm font-mono font-bold whitespace-nowrap text-destructive">
-                  {formatOutflowMoneyText(totals.issued)}
+                  {formatRoundedMoneyText(totals.issued)}
                 </TableCell>
                 <TableCell
                   className={cn(
@@ -3448,15 +3455,18 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             return null;
           }
 
-          let kind: LoanFactRow["kind"] | null = null;
+          const rawMovement = parseTextNumeric(row["Движение"]);
+          let delta: number | null = null;
 
           if (isLoanReceivedArticle(article)) {
-            kind = "received";
+            delta = rawMovement;
           } else if (isLoanIssuedArticle(article)) {
-            kind = "issued";
+            delta = rawMovement * -1;
+          } else if (isGenericLoanArticle(article)) {
+            delta = rawMovement;
           }
 
-          if (!kind) {
+          if (delta === null) {
             return null;
           }
 
@@ -3466,8 +3476,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             counterparty,
             periodDate,
             periodKey: makePeriodKey(periodDate),
-            kind,
-            amount: Math.abs(parseTextNumeric(row["Движение"])),
+            delta,
           };
         })
         .filter((row): row is LoanFactRow => row !== null)
@@ -3563,7 +3572,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           <div className="grid gap-2 lg:grid-cols-[minmax(0,1.25fr)_repeat(3,minmax(0,1fr))]">
             <LoanPrimaryKpiCard value={closingPosition} />
             <LoanMetricCard icon={ArrowDown} label="Получено" value={receivedTotal} tone="success" />
-            <LoanMetricCard icon={ArrowUp} label="Выдано" value={issuedTotal} tone="accent" outflow />
+            <LoanMetricCard icon={ArrowUp} label="Выдано" value={issuedTotal} tone="accent" />
             <LoanMetricCard
               icon={RefreshCcw}
               label="Изменение"
