@@ -1599,6 +1599,7 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
     income: Banknote,
     expense: Receipt,
     profit: PiggyBank,
+    rentability: Gauge,
   };
 
   const KindIcon = kindIconMap[kind];
