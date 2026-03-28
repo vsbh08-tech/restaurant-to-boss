@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/roles";
-import { Area, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts";
+import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Legend, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 
 type FinanceFlow = {
   id: string;
@@ -1613,26 +1613,26 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
   const cardToneClass = cardToneMap[tone];
 
   return (
-    <div className={cn("kpi-card min-h-[94px] px-3 py-3", cardToneClass)}>
-      <div className="flex items-center gap-2.5">
-        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm", iconBgMap[tone])}>
-          <KindIcon className={cn("h-4 w-4", iconColorMap[tone])} />
+    <div className={cn("kpi-card px-3 py-2", cardToneClass)}>
+      <div className="flex items-center gap-2">
+        <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg shadow-sm", iconBgMap[tone])}>
+          <KindIcon className={cn("h-3.5 w-3.5", iconColorMap[tone])} />
         </div>
-        <p className="text-sm font-semibold leading-none text-foreground">{label}</p>
+        <p className="text-xs font-semibold leading-none text-foreground">{label}</p>
       </div>
-      <p className={cn("mt-2 whitespace-nowrap text-xl font-bold leading-tight tracking-tight sm:text-2xl", valueColorMap[tone])}>
+      <p className={cn("mt-1.5 whitespace-nowrap text-lg font-bold leading-tight tracking-tight", valueColorMap[tone])}>
         {normalizedValueText}
       </p>
-      <div className="mt-1.5 min-w-0">
-        <div className={cn("flex items-center gap-1 text-[13px] font-bold", toneClass)}>
-          <Icon className="h-4 w-4 shrink-0" strokeWidth={2.6} />
+      <div className="mt-1 min-w-0">
+        <div className={cn("flex items-center gap-1 text-[12px] font-bold", toneClass)}>
+          <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.6} />
           <span className="font-bold">
             {changeText || (changePct === null ? "n/a" : `${changePct > 0 ? "+" : ""}${Math.round(changePct)}%`)}
           </span>
         </div>
         <p
           className={cn(
-            "mt-0.5 text-xs leading-tight whitespace-normal",
+            "mt-0.5 text-[11px] leading-tight whitespace-normal",
             kind === "profit" ? "text-foreground/70" : "text-muted-foreground",
           )}
         >
@@ -1665,22 +1665,22 @@ function TransferKpiCard({ icon: Icon, label, value, subtitle, tone }: TransferK
   const toneConfig = toneMap[tone];
 
   return (
-    <div className={cn("min-h-[80px] px-3 py-2.5", toneConfig.cardClass)}>
-      <div className="flex items-start gap-2.5">
-        <div className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm", toneConfig.iconClassName)}>
-          <Icon className="h-4 w-4" />
+    <div className={cn("px-3 py-2", toneConfig.cardClass)}>
+      <div className="flex items-start gap-2">
+        <div className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg shadow-sm", toneConfig.iconClassName)}>
+          <Icon className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0">
           <p className="text-xs leading-snug text-muted-foreground">{label}</p>
           <p
             className={cn(
-              "mt-0.5 text-xl font-bold leading-tight tracking-tight xl:text-2xl",
+              "mt-0.5 text-lg font-bold leading-tight tracking-tight",
               toneConfig.valueClassName,
             )}
           >
             {value}
           </p>
-          {subtitle ? <p className="mt-0.5 text-[11px] text-muted-foreground">{subtitle}</p> : null}
+          {subtitle ? <p className="mt-0.5 text-[10px] text-muted-foreground">{subtitle}</p> : null}
         </div>
       </div>
     </div>
@@ -2500,58 +2500,53 @@ function StructureCard({
 
   return (
     <Card className="overflow-hidden border-0 shadow-md">
-      <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
-        <CardTitle className="text-sm font-serif flex items-center gap-2">
-          <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
+      <CardHeader className="px-3 py-2 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <CardTitle className="text-xs font-serif flex items-center gap-2">
+          <div className="h-4 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
           {title}
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="px-4 pb-4 pt-0">
+      <CardContent className="px-3 pb-2 pt-0">
         {rows.length === 0 ? (
-          <div className="py-6 text-sm text-muted-foreground">Нет данных по выбранному срезу.</div>
+          <div className="py-4 text-xs text-muted-foreground">Нет данных по выбранному срезу.</div>
         ) : (
           <>
-            <div className="max-h-[320px] overflow-y-auto pr-1">
-              <div className="divide-y divide-border/30">
-                {rows.map((row, idx) => {
-                  const barWidth = maxMagnitude === 0 ? 0 : Math.max((row.magnitude / maxMagnitude) * 100, 4);
-                  const sharePercent = totalValue === 0 ? 0 : Math.round((Math.abs(row.value) / totalValue) * 100);
+            <div className="divide-y divide-border/30">
+              {rows.map((row) => {
+                const barWidth = maxMagnitude === 0 ? 0 : Math.max((row.magnitude / maxMagnitude) * 100, 4);
+                const sharePercent = totalValue === 0 ? 0 : Math.round((Math.abs(row.value) / totalValue) * 100);
 
-                  return (
-                    <div
-                      key={row.article}
-                      className="py-2.5 group hover:bg-muted/20 transition-colors -mx-1 px-1 rounded"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm flex-1 min-w-0 break-words leading-snug">{row.article}</p>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className={cn("text-sm font-mono font-medium whitespace-nowrap", row.value < 0 && "text-destructive")}>
-                            {formatCurrency(roundMoneyDisplayAmount(row.value))} ₽
+                return (
+                  <div key={row.article} className="py-1.5 hover:bg-muted/20 transition-colors rounded">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs flex-1 min-w-0 break-words leading-snug">{row.article}</p>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={cn("text-xs font-mono font-medium whitespace-nowrap", row.value < 0 && "text-destructive")}>
+                          {formatCurrency(roundMoneyDisplayAmount(row.value))} ₽
+                        </span>
+                        {showShare ? (
+                          <span className="inline-flex items-center justify-center min-w-[32px] rounded-full bg-primary/10 text-primary text-[9px] font-semibold px-1 py-0.5">
+                            {Math.round(row.share)}%
                           </span>
-                          {showShare ? (
-                            <span className="inline-flex items-center justify-center min-w-[38px] rounded-full bg-primary/10 text-primary text-[10px] font-semibold px-1.5 py-0.5">
-                              {Math.round(row.share)}%
-                            </span>
-                          ) : null}
-                        </div>
+                        ) : null}
                       </div>
-                      {showBars ? (
-                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted/70">
-                          <div
-                            className={cn("h-full rounded-full transition-all duration-500", barClassName)}
-                            style={{ width: `${barWidth}%` }}
-                          />
-                        </div>
-                      ) : null}
                     </div>
-                  );
-                })}
-              </div>
+                    {showBars ? (
+                      <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted/70">
+                        <div
+                          className={cn("h-full rounded-full transition-all duration-500", barClassName)}
+                          style={{ width: `${barWidth}%` }}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
 
             {typeof footerValue === "number" && footerLabel ? (
-              <div className="mt-2 flex items-center justify-between border-t-2 border-primary/20 pt-3 text-sm font-bold">
+              <div className="mt-1 flex items-center justify-between border-t-2 border-primary/20 pt-2 text-xs font-bold">
                 <span>{footerLabel}</span>
                 <span className={cn("font-mono", footerValue < 0 ? "text-destructive" : "text-primary")}>
                   {formatCurrency(roundMoneyDisplayAmount(footerValue))} ₽
@@ -2560,6 +2555,154 @@ function StructureCard({
             ) : null}
           </>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+const RESTAURANT_COLORS = [
+  "hsl(152, 50%, 38%)",  // green
+  "hsl(210, 55%, 52%)",  // blue
+  "hsl(0, 58%, 56%)",    // red/coral
+  "hsl(38, 85%, 50%)",   // orange
+  "hsl(260, 48%, 55%)",  // purple
+];
+
+const MONTH_LABELS_RU: Record<number, string> = {
+  0: "Янв", 1: "Фев", 2: "Мар", 3: "Апр", 4: "Май", 5: "Июн",
+  6: "Июл", 7: "Авг", 8: "Сен", 9: "Окт", 10: "Ноя", 11: "Дек",
+};
+
+function RestaurantProfitChart({
+  flowRows,
+  activeRestaurants,
+  periodOptions,
+}: {
+  flowRows: FinancialFlowRow[];
+  activeRestaurants: string[];
+  periodOptions: PeriodOption[];
+}) {
+  const chartData = useMemo(() => {
+    const sortedPeriods = [...periodOptions].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-6);
+
+    return sortedPeriods.map((period) => {
+      const datum: Record<string, any> = {
+        periodKey: period.key,
+        label: MONTH_LABELS_RU[period.date.getMonth()] ?? period.label,
+      };
+
+      let networkTotal = 0;
+
+      activeRestaurants.forEach((restaurant) => {
+        const restaurantFlows = flowRows.filter(
+          (row) => row.restaurant === restaurant && row.periodKey === period.key,
+        );
+        const metrics = summarizeFinancialMetrics(restaurantFlows);
+        datum[restaurant] = Math.round(metrics.profit);
+        networkTotal += metrics.profit;
+      });
+
+      datum["ИТОГО СЕТЬ"] = Math.round(networkTotal);
+
+      // YoY comparison
+      const prevYearKey = `${period.date.getFullYear() - 1}-${String(period.date.getMonth() + 1).padStart(2, "0")}`;
+      const prevYearFlows = flowRows.filter(
+        (row) => activeRestaurants.includes(row.restaurant) && row.periodKey === prevYearKey,
+      );
+      const prevMetrics = summarizeFinancialMetrics(prevYearFlows);
+      datum["yoyPrev"] = Math.round(prevMetrics.profit);
+      datum["yoyChange"] = prevMetrics.profit !== 0
+        ? Math.round(((networkTotal - prevMetrics.profit) / Math.abs(prevMetrics.profit)) * 100)
+        : null;
+
+      return datum;
+    });
+  }, [flowRows, activeRestaurants, periodOptions]);
+
+  if (chartData.length === 0 || activeRestaurants.length === 0) return null;
+
+  const restaurantColorMap = Object.fromEntries(
+    activeRestaurants.map((name, idx) => [name, RESTAURANT_COLORS[idx % RESTAURANT_COLORS.length]])
+  );
+
+  const chartConfig: ChartConfig = {
+    ...Object.fromEntries(activeRestaurants.map((name) => [name, { label: name, color: restaurantColorMap[name] }])),
+    "ИТОГО СЕТЬ": { label: "ИТОГО СЕТЬ", color: "hsl(0, 0%, 15%)" },
+  };
+
+  return (
+    <Card className="overflow-hidden border-0 shadow-md">
+      <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <CardTitle className="text-sm font-serif flex items-center gap-2">
+          <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
+          Вклад ресторанов в общую прибыль сети (6 месяцев)
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pb-4 pt-4">
+        <ChartContainer config={chartConfig} className="aspect-[2/1] w-full">
+          <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(228, 18%, 88%)" />
+            <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${Math.round(v / 1000)}т`} />
+            <ReferenceLine y={0} stroke="hsl(228, 12%, 48%)" strokeDasharray="4 4" />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                const yoyChange = payload[0]?.payload?.yoyChange;
+                return (
+                  <div className="rounded-lg border border-border/50 bg-card px-3 py-2 shadow-xl text-xs">
+                    <p className="font-semibold mb-1.5">{label}</p>
+                    {payload.map((entry: any) => (
+                      <div key={entry.dataKey} className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-1.5">
+                          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                          <span className="text-muted-foreground">{entry.name}</span>
+                        </div>
+                        <span className="font-mono font-medium">
+                          {formatCurrency(entry.value)} ₽
+                        </span>
+                      </div>
+                    ))}
+                    {yoyChange !== null && yoyChange !== undefined && (
+                      <div className={cn("mt-1 pt-1 border-t border-border/30 text-[11px]", yoyChange >= 0 ? "text-success" : "text-destructive")}>
+                        YoY: {yoyChange > 0 ? "+" : ""}{yoyChange}%
+                      </div>
+                    )}
+                  </div>
+                );
+              }}
+            />
+            <Legend
+              content={({ payload }) => (
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 pt-3 text-xs">
+                  {payload?.map((entry: any) => (
+                    <div key={entry.value} className="flex items-center gap-1.5 cursor-pointer">
+                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                      <span>{entry.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            />
+            {activeRestaurants.map((restaurant) => (
+              <Bar
+                key={restaurant}
+                dataKey={restaurant}
+                fill={restaurantColorMap[restaurant]}
+                radius={[3, 3, 0, 0]}
+                maxBarSize={40}
+              />
+            ))}
+            <Line
+              type="monotone"
+              dataKey="ИТОГО СЕТЬ"
+              stroke="hsl(0, 0%, 15%)"
+              strokeWidth={2.5}
+              dot={{ r: 4, fill: "hsl(0, 0%, 15%)", stroke: "white", strokeWidth: 2 }}
+              activeDot={{ r: 6 }}
+            />
+          </ComposedChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );
@@ -3077,6 +3220,12 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           />
         </div>
       )}
+
+      <RestaurantProfitChart
+        flowRows={flowRows}
+        activeRestaurants={activeRestaurants}
+        periodOptions={periodOptions}
+      />
     </div>
   );
 }
