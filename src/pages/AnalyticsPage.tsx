@@ -2512,7 +2512,7 @@ function StructureCard({
           <div className="py-4 text-xs text-muted-foreground">Нет данных по выбранному срезу.</div>
         ) : (
           <>
-            <div className="divide-y divide-border/30">
+            <div className={cn("divide-y divide-border/30", showBars && "max-h-[240px] overflow-y-auto pr-1")}>
               {rows.map((row) => {
                 const barWidth = maxMagnitude === 0 ? 0 : Math.max((row.magnitude / maxMagnitude) * 100, 4);
                 const sharePercent = totalValue === 0 ? 0 : Math.round((Math.abs(row.value) / totalValue) * 100);
