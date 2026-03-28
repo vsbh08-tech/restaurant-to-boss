@@ -4398,8 +4398,8 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         </Card>
       ) : (
         <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.45fr)_360px] 2xl:grid-cols-[minmax(0,1.35fr)_420px]">
-          <Card className="min-w-0 overflow-hidden border-0 shadow-md">
-            <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+          <Card className="min-w-0 overflow-hidden border border-border/60 shadow-lg rounded-xl">
+            <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 border-b-2 border-primary/20">
               <CardTitle className="text-sm font-serif flex items-center gap-2">
                 <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
                 Отчет
@@ -4409,8 +4409,8 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             <CardContent className="px-0 pt-0">
                 <Table className="min-w-[462px] table-fixed sm:min-w-max">
                 <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-primary/8 to-accent/8 border-b-2 border-primary/15">
-                    <TableHead className="sticky left-0 z-30 w-[106px] min-w-[106px] bg-gradient-to-r from-primary/10 to-primary/5 px-2 text-[10px] font-semibold text-foreground uppercase tracking-wide shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                  <TableRow className="bg-primary/10 border-b-2 border-primary/20">
+                    <TableHead className="sticky left-0 z-30 w-[106px] min-w-[106px] bg-primary/12 px-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
                       Статья
                     </TableHead>
                     <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
