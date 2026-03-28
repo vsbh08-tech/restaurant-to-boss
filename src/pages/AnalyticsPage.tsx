@@ -3072,6 +3072,12 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           />
         </div>
       )}
+
+      <RestaurantProfitChart
+        flowRows={flowRows}
+        activeRestaurants={activeRestaurants}
+        periodOptions={periodOptions}
+      />
     </div>
   );
 }
