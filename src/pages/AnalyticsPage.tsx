@@ -1613,26 +1613,26 @@ function KpiCard({ label, valueText, kind, changePct, comparisonText, changeText
   const cardToneClass = cardToneMap[tone];
 
   return (
-    <div className={cn("kpi-card min-h-[94px] px-3 py-3", cardToneClass)}>
-      <div className="flex items-center gap-2.5">
-        <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm", iconBgMap[tone])}>
-          <KindIcon className={cn("h-4 w-4", iconColorMap[tone])} />
+    <div className={cn("kpi-card px-3 py-2", cardToneClass)}>
+      <div className="flex items-center gap-2">
+        <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg shadow-sm", iconBgMap[tone])}>
+          <KindIcon className={cn("h-3.5 w-3.5", iconColorMap[tone])} />
         </div>
-        <p className="text-sm font-semibold leading-none text-foreground">{label}</p>
+        <p className="text-xs font-semibold leading-none text-foreground">{label}</p>
       </div>
-      <p className={cn("mt-2 whitespace-nowrap text-xl font-bold leading-tight tracking-tight sm:text-2xl", valueColorMap[tone])}>
+      <p className={cn("mt-1.5 whitespace-nowrap text-lg font-bold leading-tight tracking-tight", valueColorMap[tone])}>
         {normalizedValueText}
       </p>
-      <div className="mt-1.5 min-w-0">
-        <div className={cn("flex items-center gap-1 text-[13px] font-bold", toneClass)}>
-          <Icon className="h-4 w-4 shrink-0" strokeWidth={2.6} />
+      <div className="mt-1 min-w-0">
+        <div className={cn("flex items-center gap-1 text-[12px] font-bold", toneClass)}>
+          <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2.6} />
           <span className="font-bold">
             {changeText || (changePct === null ? "n/a" : `${changePct > 0 ? "+" : ""}${Math.round(changePct)}%`)}
           </span>
         </div>
         <p
           className={cn(
-            "mt-0.5 text-xs leading-tight whitespace-normal",
+            "mt-0.5 text-[11px] leading-tight whitespace-normal",
             kind === "profit" ? "text-foreground/70" : "text-muted-foreground",
           )}
         >

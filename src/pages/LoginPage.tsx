@@ -194,7 +194,7 @@ export default function LoginPage() {
 
             <Dialog open={demoDialogOpen} onOpenChange={setDemoDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="w-full border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50">
+                <Button variant="outline" className="w-full border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 hover:text-primary">
                   Тестовый вход
                 </Button>
               </DialogTrigger>
