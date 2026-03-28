@@ -1769,10 +1769,10 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             </TableHeader>
             <TableBody>
               {summary.rows.map((row, idx) => (
-                <TableRow key={row.restaurant} className={cn(idx % 2 === 0 ? "bg-background" : "bg-muted/20", "hover:bg-primary/5 transition-colors")}>
+                <TableRow key={row.restaurant} className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors border-b border-border/30")}>
                   <TableCell
-                    className="sticky left-0 z-30 w-[128px] min-w-[128px] overflow-hidden border-r border-border/50 px-3 py-2 text-xs font-semibold leading-tight shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
-                    style={{ background: idx % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.2)' }}
+                    className="sticky left-0 z-30 w-[128px] min-w-[128px] overflow-hidden border-r border-border/40 px-3 py-2 text-xs font-semibold leading-tight shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
+                    style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}
                   >
                     {row.restaurant}
                   </TableCell>
