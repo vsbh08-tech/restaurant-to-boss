@@ -2548,7 +2548,7 @@ function LoanCounterpartyTableCard({
 
         <Accordion type="single" collapsible className="mx-3 mb-3 mt-8 rounded-xl border border-dashed border-border/50 bg-muted/10">
           <AccordionItem value="investment-loans" className="border-none">
-            <AccordionTrigger className="px-4 py-3 text-left hover:no-underline">
+            <AccordionTrigger className="group px-4 py-3 text-left transition-colors hover:bg-background/40 hover:no-underline">
               <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -2560,6 +2560,7 @@ function LoanCounterpartyTableCard({
                   <p className="mt-1 text-xs text-muted-foreground">
                     Долгоруковская, накопленный итог на конец выбранного периода.
                   </p>
+                  <p className="mt-1 text-[11px] font-medium text-primary/85">Нажмите, чтобы раскрыть детали</p>
                 </div>
                 <div className="hidden rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground sm:block">
                   Период: {periodLabel}
@@ -2580,13 +2581,13 @@ function LoanCounterpartyTableCard({
                   <Table className="min-w-[420px] table-fixed">
                     <TableHeader>
                       <TableRow className="border-b border-border/40 bg-background/60">
-                        <TableHead className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+                        <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-primary sm:text-sm">
                           Контрагент
                         </TableHead>
-                        <TableHead className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+                        <TableHead className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-sm">
                           Сумма
                         </TableHead>
-                        <TableHead className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+                        <TableHead className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-sm">
                           Доля (%)
                         </TableHead>
                       </TableRow>
@@ -2597,16 +2598,16 @@ function LoanCounterpartyTableCard({
                           key={row.counterparty}
                           className={cn(idx % 2 === 0 ? "bg-background/75" : "bg-muted/5", "hover:bg-muted/10 transition-colors")}
                         >
-                          <TableCell className="px-4 py-2.5 text-sm text-foreground/80">{row.counterparty}</TableCell>
+                          <TableCell className="px-4 py-2.5 text-[13px] font-medium text-primary sm:text-sm">{row.counterparty}</TableCell>
                           <TableCell
                             className={cn(
-                              "px-3 py-2.5 text-right text-sm font-mono whitespace-nowrap",
-                              row.amount < 0 ? "text-destructive" : "text-foreground/80",
+                              "px-3 py-2.5 text-right text-[13px] font-mono whitespace-nowrap sm:text-sm",
+                              row.amount < 0 ? "text-destructive" : "text-foreground/75",
                             )}
                           >
                             {formatRoundedMoneyText(row.amount)}
                           </TableCell>
-                          <TableCell className="px-3 py-2.5 text-right text-sm font-mono whitespace-nowrap text-muted-foreground">
+                          <TableCell className="px-3 py-2.5 text-right text-[13px] font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
                             {Math.round(row.share)}%
                           </TableCell>
                         </TableRow>
@@ -2614,16 +2615,16 @@ function LoanCounterpartyTableCard({
                     </TableBody>
                     <TableFooter className="bg-muted/15">
                       <TableRow className="border-t border-border/40 bg-muted/15 hover:bg-muted/20">
-                        <TableCell className="px-4 py-2.5 text-sm font-medium text-foreground/90">Итого</TableCell>
+                        <TableCell className="px-4 py-2.5 text-[13px] font-medium text-primary sm:text-sm">Итого</TableCell>
                         <TableCell
                           className={cn(
-                            "px-3 py-2.5 text-right text-sm font-mono font-medium whitespace-nowrap",
-                            investmentTotal < 0 ? "text-destructive" : "text-foreground/90",
+                            "px-3 py-2.5 text-right text-[13px] font-mono font-medium whitespace-nowrap sm:text-sm",
+                            investmentTotal < 0 ? "text-destructive" : "text-foreground/80",
                           )}
                         >
                           {formatRoundedMoneyText(investmentTotal)}
                         </TableCell>
-                        <TableCell className="px-3 py-2.5 text-right text-sm font-mono whitespace-nowrap text-muted-foreground">
+                        <TableCell className="px-3 py-2.5 text-right text-[13px] font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
                           100%
                         </TableCell>
                       </TableRow>
