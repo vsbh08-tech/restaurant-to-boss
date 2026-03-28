@@ -2581,13 +2581,13 @@ function LoanCounterpartyTableCard({
                   <Table className="min-w-[420px] table-fixed">
                     <TableHeader>
                       <TableRow className="border-b border-border/40 bg-background/60">
-                        <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-primary sm:text-sm">
+                        <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
                           Контрагент
                         </TableHead>
-                        <TableHead className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-sm">
+                        <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
                           Сумма
                         </TableHead>
-                        <TableHead className="px-3 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-sm">
+                        <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
                           Доля (%)
                         </TableHead>
                       </TableRow>
@@ -2598,16 +2598,16 @@ function LoanCounterpartyTableCard({
                           key={row.counterparty}
                           className={cn(idx % 2 === 0 ? "bg-background/75" : "bg-muted/5", "hover:bg-muted/10 transition-colors")}
                         >
-                          <TableCell className="px-4 py-2.5 text-[13px] font-medium text-primary sm:text-sm">{row.counterparty}</TableCell>
+                          <TableCell className="px-4 py-2.5 text-xs font-medium text-primary sm:text-sm">{row.counterparty}</TableCell>
                           <TableCell
                             className={cn(
-                              "px-3 py-2.5 text-right text-[13px] font-mono whitespace-nowrap sm:text-sm",
+                              "px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap sm:text-sm",
                               row.amount < 0 ? "text-destructive" : "text-foreground/75",
                             )}
                           >
                             {formatRoundedMoneyText(row.amount)}
                           </TableCell>
-                          <TableCell className="px-3 py-2.5 text-right text-[13px] font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
+                          <TableCell className="px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
                             {Math.round(row.share)}%
                           </TableCell>
                         </TableRow>
@@ -2615,16 +2615,16 @@ function LoanCounterpartyTableCard({
                     </TableBody>
                     <TableFooter className="bg-muted/15">
                       <TableRow className="border-t border-border/40 bg-muted/15 hover:bg-muted/20">
-                        <TableCell className="px-4 py-2.5 text-[13px] font-medium text-primary sm:text-sm">Итого</TableCell>
+                        <TableCell className="px-4 py-2.5 text-xs font-medium text-primary sm:text-sm">Итого</TableCell>
                         <TableCell
                           className={cn(
-                            "px-3 py-2.5 text-right text-[13px] font-mono font-medium whitespace-nowrap sm:text-sm",
+                            "px-3 py-2.5 text-right text-xs font-mono font-medium whitespace-nowrap sm:text-sm",
                             investmentTotal < 0 ? "text-destructive" : "text-foreground/80",
                           )}
                         >
                           {formatRoundedMoneyText(investmentTotal)}
                         </TableCell>
-                        <TableCell className="px-3 py-2.5 text-right text-[13px] font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
+                        <TableCell className="px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
                           100%
                         </TableCell>
                       </TableRow>
