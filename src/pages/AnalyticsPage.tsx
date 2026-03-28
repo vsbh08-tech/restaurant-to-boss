@@ -1055,6 +1055,15 @@ function isRentLoanArticle(article: string) {
   return matchesArticleAlias(article, LOAN_RENT_ARTICLE_ALIASES);
 }
 
+function normalizeInvestmentLoanCounterparty(counterparty: string | null | undefined) {
+  const trimmed = counterparty?.trim() ?? "";
+  if (!trimmed) {
+    return "Без контрагента";
+  }
+
+  return normalizeLookupText(trimmed) === "гл кап" ? "ГЛ" : trimmed;
+}
+
 function buildLoanCounterpartyRows(rows: LoanFactRow[], selectedPeriodDate: Date | null) {
   if (!selectedPeriodDate) {
     return {
@@ -4341,7 +4350,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     owners.forEach((row) => {
       const periodDate = parsePeriodDate(row["Период"]);
       const restaurant = row["Ресторан"]?.trim() ?? "";
-      const counterparty = row["Псевдо"]?.trim() ?? "Без контрагента";
+      const counterparty = normalizeInvestmentLoanCounterparty(row["Псевдо"]);
       const article = normalizeLookupText(row["Группа"]);
 
       if (!periodDate || restaurant !== "Долгоруковская") {
