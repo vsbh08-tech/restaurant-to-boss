@@ -393,6 +393,22 @@ const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные"];
 const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные"];
 const LOAN_GENERIC_ARTICLE_ALIASES = ["займы"];
 const LOAN_RENT_ARTICLE_ALIASES = ["аренда"];
+const STICKY_HEADER_SURFACE_STYLE = {
+  background: "linear-gradient(hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.1)), hsl(var(--card))",
+};
+const STICKY_FOOTER_SURFACE_STYLE = {
+  background: "linear-gradient(hsl(var(--muted) / 0.2), hsl(var(--muted) / 0.2)), hsl(var(--card))",
+};
+const STICKY_ROW_SURFACE_EVEN_STYLE = {
+  background: "hsl(var(--card))",
+};
+const STICKY_ROW_SURFACE_ODD_STYLE = {
+  background: "linear-gradient(hsl(var(--muted) / 0.15), hsl(var(--muted) / 0.15)), hsl(var(--card))",
+};
+
+function getStripedStickySurfaceStyle(index: number) {
+  return index % 2 === 0 ? STICKY_ROW_SURFACE_EVEN_STYLE : STICKY_ROW_SURFACE_ODD_STYLE;
+}
 
 function makePeriodKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -1740,6 +1756,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 <TableHead
                   rowSpan={2}
                   className="sticky left-0 z-40 w-[128px] min-w-[128px] border-r border-primary/15 bg-primary/10 px-3 py-2 text-left text-xs font-bold uppercase tracking-wider leading-tight text-primary shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
+                  style={STICKY_HEADER_SURFACE_STYLE}
                 >
                   Откуда ↓
                 </TableHead>
@@ -1772,7 +1789,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 <TableRow key={row.restaurant} className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors border-b border-border/30")}>
                   <TableCell
                     className="sticky left-0 z-30 w-[128px] min-w-[128px] overflow-hidden border-r border-border/40 px-3 py-2 text-xs font-semibold leading-tight shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
-                    style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}
+                    style={getStripedStickySurfaceStyle(idx)}
                   >
                     {row.restaurant}
                   </TableCell>
@@ -1803,7 +1820,10 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             </TableBody>
             <TableFooter className="bg-muted/20">
               <TableRow className="bg-muted/20 border-t border-border/40 hover:bg-muted/25">
-                <TableCell className="sticky left-0 z-40 w-[128px] min-w-[128px] overflow-hidden border-r border-border/40 bg-muted/20 px-3 py-2.5 text-xs font-bold text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm">
+                <TableCell
+                  className="sticky left-0 z-40 w-[128px] min-w-[128px] overflow-hidden border-r border-border/40 bg-muted/20 px-3 py-2.5 text-xs font-bold text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm"
+                  style={STICKY_FOOTER_SURFACE_STYLE}
+                >
                   Итого получено
                 </TableCell>
                 {summary.columnTotals.map((amount, index) => (
@@ -2345,7 +2365,10 @@ function LoanCounterpartyTableCard({
           <Table className="min-w-[548px] table-fixed sm:min-w-max">
             <TableHeader>
               <TableRow className="bg-primary/10 border-b-2 border-primary/20">
-                <TableHead className="sticky left-0 z-30 w-[148px] min-w-[148px] border-r border-primary/15 bg-primary/10 px-3 py-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:text-xs">
+                <TableHead
+                  className="sticky left-0 z-30 w-[148px] min-w-[148px] border-r border-primary/15 bg-primary/10 px-3 py-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:text-xs"
+                  style={STICKY_HEADER_SURFACE_STYLE}
+                >
                   Контрагент
                 </TableHead>
                 <TableHead className="w-[104px] min-w-[104px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:text-xs">
@@ -2365,10 +2388,12 @@ function LoanCounterpartyTableCard({
             <TableBody>
               {rows.map((row, idx) => {
                 const stripeBg = idx % 2 === 0 ? "bg-card" : "bg-muted/15";
-                const stickyBg = idx % 2 === 0 ? "bg-card" : "bg-muted/20";
                 return (
                   <TableRow key={row.counterparty} className={cn(stripeBg, "hover:bg-primary/5 transition-colors")}>
-                    <TableCell className={cn("sticky left-0 z-20 overflow-hidden border-r border-border/40 px-3 py-2 text-xs font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.1)] sm:text-sm", stickyBg)}>
+                    <TableCell
+                      className="sticky left-0 z-20 overflow-hidden border-r border-border/40 px-3 py-2 text-xs font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.1)] sm:text-sm"
+                      style={getStripedStickySurfaceStyle(idx)}
+                    >
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
@@ -2411,7 +2436,10 @@ function LoanCounterpartyTableCard({
             </TableBody>
             <TableFooter className="bg-muted/20">
               <TableRow className="bg-muted/20 border-t border-border/40 hover:bg-muted/25">
-                <TableCell className="sticky left-0 z-30 overflow-hidden border-r border-border/40 bg-muted/20 px-3 py-2.5 text-xs font-bold text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:text-sm">
+                <TableCell
+                  className="sticky left-0 z-30 overflow-hidden border-r border-border/40 bg-muted/20 px-3 py-2.5 text-xs font-bold text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:text-sm"
+                  style={STICKY_FOOTER_SURFACE_STYLE}
+                >
                   Итого
                 </TableCell>
                 <TableCell
@@ -4414,7 +4442,10 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                 <Table className="min-w-[462px] table-fixed sm:min-w-max">
                 <TableHeader>
                   <TableRow className="bg-primary/10 border-b-2 border-primary/20">
-                    <TableHead className="sticky left-0 z-30 w-[106px] min-w-[106px] border-r border-primary/15 bg-primary/10 px-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                    <TableHead
+                      className="sticky left-0 z-30 w-[106px] min-w-[106px] border-r border-primary/15 bg-primary/10 px-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs"
+                      style={STICKY_HEADER_SURFACE_STYLE}
+                    >
                       Статья
                     </TableHead>
                     <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
@@ -4438,7 +4469,10 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                 <TableBody>
                   {reportRows.map((row, idx) => (
                     <TableRow key={row.article} className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors border-b border-border/30")}>
-                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] overflow-hidden border-r border-border/40 px-2 py-2 text-[10px] font-semibold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs" style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}>
+                      <TableCell
+                        className="sticky left-0 z-20 w-[106px] min-w-[106px] overflow-hidden border-r border-border/40 px-2 py-2 text-[10px] font-semibold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs"
+                        style={getStripedStickySurfaceStyle(idx)}
+                      >
                         {row.article}
                       </TableCell>
                         <TableCell
@@ -4464,7 +4498,10 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                   </TableBody>
                   <TableFooter className="bg-muted/20">
                     <TableRow className="bg-muted/20 border-t border-border/40 hover:bg-muted/25">
-                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] overflow-hidden border-r border-border/40 bg-muted/20 px-2 py-2.5 text-[10px] font-bold text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                      <TableCell
+                        className="sticky left-0 z-20 w-[106px] min-w-[106px] overflow-hidden border-r border-border/40 bg-muted/20 px-2 py-2.5 text-[10px] font-bold text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs"
+                        style={STICKY_FOOTER_SURFACE_STYLE}
+                      >
                         Общий итог
                       </TableCell>
                       <TableCell
@@ -4895,10 +4932,16 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
               <Table className="min-w-[520px] table-fixed sm:min-w-max">
                 <TableHeader>
                   <TableRow className="bg-primary/10 border-b-2 border-primary/20">
-                    <TableHead className="sticky left-0 z-50 w-[58px] min-w-[58px] border-r border-primary/15 bg-primary/10 px-1.5 py-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-[11px]">
+                    <TableHead
+                      className="sticky left-0 z-50 w-[58px] min-w-[58px] border-r border-primary/15 bg-primary/10 px-1.5 py-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-[11px]"
+                      style={STICKY_HEADER_SURFACE_STYLE}
+                    >
                       Дата
                     </TableHead>
-                    <TableHead className="sticky left-[58px] z-40 w-[88px] min-w-[88px] border-r border-primary/15 bg-primary/10 px-1.5 py-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-[11px]">
+                    <TableHead
+                      className="sticky left-[58px] z-40 w-[88px] min-w-[88px] border-r border-primary/15 bg-primary/10 px-1.5 py-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-[11px]"
+                      style={STICKY_HEADER_SURFACE_STYLE}
+                    >
                       Статья
                     </TableHead>
                     <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
@@ -4918,13 +4961,13 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                     <TableRow key={[row.periodKey, row.article].join("::")} className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors border-b border-border/30")}>
                       <TableCell
                         className="sticky left-0 z-40 w-[58px] min-w-[58px] overflow-hidden border-r border-border/40 px-1.5 py-2 text-[10px] font-semibold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-xs"
-                        style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}
+                        style={getStripedStickySurfaceStyle(idx)}
                       >
                         {formatPeriodRangeLabel(row.periodDate)}
                       </TableCell>
                       <TableCell
                         className="sticky left-[58px] z-30 w-[88px] min-w-[88px] overflow-hidden truncate border-r border-border/40 px-1.5 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-xs"
-                        style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}
+                        style={getStripedStickySurfaceStyle(idx)}
                       >
                         {row.article}
                       </TableCell>
