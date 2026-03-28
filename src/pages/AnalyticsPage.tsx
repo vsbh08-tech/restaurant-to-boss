@@ -2560,12 +2560,16 @@ function StructureCard({
   );
 }
 
-const RESTAURANT_COLORS = [
-  "hsl(152, 50%, 38%)",  // green
-  "hsl(210, 55%, 52%)",  // blue
+const RESTAURANT_COLOR_MAP: Record<string, string> = {
+  "Долгоруковская": "hsl(210, 65%, 55%)",   // голубой
+  "РестПрМ": "hsl(152, 55%, 42%)",          // зеленый
+  "Солнцево": "hsl(45, 85%, 50%)",          // желтый
+};
+
+const RESTAURANT_COLORS_FALLBACK = [
+  "hsl(260, 48%, 55%)",  // purple
   "hsl(0, 58%, 56%)",    // red/coral
   "hsl(38, 85%, 50%)",   // orange
-  "hsl(260, 48%, 55%)",  // purple
 ];
 
 const MONTH_LABELS_RU: Record<number, string> = {
