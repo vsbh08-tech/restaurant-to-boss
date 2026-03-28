@@ -2512,7 +2512,7 @@ function StructureCard({
           <div className="py-4 text-xs text-muted-foreground">Нет данных по выбранному срезу.</div>
         ) : (
           <>
-            <div className="divide-y divide-border/30">
+            <div className={cn("divide-y divide-border/30", showBars && "max-h-[240px] overflow-y-auto pr-1")}>
               {rows.map((row) => {
                 const barWidth = maxMagnitude === 0 ? 0 : Math.max((row.magnitude / maxMagnitude) * 100, 4);
                 const sharePercent = totalValue === 0 ? 0 : Math.round((Math.abs(row.value) / totalValue) * 100);
@@ -2575,25 +2575,43 @@ const MONTH_LABELS_RU: Record<number, string> = {
 
 function RestaurantProfitChart({
   flowRows,
-  activeRestaurants,
+  allRestaurants,
   periodOptions,
+  selectedPeriodKey,
 }: {
   flowRows: FinancialFlowRow[];
-  activeRestaurants: string[];
+  allRestaurants: string[];
   periodOptions: PeriodOption[];
+  selectedPeriodKey: string | null;
 }) {
   const chartData = useMemo(() => {
-    const sortedPeriods = [...periodOptions].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-6);
+    // Determine anchor period: use selectedPeriodKey or latest available
+    let anchorDate: Date | null = null;
+    if (selectedPeriodKey) {
+      const found = periodOptions.find((o) => o.key === selectedPeriodKey);
+      if (found) anchorDate = found.date;
+    }
+    if (!anchorDate && periodOptions.length > 0) {
+      anchorDate = [...periodOptions].sort((a, b) => b.date.getTime() - a.date.getTime())[0].date;
+    }
+    if (!anchorDate) return [];
 
-    return sortedPeriods.map((period) => {
+    // Build 6-month window ending at anchor
+    const windowPeriods = Array.from({ length: 6 }, (_, i) => {
+      const offset = 5 - i;
+      const d = new Date(anchorDate!.getFullYear(), anchorDate!.getMonth() - offset, 1);
+      return { key: makePeriodKey(d), date: d };
+    });
+
+    return windowPeriods.map((period) => {
       const datum: Record<string, any> = {
         periodKey: period.key,
-        label: MONTH_LABELS_RU[period.date.getMonth()] ?? period.label,
+        label: MONTH_LABELS_RU[period.date.getMonth()] ?? period.key,
       };
 
       let networkTotal = 0;
 
-      activeRestaurants.forEach((restaurant) => {
+      allRestaurants.forEach((restaurant) => {
         const restaurantFlows = flowRows.filter(
           (row) => row.restaurant === restaurant && row.periodKey === period.key,
         );
@@ -2607,7 +2625,7 @@ function RestaurantProfitChart({
       // YoY comparison
       const prevYearKey = `${period.date.getFullYear() - 1}-${String(period.date.getMonth() + 1).padStart(2, "0")}`;
       const prevYearFlows = flowRows.filter(
-        (row) => activeRestaurants.includes(row.restaurant) && row.periodKey === prevYearKey,
+        (row) => allRestaurants.includes(row.restaurant) && row.periodKey === prevYearKey,
       );
       const prevMetrics = summarizeFinancialMetrics(prevYearFlows);
       datum["yoyPrev"] = Math.round(prevMetrics.profit);
@@ -2617,16 +2635,16 @@ function RestaurantProfitChart({
 
       return datum;
     });
-  }, [flowRows, activeRestaurants, periodOptions]);
+  }, [flowRows, allRestaurants, periodOptions, selectedPeriodKey]);
 
-  if (chartData.length === 0 || activeRestaurants.length === 0) return null;
+  if (chartData.length === 0 || allRestaurants.length === 0) return null;
 
   const restaurantColorMap = Object.fromEntries(
-    activeRestaurants.map((name, idx) => [name, RESTAURANT_COLORS[idx % RESTAURANT_COLORS.length]])
+    allRestaurants.map((name, idx) => [name, RESTAURANT_COLORS[idx % RESTAURANT_COLORS.length]])
   );
 
   const chartConfig: ChartConfig = {
-    ...Object.fromEntries(activeRestaurants.map((name) => [name, { label: name, color: restaurantColorMap[name] }])),
+    ...Object.fromEntries(allRestaurants.map((name) => [name, { label: name, color: restaurantColorMap[name] }])),
     "ИТОГО СЕТЬ": { label: "ИТОГО СЕТЬ", color: "hsl(0, 0%, 15%)" },
   };
 
@@ -2684,7 +2702,7 @@ function RestaurantProfitChart({
                 </div>
               )}
             />
-            {activeRestaurants.map((restaurant) => (
+            {allRestaurants.map((restaurant) => (
               <Bar
                 key={restaurant}
                 dataKey={restaurant}
@@ -3223,8 +3241,9 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
       <RestaurantProfitChart
         flowRows={flowRows}
-        activeRestaurants={activeRestaurants}
+        allRestaurants={restaurantOptions}
         periodOptions={periodOptions}
+        selectedPeriodKey={selectedPeriods.length > 0 ? selectedPeriods[selectedPeriods.length - 1] : null}
       />
     </div>
   );
@@ -3579,56 +3598,54 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
   return (
     <div className="space-y-3">
-      <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
-        <CardContent className="space-y-3 px-3 py-3">
-          <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,1fr)]">
-            <div className="flex flex-wrap items-start gap-2">
-              {!scope?.hideRestaurantFilter && (
-                <FilterChipGroup
-                  label="Рестораны"
-                  options={restaurantOptions}
-                  selection={selectedRestaurants}
-                  onChange={setSelectedRestaurants}
-                  matchPeriodHeight
-                  allowSelectAll
-                  compact
-                />
-              )}
-              <PeriodSelector
-                selection={selectedPeriods}
-                onChange={setSelectedPeriods}
-                options={periodOptions}
-                refsMap={periodRefs}
+      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,1fr)]">
+        <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
+          <CardContent className="flex flex-wrap items-start gap-2 px-3 py-3">
+            {!scope?.hideRestaurantFilter && (
+              <FilterChipGroup
+                label="Рестораны"
+                options={restaurantOptions}
+                selection={selectedRestaurants}
+                onChange={setSelectedRestaurants}
+                matchPeriodHeight
+                allowSelectAll
                 compact
-                allowSelectAll={false}
               />
-            </div>
+            )}
+            <PeriodSelector
+              selection={selectedPeriods}
+              onChange={setSelectedPeriods}
+              options={periodOptions}
+              refsMap={periodRefs}
+              compact
+              allowSelectAll={false}
+            />
+          </CardContent>
+        </Card>
 
-            <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-3">
-              <TransferKpiCard
-                icon={Wallet}
-                label="Денег всего"
-                value={`${formatCurrency(roundMoneyDisplayAmount(closingCashTotal))} ₽`}
-                subtitle={`на конец ${endingPeriodLabel}`}
-                tone="primary"
-              />
-              <TransferKpiCard
-                icon={HandCoins}
-                label="Нужно заплатить"
-                value={`${formatCurrency(roundMoneyDisplayAmount(requiredPaymentTotal))} ₽`}
-                subtitle="обязательные выплаты"
-                tone={requiredPaymentTotal > 0 ? "accent" : "success"}
-              />
-              <TransferKpiCard
-                icon={PiggyBank}
-                label="Остаток после выплат"
-                value={`${formatCurrency(roundMoneyDisplayAmount(remainingAfterPayments))} ₽`}
-                tone={remainingAfterPayments < 0 ? "accent" : "success"}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-3">
+          <TransferKpiCard
+            icon={Wallet}
+            label="Денег всего"
+            value={`${formatCurrency(roundMoneyDisplayAmount(closingCashTotal))} ₽`}
+            subtitle={`на конец ${endingPeriodLabel}`}
+            tone="primary"
+          />
+          <TransferKpiCard
+            icon={HandCoins}
+            label="Нужно заплатить"
+            value={`${formatCurrency(roundMoneyDisplayAmount(requiredPaymentTotal))} ₽`}
+            subtitle="обязательные выплаты"
+            tone={requiredPaymentTotal > 0 ? "accent" : "success"}
+          />
+          <TransferKpiCard
+            icon={PiggyBank}
+            label="Остаток после выплат"
+            value={`${formatCurrency(roundMoneyDisplayAmount(remainingAfterPayments))} ₽`}
+            tone={remainingAfterPayments < 0 ? "accent" : "success"}
+          />
+        </div>
+      </div>
 
       <div className="grid gap-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
         <div className="grid gap-3">
