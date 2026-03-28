@@ -2397,7 +2397,7 @@ function LoanCounterpartyTableCard({
 }) {
   const endingIssuedTotal = rows.reduce((sum, row) => (row.closing < 0 ? sum + Math.abs(row.closing) : sum), 0);
   const endingReceivedTotal = rows.reduce((sum, row) => (row.closing > 0 ? sum + row.closing : sum), 0);
-  const endingChangeTotal = endingReceivedTotal - endingIssuedTotal;
+  const endingClosingTotal = endingReceivedTotal - endingIssuedTotal;
 
   return (
     <Card className="min-w-0 overflow-hidden rounded-xl border border-border/60 shadow-lg">
@@ -2526,9 +2526,9 @@ function LoanCounterpartyTableCard({
             <LoanCompactMetricCard icon={ArrowDown} label="Займы полученные" value={endingReceivedTotal} tone="success" />
             <LoanCompactMetricCard
               icon={RefreshCcw}
-              label="Изменение"
-              value={endingChangeTotal}
-              tone={endingChangeTotal < 0 ? "accent" : endingChangeTotal > 0 ? "success" : "primary"}
+              label="Остаток на конец периода"
+              value={endingClosingTotal}
+              tone={endingClosingTotal < 0 ? "accent" : endingClosingTotal > 0 ? "success" : "primary"}
             />
           </div>
         </div>
