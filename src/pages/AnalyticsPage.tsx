@@ -1719,8 +1719,8 @@ function TransferPeriodCard({
 
 function TransferMatrixCard({ title, periodLabel, summary, description }: TransferMatrixCardProps) {
   return (
-    <Card className="min-w-0 overflow-hidden border-0 shadow-md">
-      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+    <Card className="min-w-0 overflow-hidden border border-border/60 shadow-lg rounded-xl">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 border-b-2 border-primary/20">
         <div className="flex items-start gap-2">
           <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent mt-0.5" />
           <div>
@@ -1736,31 +1736,31 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
       <CardContent className="px-0 pt-0">
         <Table className="min-w-[594px] table-fixed sm:min-w-max">
             <TableHeader>
-              <TableRow className="bg-gradient-to-r from-primary/8 to-accent/8 border-b border-primary/15">
+              <TableRow className="bg-primary/10 border-b border-primary/20">
                 <TableHead
                   rowSpan={2}
-                  className="sticky left-0 z-40 w-[128px] min-w-[128px] border-r border-primary/10 bg-gradient-to-r from-primary/12 to-primary/6 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide leading-tight text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
+                  className="sticky left-0 z-40 w-[128px] min-w-[128px] border-r border-primary/15 bg-primary/15 px-3 py-2 text-left text-xs font-bold uppercase tracking-wider leading-tight text-primary shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
                 >
                   Откуда ↓
                 </TableHead>
                 <TableHead
                   colSpan={summary.restaurants.length}
-                  className="px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-foreground sm:py-2.5 sm:text-sm"
+                  className="px-2 py-2 text-center text-xs font-bold uppercase tracking-wider text-primary sm:py-2.5 sm:text-sm"
                 >
                   Куда →
                 </TableHead>
                 <TableHead
                   rowSpan={2}
-                  className="w-[112px] min-w-[112px] px-2 py-2 text-right text-xs font-semibold uppercase tracking-wide leading-tight text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
+                  className="w-[112px] min-w-[112px] px-2 py-2 text-right text-xs font-bold uppercase tracking-wider leading-tight text-primary sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
                 >
                   Итого выдано
                 </TableHead>
               </TableRow>
-              <TableRow className="bg-gradient-to-r from-primary/5 to-accent/5 border-b-2 border-primary/15">
+              <TableRow className="bg-primary/6 border-b-2 border-primary/20">
                 {summary.restaurants.map((restaurant) => (
                   <TableHead
                     key={restaurant}
-                    className="w-[118px] min-w-[118px] px-2 py-2 text-center text-[10px] font-semibold leading-tight whitespace-nowrap text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
+                    className="w-[118px] min-w-[118px] px-2 py-2 text-center text-[10px] font-bold leading-tight whitespace-nowrap text-primary sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
                   >
                     {restaurant}
                   </TableHead>
@@ -1769,10 +1769,10 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
             </TableHeader>
             <TableBody>
               {summary.rows.map((row, idx) => (
-                <TableRow key={row.restaurant} className={cn(idx % 2 === 0 ? "bg-background" : "bg-muted/20", "hover:bg-primary/5 transition-colors")}>
+                <TableRow key={row.restaurant} className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors border-b border-border/30")}>
                   <TableCell
-                    className="sticky left-0 z-30 w-[128px] min-w-[128px] overflow-hidden border-r border-border/50 px-3 py-2 text-xs font-semibold leading-tight shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
-                    style={{ background: idx % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.2)' }}
+                    className="sticky left-0 z-30 w-[128px] min-w-[128px] overflow-hidden border-r border-border/40 px-3 py-2 text-xs font-semibold leading-tight shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
+                    style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}
                   >
                     {row.restaurant}
                   </TableCell>
@@ -1802,8 +1802,8 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
               ))}
             </TableBody>
             <TableFooter>
-              <TableRow className="bg-gradient-to-r from-primary/10 to-accent/10 border-t-2 border-primary/20 hover:from-primary/12 hover:to-accent/12">
-                <TableCell className="sticky left-0 z-40 w-[128px] min-w-[128px] overflow-hidden border-r border-primary/10 bg-gradient-to-r from-primary/12 to-primary/6 px-3 py-2.5 text-xs font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm">
+              <TableRow className="bg-primary/12 border-t-2 border-primary/25 hover:bg-primary/15">
+                <TableCell className="sticky left-0 z-40 w-[128px] min-w-[128px] overflow-hidden border-r border-primary/15 bg-primary/15 px-3 py-2.5 text-xs font-bold text-primary shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm">
                   Итого получено
                 </TableCell>
                 {summary.columnTotals.map((amount, index) => (
@@ -4302,7 +4302,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
   );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
         <CardHeader className="hidden">
           <CardTitle className="text-lg font-serif">Отчет Собственников</CardTitle>
@@ -4397,9 +4397,9 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.45fr)_360px] 2xl:grid-cols-[minmax(0,1.35fr)_420px]">
-          <Card className="min-w-0 overflow-hidden border-0 shadow-md">
-            <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.45fr)_360px] 2xl:grid-cols-[minmax(0,1.35fr)_420px]">
+          <Card className="min-w-0 overflow-hidden border border-border/60 shadow-lg rounded-xl">
+            <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 border-b-2 border-primary/20">
               <CardTitle className="text-sm font-serif flex items-center gap-2">
                 <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
                 Отчет
@@ -4409,23 +4409,23 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             <CardContent className="px-0 pt-0">
                 <Table className="min-w-[462px] table-fixed sm:min-w-max">
                 <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-primary/8 to-accent/8 border-b-2 border-primary/15">
-                    <TableHead className="sticky left-0 z-30 w-[106px] min-w-[106px] bg-gradient-to-r from-primary/10 to-primary/5 px-2 text-[10px] font-semibold text-foreground uppercase tracking-wide shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                  <TableRow className="bg-primary/10 border-b-2 border-primary/20">
+                    <TableHead className="sticky left-0 z-30 w-[106px] min-w-[106px] bg-primary/12 px-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
                       Статья
                     </TableHead>
-                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Ост. нач.</span>
                       <span className="hidden sm:inline">Остаток на начало</span>
                     </TableHead>
-                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Начисл.</span>
                       <span className="hidden sm:inline">Начислено / получено / в пути</span>
                     </TableHead>
-                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Выплата</span>
                       <span className="hidden sm:inline">Выплачено / возврат</span>
                     </TableHead>
-                    <TableHead className="h-9 w-[92px] min-w-[92px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[92px] min-w-[92px] px-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Ост. кон.</span>
                       <span className="hidden sm:inline">Остаток на конец</span>
                     </TableHead>
@@ -4433,8 +4433,8 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                 </TableHeader>
                 <TableBody>
                   {reportRows.map((row, idx) => (
-                    <TableRow key={row.article} className={cn(idx % 2 === 0 ? "bg-background" : "bg-muted/20", "hover:bg-primary/5 transition-colors")}>
-                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] px-2 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs" style={{ background: idx % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.2)' }}>
+                    <TableRow key={row.article} className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors border-b border-border/30")}>
+                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] px-2 py-2 text-[10px] font-semibold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs" style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}>
                         {row.article}
                       </TableCell>
                         <TableCell
@@ -4459,8 +4459,8 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                     ))}
                   </TableBody>
                   <TableFooter>
-                    <TableRow className="bg-gradient-to-r from-primary/10 to-accent/10 border-t-2 border-primary/20 hover:from-primary/12 hover:to-accent/12">
-                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] bg-gradient-to-r from-primary/12 to-primary/6 px-2 py-2.5 text-[10px] font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                    <TableRow className="bg-primary/12 border-t-2 border-primary/25 hover:bg-primary/15">
+                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] bg-primary/15 px-2 py-2.5 text-[10px] font-bold text-primary shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
                         Общий итог
                       </TableCell>
                       <TableCell
@@ -4863,8 +4863,8 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <Card className="overflow-hidden border-0 shadow-md">
-          <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-xl">
+          <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 border-b-2 border-primary/20">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="text-sm font-serif flex items-center gap-2">
                 <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
@@ -4890,20 +4890,20 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           <CardContent className="px-0 pt-0">
               <Table className="min-w-[520px] table-fixed sm:min-w-max">
                 <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-primary/8 to-accent/8 border-b-2 border-primary/15">
-                    <TableHead className="sticky left-0 z-40 w-[58px] min-w-[58px] border-r border-primary/10 bg-gradient-to-r from-primary/10 to-primary/5 px-1.5 py-2 text-[10px] font-semibold text-foreground uppercase tracking-wide shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-[11px]">
+                  <TableRow className="bg-primary/10 border-b-2 border-primary/20">
+                    <TableHead className="sticky left-0 z-40 w-[58px] min-w-[58px] border-r border-primary/15 bg-primary/12 px-1.5 py-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-[11px]">
                       Дата
                     </TableHead>
-                    <TableHead className="sticky left-[58px] z-40 w-[88px] min-w-[88px] border-r border-primary/10 bg-gradient-to-r from-primary/8 to-primary/4 px-1.5 py-2 text-[10px] font-semibold text-foreground uppercase tracking-wide shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-[11px]">
+                    <TableHead className="sticky left-[58px] z-40 w-[88px] min-w-[88px] border-r border-primary/15 bg-primary/10 px-1.5 py-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-[11px]">
                       Статья
                     </TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
                       <span className="sm:hidden">Ост. нач.</span>
                       <span className="hidden sm:inline">Остаток на начало</span>
                     </TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Начислено</TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Выплачено</TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Начислено</TableHead>
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Выплачено</TableHead>
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
                       <span className="sm:hidden">Ост. кон.</span>
                       <span className="hidden sm:inline">Остаток на конец</span>
                     </TableHead>
@@ -4911,16 +4911,16 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                 </TableHeader>
                 <TableBody>
                   {visibleRows.map((row, idx) => (
-                    <TableRow key={[row.periodKey, row.article].join("::")} className={cn(idx % 2 === 0 ? "bg-background" : "bg-muted/20", "hover:bg-primary/5 transition-colors")}>
+                    <TableRow key={[row.periodKey, row.article].join("::")} className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors border-b border-border/30")}>
                       <TableCell
-                        className="sticky left-0 z-30 w-[58px] min-w-[58px] overflow-hidden border-r border-border/50 px-1.5 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-xs"
-                        style={{ background: idx % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.2)' }}
+                        className="sticky left-0 z-30 w-[58px] min-w-[58px] overflow-hidden border-r border-border/40 px-1.5 py-2 text-[10px] font-semibold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-xs"
+                        style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}
                       >
                         {formatPeriodRangeLabel(row.periodDate)}
                       </TableCell>
                       <TableCell
-                        className="sticky left-[58px] z-30 w-[88px] min-w-[88px] overflow-hidden truncate border-r border-border/50 px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-xs"
-                        style={{ background: idx % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.2)' }}
+                        className="sticky left-[58px] z-30 w-[88px] min-w-[88px] overflow-hidden truncate border-r border-border/40 px-1.5 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-xs"
+                        style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}
                       >
                         {row.article}
                       </TableCell>
