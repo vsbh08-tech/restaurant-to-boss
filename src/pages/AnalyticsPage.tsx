@@ -2637,14 +2637,14 @@ function RestaurantProfitChart({
     });
   }, [flowRows, allRestaurants, periodOptions, selectedPeriodKey]);
 
-  if (chartData.length === 0 || activeRestaurants.length === 0) return null;
+  if (chartData.length === 0 || allRestaurants.length === 0) return null;
 
   const restaurantColorMap = Object.fromEntries(
-    activeRestaurants.map((name, idx) => [name, RESTAURANT_COLORS[idx % RESTAURANT_COLORS.length]])
+    allRestaurants.map((name, idx) => [name, RESTAURANT_COLORS[idx % RESTAURANT_COLORS.length]])
   );
 
   const chartConfig: ChartConfig = {
-    ...Object.fromEntries(activeRestaurants.map((name) => [name, { label: name, color: restaurantColorMap[name] }])),
+    ...Object.fromEntries(allRestaurants.map((name) => [name, { label: name, color: restaurantColorMap[name] }])),
     "ИТОГО СЕТЬ": { label: "ИТОГО СЕТЬ", color: "hsl(0, 0%, 15%)" },
   };
 
