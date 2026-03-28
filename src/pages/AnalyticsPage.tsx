@@ -29,6 +29,7 @@ import { formatCurrency, parsePeriodDate, parseTextNumeric } from "@/lib/supabas
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -2545,78 +2546,94 @@ function LoanCounterpartyTableCard({
           </div>
         </div>
 
-        <div className="mx-3 mb-3 mt-6 rounded-xl border border-dashed border-border/50 bg-muted/10">
-          <div className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
-            <div>
-              <h3 className="text-sm font-serif text-foreground/90">Инвестиционные займы</h3>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Долгоруковская, накопленный итог на конец выбранного периода. Справочно.
-              </p>
-            </div>
-            <div className="rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-              Период: {periodLabel}
-            </div>
-          </div>
+        <Accordion type="single" collapsible className="mx-3 mb-3 mt-8 rounded-xl border border-dashed border-border/50 bg-muted/10">
+          <AccordionItem value="investment-loans" className="border-none">
+            <AccordionTrigger className="px-4 py-3 text-left hover:no-underline">
+              <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-serif font-semibold text-foreground">Инвестиционные займы</h3>
+                    <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                      Справочно
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Долгоруковская, накопленный итог на конец выбранного периода.
+                  </p>
+                </div>
+                <div className="hidden rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground sm:block">
+                  Период: {periodLabel}
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-0 pb-0 pt-0">
+              <div className="border-t border-border/40 px-4 pb-4 pt-3 sm:hidden">
+                <div className="inline-flex rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  Период: {periodLabel}
+                </div>
+              </div>
 
-          {investmentRows.length === 0 ? (
-            <div className="px-4 pb-4 text-sm text-muted-foreground">Нет данных по инвестиционным займам.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table className="min-w-[420px] table-fixed">
-                <TableHeader>
-                  <TableRow className="border-b border-border/50 bg-muted/30">
-                    <TableHead className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
-                      Контрагент
-                    </TableHead>
-                    <TableHead className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
-                      Сумма
-                    </TableHead>
-                    <TableHead className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
-                      Доля (%)
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {investmentRows.map((row, idx) => (
-                    <TableRow
-                      key={row.counterparty}
-                      className={cn(idx % 2 === 0 ? "bg-background/80" : "bg-muted/10", "hover:bg-muted/20 transition-colors")}
-                    >
-                      <TableCell className="px-4 py-2.5 text-sm font-medium">{row.counterparty}</TableCell>
-                      <TableCell
-                        className={cn(
-                          "px-3 py-2.5 text-right text-sm font-mono font-semibold whitespace-nowrap",
-                          row.amount < 0 ? "text-destructive" : "text-foreground",
-                        )}
-                      >
-                        {formatRoundedMoneyText(row.amount)}
-                      </TableCell>
-                      <TableCell className="px-3 py-2.5 text-right text-sm font-mono whitespace-nowrap text-muted-foreground">
-                        {Math.round(row.share)}%
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                <TableFooter className="bg-muted/20">
-                  <TableRow className="border-t border-border/40 bg-muted/20 hover:bg-muted/25">
-                    <TableCell className="px-4 py-2.5 text-sm font-semibold text-foreground">Итого</TableCell>
-                    <TableCell
-                      className={cn(
-                        "px-3 py-2.5 text-right text-sm font-mono font-semibold whitespace-nowrap",
-                        investmentTotal < 0 ? "text-destructive" : "text-foreground",
-                      )}
-                    >
-                      {formatRoundedMoneyText(investmentTotal)}
-                    </TableCell>
-                    <TableCell className="px-3 py-2.5 text-right text-sm font-mono whitespace-nowrap text-muted-foreground">
-                      100%
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </div>
-          )}
-        </div>
+              {investmentRows.length === 0 ? (
+                <div className="px-4 pb-4 text-sm text-muted-foreground">Нет данных по инвестиционным займам.</div>
+              ) : (
+                <div className="overflow-x-auto border-t border-border/40">
+                  <Table className="min-w-[420px] table-fixed">
+                    <TableHeader>
+                      <TableRow className="border-b border-border/40 bg-background/60">
+                        <TableHead className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+                          Контрагент
+                        </TableHead>
+                        <TableHead className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+                          Сумма
+                        </TableHead>
+                        <TableHead className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+                          Доля (%)
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {investmentRows.map((row, idx) => (
+                        <TableRow
+                          key={row.counterparty}
+                          className={cn(idx % 2 === 0 ? "bg-background/75" : "bg-muted/5", "hover:bg-muted/10 transition-colors")}
+                        >
+                          <TableCell className="px-4 py-2.5 text-sm text-foreground/80">{row.counterparty}</TableCell>
+                          <TableCell
+                            className={cn(
+                              "px-3 py-2.5 text-right text-sm font-mono whitespace-nowrap",
+                              row.amount < 0 ? "text-destructive" : "text-foreground/80",
+                            )}
+                          >
+                            {formatRoundedMoneyText(row.amount)}
+                          </TableCell>
+                          <TableCell className="px-3 py-2.5 text-right text-sm font-mono whitespace-nowrap text-muted-foreground">
+                            {Math.round(row.share)}%
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    <TableFooter className="bg-muted/15">
+                      <TableRow className="border-t border-border/40 bg-muted/15 hover:bg-muted/20">
+                        <TableCell className="px-4 py-2.5 text-sm font-medium text-foreground/90">Итого</TableCell>
+                        <TableCell
+                          className={cn(
+                            "px-3 py-2.5 text-right text-sm font-mono font-medium whitespace-nowrap",
+                            investmentTotal < 0 ? "text-destructive" : "text-foreground/90",
+                          )}
+                        >
+                          {formatRoundedMoneyText(investmentTotal)}
+                        </TableCell>
+                        <TableCell className="px-3 py-2.5 text-right text-sm font-mono whitespace-nowrap text-muted-foreground">
+                          100%
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </div>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </CardContent>
     </Card>
   );
