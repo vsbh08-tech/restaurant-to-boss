@@ -2613,9 +2613,9 @@ function StructureCard({
 }
 
 const RESTAURANT_COLOR_MAP: Record<string, string> = {
-  "Долгоруковская": "hsl(210, 65%, 55%)",   // голубой
-  "РестПрМ": "hsl(152, 55%, 42%)",          // зеленый
-  "Солнцево": "hsl(45, 85%, 50%)",          // желтый
+  "Долгоруковская": "#38BDF8", // голубой
+  "РестПрМ": "#0F766E",        // зеленый
+  "Солнцево": "#FDE68A",       // желтый
 };
 
 const RESTAURANT_COLORS_FALLBACK = [
