@@ -2406,11 +2406,9 @@ function LoanCompactMetricCard({
 }
 
 function InvestmentLoanDistributionCard({
-  periodLabel,
   rows,
   total,
 }: {
-  periodLabel: string;
   rows: InvestmentLoanRow[];
   total: number;
 }) {
@@ -2431,56 +2429,38 @@ function InvestmentLoanDistributionCard({
     ]),
   ) as ChartConfig;
 
-  const renderLabel = ({
-    x = 0,
-    y = 0,
-    cx = 0,
-    index = 0,
-  }: {
-    x?: number;
-    y?: number;
-    cx?: number;
-    index?: number;
-  }) => {
-    const row = chartData[index];
-    if (!row) return null;
-
-    const isRightSide = x >= cx;
-    const textAnchor = isRightSide ? "start" : "end";
-
-    return (
-      <g>
-        <text x={x} y={y - 4} textAnchor={textAnchor} className="fill-primary text-[11px] font-medium">
-          {row.counterparty}
-        </text>
-        <text x={x} y={y + 10} textAnchor={textAnchor} className="fill-muted-foreground text-[10px]">
-          {formatRoundedMoneyText(row.amount)}
-        </text>
-        <text x={x} y={y + 22} textAnchor={textAnchor} className="fill-muted-foreground text-[10px]">
-          {Math.round(row.share)}%
-        </text>
-      </g>
-    );
-  };
+  const leftCallouts = chartData.filter((_, index) => index % 2 === 0);
+  const rightCallouts = chartData.filter((_, index) => index % 2 === 1);
 
   return (
-    <Card className="min-w-0 overflow-hidden rounded-xl border border-dashed border-border/50 bg-muted/10">
-      <CardHeader className="px-4 py-3">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <CardTitle className="text-sm font-serif">Инвестиционные займы</CardTitle>
-            <p className="mt-0.5 text-xs text-muted-foreground">Долгоруковская, структура по контрагентам на конец выбранного периода.</p>
-          </div>
-          <div className="rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-            Период: {periodLabel}
-          </div>
-        </div>
-      </CardHeader>
+    <div className="rounded-xl border border-border/40 bg-background/65 p-3">
+      <div className="mb-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary sm:text-xs">Структура по контрагентам</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">Диаграмма по тем же инвестиционным займам без дублирования таблицы.</p>
+      </div>
 
-      <CardContent className="px-3 pb-4 pt-0 sm:px-4">
-        <div className="relative mx-auto w-full max-w-[360px]">
-          <ChartContainer config={chartConfig} className="mx-auto h-[320px] w-full max-w-[360px]">
-            <PieChart margin={{ top: 28, right: 64, bottom: 28, left: 64 }}>
+      <div className="grid items-center gap-3 lg:grid-cols-[minmax(120px,1fr)_260px_minmax(120px,1fr)]">
+        <div className="order-2 grid gap-2 lg:order-1">
+          {leftCallouts.map((row) => (
+            <div key={row.chartKey} className="rounded-lg border border-border/30 bg-background/80 px-3 py-2 lg:text-right">
+              <div className="flex items-start gap-2 lg:flex-row-reverse">
+                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: row.fill }} />
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium text-primary sm:text-sm">{row.counterparty}</p>
+                  <p className={cn("mt-1 text-xs font-mono sm:text-sm", row.amount < 0 ? "text-destructive" : "text-foreground/80")}>
+                    {formatRoundedMoneyText(row.amount)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">{Math.round(row.share)}%</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="order-1 lg:order-2">
+          <div className="relative mx-auto w-full max-w-[260px]">
+            <ChartContainer config={chartConfig} className="mx-auto h-[260px] w-full max-w-[260px]">
+              <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
               <ChartTooltip
                 cursor={false}
                 content={
@@ -2510,31 +2490,49 @@ function InvestmentLoanDistributionCard({
                 nameKey="chartKey"
                 cx="50%"
                 cy="50%"
-                innerRadius={56}
-                outerRadius={88}
+                innerRadius={52}
+                outerRadius={84}
                 paddingAngle={3}
                 cornerRadius={6}
-                labelLine={{ stroke: "hsl(var(--border))", strokeWidth: 1 }}
-                label={renderLabel}
+                startAngle={90}
+                endAngle={-270}
               >
                 {chartData.map((row) => (
                   <Cell key={row.chartKey} fill={row.fill} />
                 ))}
               </Pie>
             </PieChart>
-          </ChartContainer>
+            </ChartContainer>
 
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="rounded-full border border-border/50 bg-background/95 px-3 py-2 text-center shadow-sm">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Итого</p>
-              <p className={cn("mt-0.5 text-sm font-mono font-semibold", total < 0 ? "text-destructive" : "text-foreground")}>
-                {formatRoundedMoneyText(total)}
-              </p>
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="rounded-full border border-border/50 bg-background/95 px-3 py-2 text-center shadow-sm">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Итого</p>
+                <p className={cn("mt-0.5 text-sm font-mono font-semibold", total < 0 ? "text-destructive" : "text-foreground")}>
+                  {formatRoundedMoneyText(total)}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="order-3 grid gap-2">
+          {rightCallouts.map((row) => (
+            <div key={row.chartKey} className="rounded-lg border border-border/30 bg-background/80 px-3 py-2">
+              <div className="flex items-start gap-2">
+                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: row.fill }} />
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium text-primary sm:text-sm">{row.counterparty}</p>
+                  <p className={cn("mt-1 text-xs font-mono sm:text-sm", row.amount < 0 ? "text-destructive" : "text-foreground/80")}>
+                    {formatRoundedMoneyText(row.amount)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">{Math.round(row.share)}%</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -2775,6 +2773,10 @@ function LoanCounterpartyTableCard({
                         </TableRow>
                       </TableFooter>
                     </Table>
+                  </div>
+
+                  <div className="mt-4">
+                    <InvestmentLoanDistributionCard rows={investmentRows} total={investmentTotal} />
                   </div>
                 </div>
               )}
@@ -4343,16 +4345,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             endingReceivedTotal={endingReceivedBalanceTotal}
             investmentRows={investmentLoanRows}
           />
-          <div className="grid gap-3 self-start">
-            <LoanPositionChartCard data={timelineData} />
-            {investmentLoanRows.length > 0 ? (
-              <InvestmentLoanDistributionCard
-                periodLabel={selectedPeriodOption.label}
-                rows={investmentLoanRows}
-                total={investmentLoanRows.reduce((sum, row) => sum + row.amount, 0)}
-              />
-            ) : null}
-          </div>
+          <LoanPositionChartCard data={timelineData} />
         </div>
       )}
     </div>
