@@ -3241,8 +3241,9 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
       <RestaurantProfitChart
         flowRows={flowRows}
-        activeRestaurants={activeRestaurants}
+        allRestaurants={restaurantOptions}
         periodOptions={periodOptions}
+        selectedPeriodKey={selectedPeriods.length > 0 ? selectedPeriods[selectedPeriods.length - 1] : null}
       />
     </div>
   );
