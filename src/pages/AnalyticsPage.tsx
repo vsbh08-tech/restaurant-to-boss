@@ -4863,8 +4863,8 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <Card className="overflow-hidden border-0 shadow-md">
-          <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-xl">
+          <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 border-b-2 border-primary/20">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="text-sm font-serif flex items-center gap-2">
                 <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
@@ -4890,20 +4890,20 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           <CardContent className="px-0 pt-0">
               <Table className="min-w-[520px] table-fixed sm:min-w-max">
                 <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-primary/8 to-accent/8 border-b-2 border-primary/15">
-                    <TableHead className="sticky left-0 z-40 w-[58px] min-w-[58px] border-r border-primary/10 bg-gradient-to-r from-primary/10 to-primary/5 px-1.5 py-2 text-[10px] font-semibold text-foreground uppercase tracking-wide shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-[11px]">
+                  <TableRow className="bg-primary/10 border-b-2 border-primary/20">
+                    <TableHead className="sticky left-0 z-40 w-[58px] min-w-[58px] border-r border-primary/15 bg-primary/12 px-1.5 py-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-[11px]">
                       Дата
                     </TableHead>
-                    <TableHead className="sticky left-[58px] z-40 w-[88px] min-w-[88px] border-r border-primary/10 bg-gradient-to-r from-primary/8 to-primary/4 px-1.5 py-2 text-[10px] font-semibold text-foreground uppercase tracking-wide shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-[11px]">
+                    <TableHead className="sticky left-[58px] z-40 w-[88px] min-w-[88px] border-r border-primary/15 bg-primary/10 px-1.5 py-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-[11px]">
                       Статья
                     </TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
                       <span className="sm:hidden">Ост. нач.</span>
                       <span className="hidden sm:inline">Остаток на начало</span>
                     </TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Начислено</TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Выплачено</TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Начислено</TableHead>
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Выплачено</TableHead>
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
                       <span className="sm:hidden">Ост. кон.</span>
                       <span className="hidden sm:inline">Остаток на конец</span>
                     </TableHead>
