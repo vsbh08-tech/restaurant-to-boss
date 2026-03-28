@@ -2661,10 +2661,10 @@ function RestaurantProfitChart({
       </CardHeader>
       <CardContent className="px-2 pb-4 pt-4">
         <ChartContainer config={chartConfig} className="aspect-[2/1] w-full">
-          <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+          <ComposedChart data={chartData} barGap={0} barCategoryGap="20%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(228, 18%, 88%)" />
             <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${Math.round(v / 1000)}т`} />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${Math.round(v / 1000)}т`} label={{ value: "Прибыль/Убыток (тыс.руб.)", angle: -90, position: "insideLeft", offset: 0, style: { fontSize: 11, fill: "hsl(228, 12%, 48%)", textAnchor: "middle" } }} />
             <ReferenceLine y={0} stroke="hsl(228, 12%, 48%)" strokeDasharray="4 4" />
             <Tooltip
               content={({ active, payload, label }) => {
