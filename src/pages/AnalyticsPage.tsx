@@ -2429,38 +2429,17 @@ function InvestmentLoanDistributionCard({
     ]),
   ) as ChartConfig;
 
-  const leftCallouts = chartData.filter((_, index) => index % 2 === 0);
-  const rightCallouts = chartData.filter((_, index) => index % 2 === 1);
-
   return (
-    <div className="rounded-xl border border-border/40 bg-background/65 p-3">
-      <div className="mb-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary sm:text-xs">Структура по контрагентам</p>
-        <p className="mt-1 text-[11px] text-muted-foreground">Диаграмма по тем же инвестиционным займам без дублирования таблицы.</p>
-      </div>
+    <Card className="min-w-0 overflow-hidden">
+      <CardHeader className="px-4 py-3">
+        <CardTitle className="text-sm font-serif">Структура по контрагентам</CardTitle>
+        <p className="mt-0.5 text-xs text-muted-foreground">Диаграмма по тем же инвестиционным займам без дублирования таблицы.</p>
+      </CardHeader>
 
-      <div className="grid items-center gap-3 lg:grid-cols-[minmax(120px,1fr)_260px_minmax(120px,1fr)]">
-        <div className="order-2 grid gap-2 lg:order-1">
-          {leftCallouts.map((row) => (
-            <div key={row.chartKey} className="rounded-lg border border-border/30 bg-background/80 px-3 py-2 lg:text-right">
-              <div className="flex items-start gap-2 lg:flex-row-reverse">
-                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: row.fill }} />
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-medium text-primary sm:text-sm">{row.counterparty}</p>
-                  <p className={cn("mt-1 text-xs font-mono sm:text-sm", row.amount < 0 ? "text-destructive" : "text-foreground/80")}>
-                    {formatRoundedMoneyText(row.amount)}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">{Math.round(row.share)}%</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="order-1 lg:order-2">
-          <div className="relative mx-auto w-full max-w-[260px]">
-            <ChartContainer config={chartConfig} className="mx-auto h-[260px] w-full max-w-[260px]">
-              <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+      <CardContent className="px-3 pb-4 pt-0 sm:px-4">
+        <div className="relative mx-auto w-full max-w-[220px]">
+          <ChartContainer config={chartConfig} className="mx-auto h-[220px] w-full max-w-[220px]">
+            <PieChart margin={{ top: 6, right: 6, bottom: 6, left: 6 }}>
               <ChartTooltip
                 cursor={false}
                 content={
@@ -2490,8 +2469,8 @@ function InvestmentLoanDistributionCard({
                 nameKey="chartKey"
                 cx="50%"
                 cy="50%"
-                innerRadius={52}
-                outerRadius={84}
+                innerRadius={44}
+                outerRadius={72}
                 paddingAngle={3}
                 cornerRadius={6}
                 startAngle={90}
@@ -2502,37 +2481,119 @@ function InvestmentLoanDistributionCard({
                 ))}
               </Pie>
             </PieChart>
-            </ChartContainer>
+          </ChartContainer>
 
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="rounded-full border border-border/50 bg-background/95 px-3 py-2 text-center shadow-sm">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Итого</p>
-                <p className={cn("mt-0.5 text-sm font-mono font-semibold", total < 0 ? "text-destructive" : "text-foreground")}>
-                  {formatRoundedMoneyText(total)}
-                </p>
-              </div>
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="rounded-full border border-border/50 bg-background/95 px-2.5 py-1.5 text-center shadow-sm">
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Итого</p>
+              <p className={cn("mt-0.5 text-xs font-mono font-semibold", total < 0 ? "text-destructive" : "text-foreground")}>
+                {formatRoundedMoneyText(total)}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="order-3 grid gap-2">
-          {rightCallouts.map((row) => (
-            <div key={row.chartKey} className="rounded-lg border border-border/30 bg-background/80 px-3 py-2">
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {chartData.map((row) => (
+            <div key={row.chartKey} className="rounded-lg border border-border/30 bg-background/80 px-2.5 py-2">
               <div className="flex items-start gap-2">
-                <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: row.fill }} />
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-medium text-primary sm:text-sm">{row.counterparty}</p>
-                  <p className={cn("mt-1 text-xs font-mono sm:text-sm", row.amount < 0 ? "text-destructive" : "text-foreground/80")}>
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: row.fill }} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="truncate text-[11px] font-medium leading-tight text-primary">{row.counterparty}</p>
+                    <p className="shrink-0 text-[10px] font-mono text-muted-foreground">{Math.round(row.share)}%</p>
+                  </div>
+                  <p className={cn("mt-0.5 text-[10px] font-mono leading-tight", row.amount < 0 ? "text-destructive" : "text-foreground/80")}>
                     {formatRoundedMoneyText(row.amount)}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">{Math.round(row.share)}%</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function InvestmentLoanTableCard({
+  periodLabel,
+  rows,
+}: {
+  periodLabel: string;
+  rows: InvestmentLoanRow[];
+}) {
+  const investmentTotal = rows.reduce((sum, row) => sum + row.amount, 0);
+
+  return (
+    <Card className="min-w-0 overflow-hidden rounded-xl border border-dashed border-border/50 bg-muted/10">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
+        <div>
+          <CardTitle className="text-base font-serif font-semibold text-foreground">Инвестиционные займы</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">Долгоруковская, накопленный итог на конец выбранного периода.</p>
+        </div>
+        <div className="rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+          Период: {periodLabel}
+        </div>
+      </CardHeader>
+
+      <CardContent className="px-4 pb-4 pt-0">
+        <div className="min-w-0 overflow-x-auto">
+          <Table className="min-w-[420px] table-fixed">
+            <TableHeader>
+              <TableRow className="border-b border-border/40 bg-background/60">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                  Контрагент
+                </TableHead>
+                <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                  Сумма
+                </TableHead>
+                <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                  Доля (%)
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row, idx) => (
+                <TableRow
+                  key={row.counterparty}
+                  className={cn(idx % 2 === 0 ? "bg-background/75" : "bg-muted/5", "hover:bg-muted/10 transition-colors")}
+                >
+                  <TableCell className="px-4 py-2.5 text-xs font-medium text-primary sm:text-sm">{row.counterparty}</TableCell>
+                  <TableCell
+                    className={cn(
+                      "px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap sm:text-sm",
+                      row.amount < 0 ? "text-destructive" : "text-foreground/75",
+                    )}
+                  >
+                    {formatRoundedMoneyText(row.amount)}
+                  </TableCell>
+                  <TableCell className="px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
+                    {Math.round(row.share)}%
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            <TableFooter className="bg-muted/15">
+              <TableRow className="border-t border-border/40 bg-muted/15 hover:bg-muted/20">
+                <TableCell className="px-4 py-2.5 text-xs font-medium text-primary sm:text-sm">Итого</TableCell>
+                <TableCell
+                  className={cn(
+                    "px-3 py-2.5 text-right text-xs font-mono font-medium whitespace-nowrap sm:text-sm",
+                    investmentTotal < 0 ? "text-destructive" : "text-foreground/80",
+                  )}
+                >
+                  {formatRoundedMoneyText(investmentTotal)}
+                </TableCell>
+                <TableCell className="px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
+                  100%
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -2542,7 +2603,6 @@ function LoanCounterpartyTableCard({
   totals,
   endingIssuedTotal,
   endingReceivedTotal,
-  investmentRows,
   investmentOpen,
   onInvestmentOpenChange,
 }: {
@@ -2551,12 +2611,10 @@ function LoanCounterpartyTableCard({
   totals: { opening: number; received: number; issued: number; closing: number };
   endingIssuedTotal: number;
   endingReceivedTotal: number;
-  investmentRows: InvestmentLoanRow[];
   investmentOpen: boolean;
   onInvestmentOpenChange: (open: boolean) => void;
 }) {
   const endingClosingTotal = endingReceivedTotal - endingIssuedTotal;
-  const investmentTotal = investmentRows.reduce((sum, row) => sum + row.amount, 0);
 
   return (
     <Card className="min-w-0 overflow-hidden rounded-xl border border-border/60 shadow-lg">
@@ -2719,75 +2777,7 @@ function LoanCounterpartyTableCard({
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="px-0 pb-0 pt-0">
-              <div className="border-t border-border/40 px-4 pb-4 pt-3 sm:hidden">
-                <div className="inline-flex rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-                  Период: {periodLabel}
-                </div>
-              </div>
-
-              {investmentRows.length === 0 ? (
-                <div className="px-4 pb-4 text-sm text-muted-foreground">Нет данных по инвестиционным займам.</div>
-              ) : (
-                <div className="border-t border-border/40 px-4 pb-4 pt-4">
-                  <div className="min-w-0 overflow-x-auto">
-                    <Table className="min-w-[420px] table-fixed">
-                      <TableHeader>
-                        <TableRow className="border-b border-border/40 bg-background/60">
-                          <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                            Контрагент
-                          </TableHead>
-                          <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                            Сумма
-                          </TableHead>
-                          <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                            Доля (%)
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {investmentRows.map((row, idx) => (
-                          <TableRow
-                            key={row.counterparty}
-                            className={cn(idx % 2 === 0 ? "bg-background/75" : "bg-muted/5", "hover:bg-muted/10 transition-colors")}
-                          >
-                            <TableCell className="px-4 py-2.5 text-xs font-medium text-primary sm:text-sm">{row.counterparty}</TableCell>
-                            <TableCell
-                              className={cn(
-                                "px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap sm:text-sm",
-                                row.amount < 0 ? "text-destructive" : "text-foreground/75",
-                              )}
-                            >
-                              {formatRoundedMoneyText(row.amount)}
-                            </TableCell>
-                            <TableCell className="px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
-                              {Math.round(row.share)}%
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                      <TableFooter className="bg-muted/15">
-                        <TableRow className="border-t border-border/40 bg-muted/15 hover:bg-muted/20">
-                          <TableCell className="px-4 py-2.5 text-xs font-medium text-primary sm:text-sm">Итого</TableCell>
-                          <TableCell
-                            className={cn(
-                              "px-3 py-2.5 text-right text-xs font-mono font-medium whitespace-nowrap sm:text-sm",
-                              investmentTotal < 0 ? "text-destructive" : "text-foreground/80",
-                            )}
-                          >
-                            {formatRoundedMoneyText(investmentTotal)}
-                          </TableCell>
-                          <TableCell className="px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
-                            100%
-                          </TableCell>
-                        </TableRow>
-                      </TableFooter>
-                    </Table>
-                  </div>
-
-                </div>
-              )}
-            </AccordionContent>
+            <AccordionContent className="hidden" />
           </AccordionItem>
         </Accordion>
       </CardContent>
@@ -4344,26 +4334,29 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-          <LoanCounterpartyTableCard
-            periodLabel={selectedPeriodOption.label}
-            rows={loanSummary.rows}
+        <div className="space-y-3">
+          <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+            <LoanCounterpartyTableCard
+              periodLabel={selectedPeriodOption.label}
+              rows={loanSummary.rows}
             totals={loanSummary.totals}
             endingIssuedTotal={endingIssuedBalanceTotal}
             endingReceivedTotal={endingReceivedBalanceTotal}
-            investmentRows={investmentLoanRows}
             investmentOpen={isInvestmentLoansOpen}
             onInvestmentOpenChange={setIsInvestmentLoansOpen}
           />
-          <div className="grid gap-3 self-start">
             <LoanPositionChartCard data={timelineData} />
-            {isInvestmentLoansOpen && investmentLoanRows.length > 0 ? (
+          </div>
+
+          {isInvestmentLoansOpen && investmentLoanRows.length > 0 ? (
+            <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+              <InvestmentLoanTableCard periodLabel={selectedPeriodOption.label} rows={investmentLoanRows} />
               <InvestmentLoanDistributionCard
                 rows={investmentLoanRows}
                 total={investmentLoanRows.reduce((sum, row) => sum + row.amount, 0)}
               />
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       )}
     </div>
