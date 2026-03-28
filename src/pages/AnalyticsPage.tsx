@@ -1736,10 +1736,10 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
       <CardContent className="px-0 pt-0">
         <Table className="min-w-[594px] table-fixed sm:min-w-max">
             <TableHeader>
-              <TableRow className="bg-gradient-to-r from-primary/8 to-accent/8 border-b border-primary/15">
+              <TableRow className="bg-primary/10 border-b border-primary/20">
                 <TableHead
                   rowSpan={2}
-                  className="sticky left-0 z-40 w-[128px] min-w-[128px] border-r border-primary/10 bg-gradient-to-r from-primary/12 to-primary/6 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide leading-tight text-foreground shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
+                  className="sticky left-0 z-40 w-[128px] min-w-[128px] border-r border-primary/15 bg-primary/15 px-3 py-2 text-left text-xs font-bold uppercase tracking-wider leading-tight text-primary shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-2.5 sm:py-2.5 sm:text-sm"
                 >
                   Откуда ↓
                 </TableHead>
