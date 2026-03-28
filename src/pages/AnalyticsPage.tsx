@@ -4919,8 +4919,8 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                         {formatPeriodRangeLabel(row.periodDate)}
                       </TableCell>
                       <TableCell
-                        className="sticky left-[58px] z-30 w-[88px] min-w-[88px] overflow-hidden truncate border-r border-border/50 px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-xs"
-                        style={{ background: idx % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.2)' }}
+                        className="sticky left-[58px] z-30 w-[88px] min-w-[88px] overflow-hidden truncate border-r border-border/40 px-1.5 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-xs"
+                        style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}
                       >
                         {row.article}
                       </TableCell>
