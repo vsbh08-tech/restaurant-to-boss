@@ -2412,6 +2412,15 @@ function InvestmentLoanDistributionCard({
   rows: InvestmentLoanRow[];
   total: number;
 }) {
+  const chartSize = 300;
+  const chartCenter = chartSize / 2;
+  const outerRadius = 72;
+  const labelWidth = 94;
+  const labelHeight = 38;
+  const topLimit = 20;
+  const bottomLimit = chartSize - labelHeight - 20;
+  const verticalGap = 42;
+
   const chartData = rows.map((row, index) => ({
     ...row,
     chartKey: `investment_${index + 1}`,
@@ -2429,17 +2438,85 @@ function InvestmentLoanDistributionCard({
     ]),
   ) as ChartConfig;
 
+  const totalMagnitude = chartData.reduce((sum, row) => sum + row.magnitude, 0);
+
+  const distributeCallouts = <T extends { desiredY: number }>(items: T[]) => {
+    const sorted = [...items].sort((a, b) => a.desiredY - b.desiredY);
+    const adjusted = sorted.map((item, index) => {
+      const previousY = index === 0 ? topLimit : sorted[index - 1].desiredY + verticalGap;
+      return {
+        ...item,
+        adjustedY: Math.max(item.desiredY, previousY),
+      };
+    });
+
+    if (adjusted.length > 0) {
+      const overflow = adjusted[adjusted.length - 1].adjustedY - bottomLimit;
+      if (overflow > 0) {
+        adjusted.forEach((item) => {
+          item.adjustedY -= overflow;
+        });
+
+        for (let index = adjusted.length - 2; index >= 0; index -= 1) {
+          adjusted[index].adjustedY = Math.min(adjusted[index].adjustedY, adjusted[index + 1].adjustedY - verticalGap);
+        }
+
+        const underflow = topLimit - adjusted[0].adjustedY;
+        if (underflow > 0) {
+          adjusted.forEach((item) => {
+            item.adjustedY += underflow;
+          });
+        }
+      }
+    }
+
+    return adjusted;
+  };
+
+  let currentAngle = 90;
+  const rawCallouts = chartData.map((row) => {
+    const angleSpan = totalMagnitude === 0 ? 0 : (row.magnitude / totalMagnitude) * 360;
+    const midAngle = currentAngle - angleSpan / 2;
+    currentAngle -= angleSpan;
+
+    const radians = (-midAngle * Math.PI) / 180;
+    const side = Math.cos(radians) >= 0 ? "right" : "left";
+    const startX = chartCenter + Math.cos(radians) * (outerRadius + 2);
+    const startY = chartCenter + Math.sin(radians) * (outerRadius + 2);
+    const elbowX = chartCenter + Math.cos(radians) * (outerRadius + 18);
+    const elbowY = chartCenter + Math.sin(radians) * (outerRadius + 18);
+
+    return {
+      ...row,
+      side,
+      startX,
+      startY,
+      elbowX,
+      elbowY,
+      desiredY: Math.max(topLimit, Math.min(bottomLimit, elbowY - labelHeight / 2)),
+    };
+  });
+
+  const leftCallouts = distributeCallouts(rawCallouts.filter((item) => item.side === "left")).map((item) => ({
+    ...item,
+    boxX: 6,
+  }));
+  const rightCallouts = distributeCallouts(rawCallouts.filter((item) => item.side === "right")).map((item) => ({
+    ...item,
+    boxX: chartSize - labelWidth - 6,
+  }));
+  const callouts = [...leftCallouts, ...rightCallouts];
+
   return (
-    <Card className="min-w-0 overflow-hidden">
+    <Card className="min-w-0 overflow-hidden h-full">
       <CardHeader className="px-4 py-3">
         <CardTitle className="text-sm font-serif">Структура по контрагентам</CardTitle>
-        <p className="mt-0.5 text-xs text-muted-foreground">Диаграмма по тем же инвестиционным займам без дублирования таблицы.</p>
       </CardHeader>
 
-      <CardContent className="px-3 pb-4 pt-0 sm:px-4">
-        <div className="relative mx-auto w-full max-w-[220px]">
-          <ChartContainer config={chartConfig} className="mx-auto h-[220px] w-full max-w-[220px]">
-            <PieChart margin={{ top: 6, right: 6, bottom: 6, left: 6 }}>
+      <CardContent className="flex h-full flex-col px-3 pb-4 pt-0 sm:px-4">
+        <div className="relative mx-auto w-full max-w-[300px]" style={{ height: chartSize }}>
+          <ChartContainer config={chartConfig} className="mx-auto h-[300px] w-full max-w-[300px]">
+            <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
               <ChartTooltip
                 cursor={false}
                 content={
@@ -2467,10 +2544,10 @@ function InvestmentLoanDistributionCard({
                 data={chartData}
                 dataKey="magnitude"
                 nameKey="chartKey"
-                cx="50%"
-                cy="50%"
+                cx={chartCenter}
+                cy={chartCenter}
                 innerRadius={44}
-                outerRadius={72}
+                outerRadius={outerRadius}
                 paddingAngle={3}
                 cornerRadius={6}
                 startAngle={90}
@@ -2483,6 +2560,54 @@ function InvestmentLoanDistributionCard({
             </PieChart>
           </ChartContainer>
 
+          <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
+            {callouts.map((item) => {
+              const lineY = item.adjustedY + labelHeight / 2;
+              const endX = item.side === "right" ? item.boxX : item.boxX + labelWidth;
+              const bendX = item.side === "right" ? item.boxX - 8 : item.boxX + labelWidth + 8;
+
+              return (
+                <polyline
+                  key={`${item.chartKey}-line`}
+                  fill="none"
+                  stroke={item.fill}
+                  strokeWidth={1.25}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  points={`${item.startX},${item.startY} ${item.elbowX},${item.elbowY} ${bendX},${lineY} ${endX},${lineY}`}
+                />
+              );
+            })}
+          </svg>
+
+          {callouts.map((item) => (
+            <div
+              key={item.chartKey}
+              className="absolute rounded-md bg-background/95 px-1.5 py-1 shadow-sm"
+              style={{
+                left: item.boxX,
+                top: item.adjustedY,
+                width: labelWidth,
+              }}
+            >
+              <p className={cn("truncate text-[10px] font-medium leading-tight", item.side === "left" ? "text-right text-primary" : "text-primary")}>
+                {item.counterparty}
+              </p>
+              <p
+                className={cn(
+                  "mt-0.5 text-[9px] font-mono leading-tight",
+                  item.side === "left" ? "text-right" : "",
+                  item.amount < 0 ? "text-destructive" : "text-foreground/80",
+                )}
+              >
+                {formatRoundedMoneyText(item.amount)}
+              </p>
+              <p className={cn("text-[9px] leading-tight text-muted-foreground", item.side === "left" ? "text-right" : "")}>
+                {Math.round(item.share)}%
+              </p>
+            </div>
+          ))}
+
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="rounded-full border border-border/50 bg-background/95 px-2.5 py-1.5 text-center shadow-sm">
               <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Итого</p>
@@ -2491,25 +2616,6 @@ function InvestmentLoanDistributionCard({
               </p>
             </div>
           </div>
-        </div>
-
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {chartData.map((row) => (
-            <div key={row.chartKey} className="rounded-lg border border-border/30 bg-background/80 px-2.5 py-2">
-              <div className="flex items-start gap-2">
-                <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: row.fill }} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="truncate text-[11px] font-medium leading-tight text-primary">{row.counterparty}</p>
-                    <p className="shrink-0 text-[10px] font-mono text-muted-foreground">{Math.round(row.share)}%</p>
-                  </div>
-                  <p className={cn("mt-0.5 text-[10px] font-mono leading-tight", row.amount < 0 ? "text-destructive" : "text-foreground/80")}>
-                    {formatRoundedMoneyText(row.amount)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       </CardContent>
     </Card>
@@ -2526,7 +2632,7 @@ function InvestmentLoanTableCard({
   const investmentTotal = rows.reduce((sum, row) => sum + row.amount, 0);
 
   return (
-    <Card className="min-w-0 overflow-hidden">
+    <Card className="min-w-0 overflow-hidden h-full">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
         <div>
           <CardTitle className="text-base font-serif font-semibold text-foreground">Инвестиционные займы</CardTitle>
@@ -2646,7 +2752,7 @@ function InvestmentLoanSectionCard({
           {rows.length === 0 ? (
             <div className="border-t border-border/40 pt-4 text-sm text-muted-foreground">Нет данных по инвестиционным займам.</div>
           ) : (
-            <div className="grid items-start gap-3 border-t border-border/40 pt-4 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+            <div className="grid items-stretch gap-3 border-t border-border/40 pt-4 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
               <InvestmentLoanTableCard periodLabel={periodLabel} rows={rows} />
               <InvestmentLoanDistributionCard
                 rows={rows}
