@@ -1745,7 +1745,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 </TableHead>
                 <TableHead
                   colSpan={summary.restaurants.length}
-                  className="px-2 py-2 text-center text-xs font-semibold uppercase tracking-wide text-foreground sm:py-2.5 sm:text-sm"
+                  className="px-2 py-2 text-center text-xs font-bold uppercase tracking-wider text-primary sm:py-2.5 sm:text-sm"
                 >
                   Куда →
                 </TableHead>
