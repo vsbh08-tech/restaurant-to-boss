@@ -2632,6 +2632,9 @@ function RestaurantProfitChart({
       datum["yoyChange"] = prevMetrics.profit !== 0
         ? Math.round(((networkTotal - prevMetrics.profit) / Math.abs(prevMetrics.profit)) * 100)
         : null;
+      // Store previous year month label for tooltip
+      const prevMonthLabel = MONTH_LABELS_RU[period.date.getMonth()]?.toLowerCase() ?? "";
+      datum["yoyLabel"] = `${prevMonthLabel} ${period.date.getFullYear() - 1} г.`;
 
       return datum;
     });
