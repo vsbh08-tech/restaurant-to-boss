@@ -4887,35 +4887,37 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           <CardContent className="px-0 pt-0">
               <Table className="min-w-[520px] table-fixed sm:min-w-max">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="sticky left-0 z-40 w-[58px] min-w-[58px] border-r border-border bg-muted px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-[11px]">
+                  <TableRow className="bg-gradient-to-r from-primary/8 to-accent/8 border-b-2 border-primary/15">
+                    <TableHead className="sticky left-0 z-40 w-[58px] min-w-[58px] border-r border-primary/10 bg-gradient-to-r from-primary/10 to-primary/5 px-1.5 py-2 text-[10px] font-semibold text-foreground uppercase tracking-wide shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-[11px]">
                       Дата
                     </TableHead>
-                    <TableHead className="sticky left-[58px] z-40 w-[88px] min-w-[88px] border-r border-border bg-muted px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-[11px]">
+                    <TableHead className="sticky left-[58px] z-40 w-[88px] min-w-[88px] border-r border-primary/10 bg-gradient-to-r from-primary/8 to-primary/4 px-1.5 py-2 text-[10px] font-semibold text-foreground uppercase tracking-wide shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-[11px]">
                       Статья
                     </TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
                       <span className="sm:hidden">Ост. нач.</span>
                       <span className="hidden sm:inline">Остаток на начало</span>
                     </TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Начислено</TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Выплачено</TableHead>
-                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Начислено</TableHead>
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">Выплачено</TableHead>
+                    <TableHead className="h-10 w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">
                       <span className="sm:hidden">Ост. кон.</span>
                       <span className="hidden sm:inline">Остаток на конец</span>
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visibleRows.map((row) => (
-                    <TableRow key={[row.periodKey, row.article].join("::")}>
+                  {visibleRows.map((row, idx) => (
+                    <TableRow key={[row.periodKey, row.article].join("::")} className={cn(idx % 2 === 0 ? "bg-background" : "bg-muted/20", "hover:bg-primary/5 transition-colors")}>
                       <TableCell
-                        className="sticky left-0 z-30 w-[58px] min-w-[58px] overflow-hidden border-r border-border bg-muted px-1.5 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-xs"
+                        className="sticky left-0 z-30 w-[58px] min-w-[58px] overflow-hidden border-r border-border/50 px-1.5 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-xs"
+                        style={{ background: idx % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.2)' }}
                       >
                         {formatPeriodRangeLabel(row.periodDate)}
                       </TableCell>
                       <TableCell
-                        className="sticky left-[58px] z-30 w-[88px] min-w-[88px] overflow-hidden truncate border-r border-border bg-muted px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-xs"
+                        className="sticky left-[58px] z-30 w-[88px] min-w-[88px] overflow-hidden truncate border-r border-border/50 px-1.5 py-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:left-[84px] sm:w-[168px] sm:min-w-[168px] sm:px-2 sm:text-xs"
+                        style={{ background: idx % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.2)' }}
                       >
                         {row.article}
                       </TableCell>
@@ -4927,12 +4929,12 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                       >
                         {formatCurrency(roundMoneyDisplayAmount(row.opening))} ₽
                       </TableCell>
-                      <TableCell className="w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap text-sky sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">{formatCurrency(roundMoneyDisplayAmount(row.accrued))} ₽</TableCell>
-                      <TableCell className="w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap text-accent sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">{formatCurrency(roundMoneyDisplayAmount(row.paid))} ₽</TableCell>
+                      <TableCell className="w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap text-success sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">{formatCurrency(roundMoneyDisplayAmount(row.accrued))} ₽</TableCell>
+                      <TableCell className="w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap text-destructive/80 sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]">{formatCurrency(roundMoneyDisplayAmount(row.paid))} ₽</TableCell>
                       <TableCell
                         className={cn(
                           "w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono font-semibold whitespace-nowrap sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]",
-                          row.closing < 0 ? "text-destructive" : "text-foreground",
+                          row.closing < 0 ? "text-destructive" : "text-primary",
                         )}
                       >
                         {formatCurrency(roundMoneyDisplayAmount(row.closing))} ₽
