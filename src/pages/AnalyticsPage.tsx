@@ -4302,7 +4302,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
   );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
         <CardHeader className="hidden">
           <CardTitle className="text-lg font-serif">Отчет Собственников</CardTitle>
