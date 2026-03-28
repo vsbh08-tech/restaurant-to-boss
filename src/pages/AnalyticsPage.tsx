@@ -2477,8 +2477,8 @@ function InvestmentLoanDistributionCard({
     const side = Math.cos(radians) >= 0 ? "right" : "left";
     const startX = chartCenter + Math.cos(radians) * (outerRadius + 2);
     const startY = chartCenter + Math.sin(radians) * (outerRadius + 2);
-    const elbowX = chartCenter + Math.cos(radians) * (outerRadius + 18);
-    const elbowY = chartCenter + Math.sin(radians) * (outerRadius + 18);
+    const elbowX = chartCenter + Math.cos(radians) * (outerRadius + 26);
+    const elbowY = chartCenter + Math.sin(radians) * (outerRadius + 26);
 
     return {
       ...row,
@@ -2558,7 +2558,7 @@ function InvestmentLoanDistributionCard({
             {callouts.map((item) => {
               const lineY = item.adjustedY + labelHeight / 2;
               const endX = item.side === "right" ? item.boxX : item.boxX + labelWidth;
-              const bendX = item.side === "right" ? item.boxX - 8 : item.boxX + labelWidth + 8;
+              const bendX = item.side === "right" ? item.boxX - 14 : item.boxX + labelWidth + 14;
 
               return (
                 <polyline
