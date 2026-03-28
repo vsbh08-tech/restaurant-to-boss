@@ -2526,7 +2526,7 @@ function InvestmentLoanTableCard({
   const investmentTotal = rows.reduce((sum, row) => sum + row.amount, 0);
 
   return (
-    <Card className="min-w-0 overflow-hidden rounded-xl border border-dashed border-border/50 bg-muted/10">
+    <Card className="min-w-0 overflow-hidden">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
         <div>
           <CardTitle className="text-base font-serif font-semibold text-foreground">Инвестиционные займы</CardTitle>
