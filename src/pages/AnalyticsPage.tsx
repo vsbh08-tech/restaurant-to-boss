@@ -2543,6 +2543,8 @@ function LoanCounterpartyTableCard({
   endingIssuedTotal,
   endingReceivedTotal,
   investmentRows,
+  investmentOpen,
+  onInvestmentOpenChange,
 }: {
   periodLabel: string;
   rows: LoanCounterpartyRow[];
@@ -2550,6 +2552,8 @@ function LoanCounterpartyTableCard({
   endingIssuedTotal: number;
   endingReceivedTotal: number;
   investmentRows: InvestmentLoanRow[];
+  investmentOpen: boolean;
+  onInvestmentOpenChange: (open: boolean) => void;
 }) {
   const endingClosingTotal = endingReceivedTotal - endingIssuedTotal;
   const investmentTotal = investmentRows.reduce((sum, row) => sum + row.amount, 0);
@@ -2688,7 +2692,13 @@ function LoanCounterpartyTableCard({
           </div>
         </div>
 
-        <Accordion type="single" collapsible className="mx-3 mb-3 mt-8 rounded-xl border border-dashed border-border/50 bg-muted/10">
+        <Accordion
+          type="single"
+          collapsible
+          value={investmentOpen ? "investment-loans" : undefined}
+          onValueChange={(value) => onInvestmentOpenChange(value === "investment-loans")}
+          className="mx-3 mb-3 mt-8 rounded-xl border border-dashed border-border/50 bg-muted/10"
+        >
           <AccordionItem value="investment-loans" className="border-none">
             <AccordionTrigger className="group px-4 py-3 text-left transition-colors hover:bg-background/40 hover:no-underline">
               <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
@@ -2702,7 +2712,7 @@ function LoanCounterpartyTableCard({
                   <p className="mt-1 text-xs text-muted-foreground">
                     Долгоруковская, накопленный итог на конец выбранного периода.
                   </p>
-                  <p className="mt-1 text-[11px] font-medium text-primary/85">Нажмите, чтобы раскрыть детали</p>
+                  <p className="mt-1 text-[11px] font-medium text-primary/85">Нажмите, чтобы раскрыть таблицу и диаграмму</p>
                 </div>
                 <div className="hidden rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground sm:block">
                   Период: {periodLabel}
@@ -2775,9 +2785,6 @@ function LoanCounterpartyTableCard({
                     </Table>
                   </div>
 
-                  <div className="mt-4">
-                    <InvestmentLoanDistributionCard rows={investmentRows} total={investmentTotal} />
-                  </div>
                 </div>
               )}
             </AccordionContent>
@@ -4047,6 +4054,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
   const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | null>(null);
+  const [isInvestmentLoansOpen, setIsInvestmentLoansOpen] = useState(false);
   const {
     accessibleRestaurantNames,
     accessibleRestaurantNameSet,
@@ -4336,7 +4344,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+        <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
           <LoanCounterpartyTableCard
             periodLabel={selectedPeriodOption.label}
             rows={loanSummary.rows}
@@ -4344,8 +4352,18 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             endingIssuedTotal={endingIssuedBalanceTotal}
             endingReceivedTotal={endingReceivedBalanceTotal}
             investmentRows={investmentLoanRows}
+            investmentOpen={isInvestmentLoansOpen}
+            onInvestmentOpenChange={setIsInvestmentLoansOpen}
           />
-          <LoanPositionChartCard data={timelineData} />
+          <div className="grid gap-3 self-start">
+            <LoanPositionChartCard data={timelineData} />
+            {isInvestmentLoansOpen && investmentLoanRows.length > 0 ? (
+              <InvestmentLoanDistributionCard
+                rows={investmentLoanRows}
+                total={investmentLoanRows.reduce((sum, row) => sum + row.amount, 0)}
+              />
+            ) : null}
+          </div>
         </div>
       )}
     </div>
