@@ -3579,56 +3579,54 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
   return (
     <div className="space-y-3">
-      <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
-        <CardContent className="space-y-3 px-3 py-3">
-          <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,1fr)]">
-            <div className="flex flex-wrap items-start gap-2">
-              {!scope?.hideRestaurantFilter && (
-                <FilterChipGroup
-                  label="Рестораны"
-                  options={restaurantOptions}
-                  selection={selectedRestaurants}
-                  onChange={setSelectedRestaurants}
-                  matchPeriodHeight
-                  allowSelectAll
-                  compact
-                />
-              )}
-              <PeriodSelector
-                selection={selectedPeriods}
-                onChange={setSelectedPeriods}
-                options={periodOptions}
-                refsMap={periodRefs}
+      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,1fr)]">
+        <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
+          <CardContent className="flex flex-wrap items-start gap-2 px-3 py-3">
+            {!scope?.hideRestaurantFilter && (
+              <FilterChipGroup
+                label="Рестораны"
+                options={restaurantOptions}
+                selection={selectedRestaurants}
+                onChange={setSelectedRestaurants}
+                matchPeriodHeight
+                allowSelectAll
                 compact
-                allowSelectAll={false}
               />
-            </div>
+            )}
+            <PeriodSelector
+              selection={selectedPeriods}
+              onChange={setSelectedPeriods}
+              options={periodOptions}
+              refsMap={periodRefs}
+              compact
+              allowSelectAll={false}
+            />
+          </CardContent>
+        </Card>
 
-            <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-3">
-              <TransferKpiCard
-                icon={Wallet}
-                label="Денег всего"
-                value={`${formatCurrency(roundMoneyDisplayAmount(closingCashTotal))} ₽`}
-                subtitle={`на конец ${endingPeriodLabel}`}
-                tone="primary"
-              />
-              <TransferKpiCard
-                icon={HandCoins}
-                label="Нужно заплатить"
-                value={`${formatCurrency(roundMoneyDisplayAmount(requiredPaymentTotal))} ₽`}
-                subtitle="обязательные выплаты"
-                tone={requiredPaymentTotal > 0 ? "accent" : "success"}
-              />
-              <TransferKpiCard
-                icon={PiggyBank}
-                label="Остаток после выплат"
-                value={`${formatCurrency(roundMoneyDisplayAmount(remainingAfterPayments))} ₽`}
-                tone={remainingAfterPayments < 0 ? "accent" : "success"}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-3">
+          <TransferKpiCard
+            icon={Wallet}
+            label="Денег всего"
+            value={`${formatCurrency(roundMoneyDisplayAmount(closingCashTotal))} ₽`}
+            subtitle={`на конец ${endingPeriodLabel}`}
+            tone="primary"
+          />
+          <TransferKpiCard
+            icon={HandCoins}
+            label="Нужно заплатить"
+            value={`${formatCurrency(roundMoneyDisplayAmount(requiredPaymentTotal))} ₽`}
+            subtitle="обязательные выплаты"
+            tone={requiredPaymentTotal > 0 ? "accent" : "success"}
+          />
+          <TransferKpiCard
+            icon={PiggyBank}
+            label="Остаток после выплат"
+            value={`${formatCurrency(roundMoneyDisplayAmount(remainingAfterPayments))} ₽`}
+            tone={remainingAfterPayments < 0 ? "accent" : "success"}
+          />
+        </div>
+      </div>
 
       <div className="grid gap-3 xl:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.05fr)]">
         <div className="grid gap-3">
