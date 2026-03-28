@@ -2409,11 +2409,11 @@ function InvestmentLoanDistributionCard({
   const chartSize = 300;
   const chartCenter = chartSize / 2;
   const outerRadius = 72;
-  const labelWidth = 94;
-  const labelHeight = 38;
+  const labelWidth = 84;
+  const labelHeight = 24;
   const topLimit = 20;
   const bottomLimit = chartSize - labelHeight - 20;
-  const verticalGap = 42;
+  const verticalGap = 28;
 
   const chartData = rows.map((row, index) => ({
     ...row,
@@ -2577,7 +2577,7 @@ function InvestmentLoanDistributionCard({
           {callouts.map((item) => (
             <div
               key={item.chartKey}
-              className="absolute rounded-md bg-background/95 px-1.5 py-1 shadow-sm"
+              className="absolute px-1"
               style={{
                 left: item.boxX,
                 top: item.adjustedY,
@@ -2587,16 +2587,7 @@ function InvestmentLoanDistributionCard({
               <p className={cn("truncate text-[10px] font-medium leading-tight", item.side === "left" ? "text-right text-primary" : "text-primary")}>
                 {item.counterparty}
               </p>
-              <p
-                className={cn(
-                  "mt-0.5 text-[9px] font-mono leading-tight",
-                  item.side === "left" ? "text-right" : "",
-                  item.amount < 0 ? "text-destructive" : "text-foreground/80",
-                )}
-              >
-                {formatRoundedMoneyText(item.amount)}
-              </p>
-              <p className={cn("text-[9px] leading-tight text-muted-foreground", item.side === "left" ? "text-right" : "")}>
+              <p className={cn("mt-0.5 text-[9px] leading-tight text-muted-foreground", item.side === "left" ? "text-right" : "")}>
                 {Math.round(item.share)}%
               </p>
             </div>
