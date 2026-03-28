@@ -4413,19 +4413,19 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                     <TableHead className="sticky left-0 z-30 w-[106px] min-w-[106px] bg-primary/12 px-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
                       Статья
                     </TableHead>
-                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Ост. нач.</span>
                       <span className="hidden sm:inline">Остаток на начало</span>
                     </TableHead>
-                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Начисл.</span>
                       <span className="hidden sm:inline">Начислено / получено / в пути</span>
                     </TableHead>
-                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Выплата</span>
                       <span className="hidden sm:inline">Выплачено / возврат</span>
                     </TableHead>
-                    <TableHead className="h-9 w-[92px] min-w-[92px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[92px] min-w-[92px] px-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Ост. кон.</span>
                       <span className="hidden sm:inline">Остаток на конец</span>
                     </TableHead>
