@@ -2647,7 +2647,7 @@ function RestaurantProfitChart({
   if (chartData.length === 0 || allRestaurants.length === 0) return null;
 
   const restaurantColorMap = Object.fromEntries(
-    allRestaurants.map((name, idx) => [name, RESTAURANT_COLORS[idx % RESTAURANT_COLORS.length]])
+    allRestaurants.map((name, idx) => [name, RESTAURANT_COLOR_MAP[name] ?? RESTAURANT_COLORS_FALLBACK[idx % RESTAURANT_COLORS_FALLBACK.length]])
   );
 
   const chartConfig: ChartConfig = {
