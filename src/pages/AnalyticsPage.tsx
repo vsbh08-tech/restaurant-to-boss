@@ -1148,19 +1148,13 @@ function buildLoanPositionTimelineData(rows: LoanFactRow[], selectedPeriodDate: 
   });
 
   return windowOptions.map((option) => {
-    const position = rows.reduce((sum, row) => {
-      if (row.periodDate.getTime() > option.date.getTime()) {
-        return sum;
-      }
-
-      return sum + row.delta;
-    }, 0);
+    const summary = buildLoanCounterpartyRows(rows, option.date);
 
     return {
       periodKey: option.key,
       label: option.label,
       fullLabel: option.fullLabel,
-      position: roundMoneyDisplayAmount(position),
+      position: roundMoneyDisplayAmount(summary.totals.closing),
     };
   });
 }
@@ -2706,21 +2700,15 @@ function InvestmentLoanTableCard({
 function InvestmentLoanSectionCard({
   periodLabel,
   rows,
-  open,
-  onOpenChange,
 }: {
   periodLabel: string;
   rows: InvestmentLoanRow[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
 }) {
   return (
     <Accordion
       type="single"
       collapsible
-      value={open ? "investment-loans" : undefined}
-      onValueChange={(value) => onOpenChange(value === "investment-loans")}
-      className="rounded-xl border border-dashed border-border/50 bg-muted/10 p-3"
+      className="rounded-xl"
     >
       <AccordionItem value="investment-loans" className="border-none">
         <AccordionTrigger className="group rounded-xl border border-border/50 bg-background px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/5 hover:no-underline">
@@ -4178,7 +4166,6 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
   const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | null>(null);
-  const [isInvestmentLoansOpen, setIsInvestmentLoansOpen] = useState(false);
   const {
     accessibleRestaurantNames,
     accessibleRestaurantNameSet,
@@ -4483,8 +4470,6 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           <InvestmentLoanSectionCard
             periodLabel={selectedPeriodOption.label}
             rows={investmentLoanRows}
-            open={isInvestmentLoansOpen}
-            onOpenChange={setIsInvestmentLoansOpen}
           />
         </div>
       )}
