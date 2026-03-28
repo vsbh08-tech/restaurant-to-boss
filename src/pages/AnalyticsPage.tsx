@@ -4397,7 +4397,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1.45fr)_360px] 2xl:grid-cols-[minmax(0,1.35fr)_420px]">
+        <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.45fr)_360px] 2xl:grid-cols-[minmax(0,1.35fr)_420px]">
           <Card className="min-w-0 overflow-hidden border border-border/60 shadow-lg rounded-xl">
             <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 border-b-2 border-primary/20">
               <CardTitle className="text-sm font-serif flex items-center gap-2">
