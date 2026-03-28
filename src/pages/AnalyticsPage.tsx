@@ -1802,8 +1802,8 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
               ))}
             </TableBody>
             <TableFooter>
-              <TableRow className="bg-gradient-to-r from-primary/10 to-accent/10 border-t-2 border-primary/20 hover:from-primary/12 hover:to-accent/12">
-                <TableCell className="sticky left-0 z-40 w-[128px] min-w-[128px] overflow-hidden border-r border-primary/10 bg-gradient-to-r from-primary/12 to-primary/6 px-3 py-2.5 text-xs font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm">
+              <TableRow className="bg-primary/12 border-t-2 border-primary/25 hover:bg-primary/15">
+                <TableCell className="sticky left-0 z-40 w-[128px] min-w-[128px] overflow-hidden border-r border-primary/15 bg-primary/15 px-3 py-2.5 text-xs font-bold text-primary shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[140px] sm:min-w-[140px] sm:px-3 sm:py-2.5 sm:text-sm">
                   Итого получено
                 </TableCell>
                 {summary.columnTotals.map((amount, index) => (
