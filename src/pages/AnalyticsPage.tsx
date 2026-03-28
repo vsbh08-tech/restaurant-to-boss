@@ -4433,8 +4433,8 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                 </TableHeader>
                 <TableBody>
                   {reportRows.map((row, idx) => (
-                    <TableRow key={row.article} className={cn(idx % 2 === 0 ? "bg-background" : "bg-muted/20", "hover:bg-primary/5 transition-colors")}>
-                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] px-2 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs" style={{ background: idx % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.2)' }}>
+                    <TableRow key={row.article} className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors border-b border-border/30")}>
+                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] px-2 py-2 text-[10px] font-semibold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs" style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}>
                         {row.article}
                       </TableCell>
                         <TableCell
