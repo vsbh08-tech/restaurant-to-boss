@@ -4911,10 +4911,10 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                 </TableHeader>
                 <TableBody>
                   {visibleRows.map((row, idx) => (
-                    <TableRow key={[row.periodKey, row.article].join("::")} className={cn(idx % 2 === 0 ? "bg-background" : "bg-muted/20", "hover:bg-primary/5 transition-colors")}>
+                    <TableRow key={[row.periodKey, row.article].join("::")} className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors border-b border-border/30")}>
                       <TableCell
-                        className="sticky left-0 z-30 w-[58px] min-w-[58px] overflow-hidden border-r border-border/50 px-1.5 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-xs"
-                        style={{ background: idx % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.2)' }}
+                        className="sticky left-0 z-30 w-[58px] min-w-[58px] overflow-hidden border-r border-border/40 px-1.5 py-2 text-[10px] font-semibold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:w-[84px] sm:min-w-[84px] sm:px-2 sm:text-xs"
+                        style={{ background: idx % 2 === 0 ? 'hsl(var(--card))' : 'hsl(var(--muted) / 0.15)' }}
                       >
                         {formatPeriodRangeLabel(row.periodDate)}
                       </TableCell>
