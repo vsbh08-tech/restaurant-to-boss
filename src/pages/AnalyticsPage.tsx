@@ -2483,7 +2483,7 @@ function InvestmentLoanDistributionCard({
     currentAngle -= angleSpan;
 
     const radians = (-midAngle * Math.PI) / 180;
-    const side = Math.cos(radians) >= 0 ? "right" : "left";
+    const naturalSide = Math.cos(radians) >= 0 ? "right" : "left";
     const startX = chartCenter + Math.cos(radians) * (outerRadius + 2);
     const startY = chartCenter + Math.sin(radians) * (outerRadius + 2);
     const elbowX = chartCenter + Math.cos(radians) * (outerRadius + 26);
@@ -2491,20 +2491,43 @@ function InvestmentLoanDistributionCard({
 
     return {
       ...row,
-      side,
+      naturalSide,
       startX,
       startY,
       elbowX,
       elbowY,
       desiredY: Math.max(topLimit, Math.min(bottomLimit, elbowY - labelHeight / 2)),
+      isTopCluster: startY < chartCenter - 24 && Math.abs(startX - chartCenter) < 44,
     };
   });
 
-  const leftCallouts = distributeCallouts(rawCallouts.filter((item) => item.side === "left")).map((item) => ({
+  let leftUpperCount = rawCallouts.filter((item) => item.naturalSide === "left" && item.startY < chartCenter).length;
+  let rightUpperCount = rawCallouts.filter((item) => item.naturalSide === "right" && item.startY < chartCenter).length;
+
+  const balancedCallouts = rawCallouts.map((item) => {
+    let side = item.naturalSide;
+
+    if (item.isTopCluster && item.naturalSide === "left" && leftUpperCount > rightUpperCount + 1) {
+      side = "right";
+      leftUpperCount -= 1;
+      rightUpperCount += 1;
+    } else if (item.isTopCluster && item.naturalSide === "right" && rightUpperCount > leftUpperCount + 1) {
+      side = "left";
+      rightUpperCount -= 1;
+      leftUpperCount += 1;
+    }
+
+    return {
+      ...item,
+      side,
+    };
+  });
+
+  const leftCallouts = distributeCallouts(balancedCallouts.filter((item) => item.side === "left")).map((item) => ({
     ...item,
     boxX: 6,
   }));
-  const rightCallouts = distributeCallouts(rawCallouts.filter((item) => item.side === "right")).map((item) => ({
+  const rightCallouts = distributeCallouts(balancedCallouts.filter((item) => item.side === "right")).map((item) => ({
     ...item,
     boxX: chartSize - labelWidth - 6,
   }));
