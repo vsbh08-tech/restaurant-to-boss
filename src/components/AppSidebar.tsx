@@ -100,7 +100,7 @@ export function AppSidebar() {
 
                   {item.section === "analytics" && analyticsVisible && !collapsed ? (
                     <SidebarMenuSub>
-                      {ANALYTICS_SIDEBAR_ITEMS.map((subItem) => (
+                      {ANALYTICS_SIDEBAR_ITEMS.filter((subItem) => !subItem.adminOnly || role === "admin").map((subItem) => (
                         <SidebarMenuSubItem key={subItem.url}>
                           <SidebarMenuSubButton asChild isActive={location.pathname === subItem.url}>
                             <NavLink

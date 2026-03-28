@@ -5905,8 +5905,170 @@ function AnalyticsOwnersSection({ scope }: { scope?: AnalyticsScopeConfig }) {
   );
 }
 
+function AnalyticsReconciliationSection({ scope }: { scope?: AnalyticsScopeConfig }) {
+  const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
+  const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | null>(null);
+  const { accessibleRestaurantNames, preferredRestaurantSelection, fixedRestaurantNames } = useAnalyticsAccess(scope);
+
+  const { data: owners = [], isLoading } = useQuery({
+    queryKey: ["owners_fact"],
+    queryFn: async () => {
+      return fetchAllRows<OwnersFact>("owners_fact");
+    },
+  });
+
+  const reconciliationRows = useMemo(
+    () =>
+      owners
+        .map((row) => {
+          const periodDate = parsePeriodDate(row["Период"]);
+          const restaurant = row["Ресторан"]?.trim() ?? "";
+
+          if (!periodDate || !restaurant) {
+            return null;
+          }
+
+          return {
+            restaurant,
+            periodDate,
+            periodKey: makePeriodKey(periodDate),
+          };
+        })
+        .filter((row): row is { restaurant: string; periodDate: Date; periodKey: string } => row !== null),
+    [owners],
+  );
+
+  const restaurantOptions = useMemo(
+    () =>
+      getUniqueValues(
+        fixedRestaurantNames.length > 0
+          ? [...fixedRestaurantNames, ...reconciliationRows.map((row) => row.restaurant)]
+          : [...accessibleRestaurantNames, ...reconciliationRows.map((row) => row.restaurant)],
+      ).sort((a, b) => a.localeCompare(b, "ru")),
+    [accessibleRestaurantNames, fixedRestaurantNames, reconciliationRows],
+  );
+
+  useInitializeSingleSelection({
+    selection: selectedRestaurants,
+    options: restaurantOptions,
+    onChange: setSelectedRestaurants,
+    preferredOption: preferredRestaurantSelection[0] ?? null,
+  });
+
+  const activeRestaurants = useMemo(
+    () => resolveScopedSelection(selectedRestaurants, restaurantOptions, fixedRestaurantNames),
+    [fixedRestaurantNames, restaurantOptions, selectedRestaurants],
+  );
+  const scopedRows = useMemo(
+    () => reconciliationRows.filter((row) => activeRestaurants.includes(row.restaurant)),
+    [activeRestaurants, reconciliationRows],
+  );
+  const periodOptions = useMemo(() => buildPeriodOptions(scopedRows.map((row) => row.periodDate)), [scopedRows]);
+  const periodKeys = useMemo(() => periodOptions.map((option) => option.key), [periodOptions]);
+  const defaultPeriodKey = useMemo(() => {
+    const now = new Date();
+    const previousMonthKey = makePeriodKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    return periodKeys.includes(previousMonthKey) ? previousMonthKey : periodKeys[0] ?? null;
+  }, [periodKeys]);
+
+  useEffect(() => {
+    if (periodKeys.length === 0) {
+      setSelectedPeriodKey(null);
+      return;
+    }
+
+    setSelectedPeriodKey((current) => (current && periodKeys.includes(current) ? current : defaultPeriodKey));
+  }, [defaultPeriodKey, periodKeys]);
+
+  const selectedRestaurant = activeRestaurants[0] ?? null;
+  const selectedPeriod = useMemo(
+    () => periodOptions.find((option) => option.key === selectedPeriodKey) ?? null,
+    [periodOptions, selectedPeriodKey],
+  );
+  const selectedPeriodLabel = selectedPeriod ? formatPeriodRangeLabel(selectedPeriod.date) : "Период не выбран";
+
+  return (
+    <div className="space-y-4">
+      <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
+        <CardContent className="flex flex-wrap items-start gap-2 px-3 py-3">
+          {!scope?.hideRestaurantFilter && (
+            <FilterChipGroup
+              label="Ресторан"
+              options={restaurantOptions}
+              selection={selectedRestaurants}
+              onChange={setSelectedRestaurants}
+              singleSelect
+              toggleSelect
+              compact
+              matchPeriodHeight
+            />
+          )}
+
+          <div className="w-full rounded-lg border bg-muted/20 p-2 pb-3 sm:w-auto sm:min-w-[240px]">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold sm:text-sm">Период</p>
+            </div>
+            <Select value={selectedPeriodKey ?? undefined} onValueChange={setSelectedPeriodKey}>
+              <SelectTrigger className="h-9 w-full min-w-0 bg-background/85">
+                <SelectValue placeholder="Выберите период" />
+              </SelectTrigger>
+              <SelectContent>
+                {periodOptions.map((option) => (
+                  <SelectItem key={option.key} value={option.key}>
+                    {formatPeriodRangeLabel(option.date)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="bank-withdrawals" className="space-y-4">
+        <TabsList className="h-auto justify-start gap-1 bg-muted">
+          <TabsTrigger
+            value="bank-withdrawals"
+            className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+          >
+            Снятие с р/с
+          </TabsTrigger>
+          <TabsTrigger
+            value="po-sums"
+            className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+          >
+            П/О суммы
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="bank-withdrawals">
+          <AnalyticsPlaceholderSection
+            title="Снятие с р/с"
+            description={
+              isLoading
+                ? "Загружаю данные для сверки."
+                : `Раздел подготовлен. Дальше наполним его логикой по ресторану ${selectedRestaurant ?? "не выбран"} за ${selectedPeriodLabel}.`
+            }
+          />
+        </TabsContent>
+
+        <TabsContent value="po-sums">
+          <AnalyticsPlaceholderSection
+            title="П/О суммы"
+            description={
+              isLoading
+                ? "Загружаю данные для сверки."
+                : `Раздел подготовлен. Дальше наполним его логикой по ресторану ${selectedRestaurant ?? "не выбран"} за ${selectedPeriodLabel}.`
+            }
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
 function AnalyticsWorkspacePage() {
   const location = useLocation();
+  const { role, isLoading: roleLoading } = useRole();
   const view = getAnalyticsWorkspaceView(location.pathname);
 
   if (!view) {
@@ -5914,6 +6076,10 @@ function AnalyticsWorkspacePage() {
   }
 
   const meta = ANALYTICS_WORKSPACE_META[view];
+
+  if (meta.adminOnly && !roleLoading && role !== "admin") {
+    return <Navigate to={ANALYTICS_ROUTE_PATHS.financial} replace />;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -5930,6 +6096,7 @@ function AnalyticsWorkspacePage() {
       {view === "transfers" ? <TransfersTab /> : null}
       {view === "cashMovement" ? <CashMovementTab /> : null}
       {view === "loans" ? <LoansTab /> : null}
+      {view === "reconciliation" ? <AnalyticsReconciliationSection /> : null}
     </div>
   );
 }

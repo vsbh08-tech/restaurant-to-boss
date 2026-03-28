@@ -5,13 +5,14 @@ export const ANALYTICS_ROUTE_PATHS = {
   owners: "/analytics/owners",
   transfers: "/analytics/transfers",
   loans: "/analytics/loans",
+  reconciliation: "/analytics/reconciliation",
 } as const;
 
-export type AnalyticsWorkspaceView = "financial" | "cashMovement" | "owners" | "transfers" | "loans";
+export type AnalyticsWorkspaceView = "financial" | "cashMovement" | "owners" | "transfers" | "loans" | "reconciliation";
 
 export const ANALYTICS_WORKSPACE_META: Record<
   AnalyticsWorkspaceView,
-  { title: string; description?: string }
+  { title: string; description?: string; adminOnly?: boolean }
 > = {
   financial: {
     title: "Финансовый результат",
@@ -33,12 +34,18 @@ export const ANALYTICS_WORKSPACE_META: Record<
     title: "Займы",
     description: "Чистая позиция по займам, движения за период и детализация по контрагентам.",
   },
+  reconciliation: {
+    title: "Сверка",
+    description: "Сверка снятий с расчетного счета и подотчетных сумм по выбранному ресторану и периоду.",
+    adminOnly: true,
+  },
 };
 
 export const ANALYTICS_SIDEBAR_ITEMS: Array<{
   title: string;
   url: string;
   view: AnalyticsWorkspaceView;
+  adminOnly?: boolean;
 }> = [
   {
     title: "Финансовый результат",
@@ -65,6 +72,12 @@ export const ANALYTICS_SIDEBAR_ITEMS: Array<{
     url: ANALYTICS_ROUTE_PATHS.loans,
     view: "loans",
   },
+  {
+    title: "Сверка",
+    url: ANALYTICS_ROUTE_PATHS.reconciliation,
+    view: "reconciliation",
+    adminOnly: true,
+  },
 ];
 
 export function getAnalyticsWorkspaceView(pathname: string): AnalyticsWorkspaceView | null {
@@ -90,6 +103,10 @@ export function getAnalyticsWorkspaceView(pathname: string): AnalyticsWorkspaceV
 
   if (pathname.startsWith(ANALYTICS_ROUTE_PATHS.loans)) {
     return "loans";
+  }
+
+  if (pathname.startsWith(ANALYTICS_ROUTE_PATHS.reconciliation)) {
+    return "reconciliation";
   }
 
   return null;
