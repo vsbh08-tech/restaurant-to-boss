@@ -3606,7 +3606,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
   return (
     <div className="space-y-3">
-      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,1fr)]">
+      <div className="grid items-stretch gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,1fr)]">
         <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
           <CardContent className="flex flex-wrap items-start gap-2 px-3 py-3">
             {!scope?.hideRestaurantFilter && (
