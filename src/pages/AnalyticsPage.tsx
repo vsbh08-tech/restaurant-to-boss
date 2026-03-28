@@ -2597,22 +2597,81 @@ function InvestmentLoanTableCard({
   );
 }
 
+function InvestmentLoanSectionCard({
+  periodLabel,
+  rows,
+  open,
+  onOpenChange,
+}: {
+  periodLabel: string;
+  rows: InvestmentLoanRow[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Accordion
+      type="single"
+      collapsible
+      value={open ? "investment-loans" : undefined}
+      onValueChange={(value) => onOpenChange(value === "investment-loans")}
+      className="rounded-xl border border-dashed border-border/50 bg-muted/10"
+    >
+      <AccordionItem value="investment-loans" className="border-none">
+        <AccordionTrigger className="group px-4 py-3 text-left transition-colors hover:bg-background/40 hover:no-underline">
+          <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-serif font-semibold text-foreground">Инвестиционные займы</h3>
+                <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  Справочно
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Долгоруковская, накопленный итог на конец выбранного периода.
+              </p>
+              <p className="mt-1 text-[11px] font-medium text-primary/85">Нажмите, чтобы раскрыть таблицу и диаграмму</p>
+            </div>
+            <div className="hidden rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground sm:block">
+              Период: {periodLabel}
+            </div>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="px-4 pb-4 pt-0">
+          <div className="border-t border-border/40 pt-4 sm:hidden">
+            <div className="inline-flex rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+              Период: {periodLabel}
+            </div>
+          </div>
+
+          {rows.length === 0 ? (
+            <div className="border-t border-border/40 pt-4 text-sm text-muted-foreground">Нет данных по инвестиционным займам.</div>
+          ) : (
+            <div className="grid items-start gap-3 border-t border-border/40 pt-4 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+              <InvestmentLoanTableCard periodLabel={periodLabel} rows={rows} />
+              <InvestmentLoanDistributionCard
+                rows={rows}
+                total={rows.reduce((sum, row) => sum + row.amount, 0)}
+              />
+            </div>
+          )}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+}
+
 function LoanCounterpartyTableCard({
   periodLabel,
   rows,
   totals,
   endingIssuedTotal,
   endingReceivedTotal,
-  investmentOpen,
-  onInvestmentOpenChange,
 }: {
   periodLabel: string;
   rows: LoanCounterpartyRow[];
   totals: { opening: number; received: number; issued: number; closing: number };
   endingIssuedTotal: number;
   endingReceivedTotal: number;
-  investmentOpen: boolean;
-  onInvestmentOpenChange: (open: boolean) => void;
 }) {
   const endingClosingTotal = endingReceivedTotal - endingIssuedTotal;
 
@@ -2749,37 +2808,6 @@ function LoanCounterpartyTableCard({
             />
           </div>
         </div>
-
-        <Accordion
-          type="single"
-          collapsible
-          value={investmentOpen ? "investment-loans" : undefined}
-          onValueChange={(value) => onInvestmentOpenChange(value === "investment-loans")}
-          className="mx-3 mb-3 mt-8 rounded-xl border border-dashed border-border/50 bg-muted/10"
-        >
-          <AccordionItem value="investment-loans" className="border-none">
-            <AccordionTrigger className="group px-4 py-3 text-left transition-colors hover:bg-background/40 hover:no-underline">
-              <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-serif font-semibold text-foreground">Инвестиционные займы</h3>
-                    <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                      Справочно
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Долгоруковская, накопленный итог на конец выбранного периода.
-                  </p>
-                  <p className="mt-1 text-[11px] font-medium text-primary/85">Нажмите, чтобы раскрыть таблицу и диаграмму</p>
-                </div>
-                <div className="hidden rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground sm:block">
-                  Период: {periodLabel}
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="hidden" />
-          </AccordionItem>
-        </Accordion>
       </CardContent>
     </Card>
   );
@@ -4339,24 +4367,19 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             <LoanCounterpartyTableCard
               periodLabel={selectedPeriodOption.label}
               rows={loanSummary.rows}
-            totals={loanSummary.totals}
-            endingIssuedTotal={endingIssuedBalanceTotal}
-            endingReceivedTotal={endingReceivedBalanceTotal}
-            investmentOpen={isInvestmentLoansOpen}
-            onInvestmentOpenChange={setIsInvestmentLoansOpen}
-          />
+              totals={loanSummary.totals}
+              endingIssuedTotal={endingIssuedBalanceTotal}
+              endingReceivedTotal={endingReceivedBalanceTotal}
+            />
             <LoanPositionChartCard data={timelineData} />
           </div>
 
-          {isInvestmentLoansOpen && investmentLoanRows.length > 0 ? (
-            <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-              <InvestmentLoanTableCard periodLabel={selectedPeriodOption.label} rows={investmentLoanRows} />
-              <InvestmentLoanDistributionCard
-                rows={investmentLoanRows}
-                total={investmentLoanRows.reduce((sum, row) => sum + row.amount, 0)}
-              />
-            </div>
-          ) : null}
+          <InvestmentLoanSectionCard
+            periodLabel={selectedPeriodOption.label}
+            rows={investmentLoanRows}
+            open={isInvestmentLoansOpen}
+            onOpenChange={setIsInvestmentLoansOpen}
+          />
         </div>
       )}
     </div>
