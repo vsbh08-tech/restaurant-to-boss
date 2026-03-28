@@ -1719,8 +1719,8 @@ function TransferPeriodCard({
 
 function TransferMatrixCard({ title, periodLabel, summary, description }: TransferMatrixCardProps) {
   return (
-    <Card className="min-w-0 overflow-hidden border-0 shadow-md">
-      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+    <Card className="min-w-0 overflow-hidden border border-border/60 shadow-lg rounded-xl">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 border-b-2 border-primary/20">
         <div className="flex items-start gap-2">
           <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent mt-0.5" />
           <div>
