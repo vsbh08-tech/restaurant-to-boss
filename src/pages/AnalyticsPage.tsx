@@ -2705,52 +2705,50 @@ function InvestmentLoanSectionCard({
   rows: InvestmentLoanRow[];
 }) {
   return (
-    <Accordion
-      type="single"
-      collapsible
-      className="rounded-xl"
-    >
-      <AccordionItem value="investment-loans" className="border-none">
-        <AccordionTrigger className="group rounded-xl border border-border/50 bg-background px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/5 hover:no-underline">
-          <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-base font-serif font-semibold text-foreground">Инвестиционные займы</h3>
-                <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                  Справочно
-                </span>
+    <Card className="min-w-0 overflow-hidden">
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="investment-loans" className="border-none">
+          <AccordionTrigger className="group px-4 py-3 text-left transition-colors hover:bg-muted/5 hover:no-underline">
+            <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-base font-serif font-semibold text-foreground">Инвестиционные займы</h3>
+                  <span className="rounded-full border border-border/60 bg-background/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    Справочно
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Долгоруковская, накопленный итог на конец выбранного периода.
+                </p>
+                <p className="mt-1 text-[11px] font-medium text-primary/85">Нажмите, чтобы раскрыть таблицу и диаграмму</p>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Долгоруковская, накопленный итог на конец выбранного периода.
-              </p>
-              <p className="mt-1 text-[11px] font-medium text-primary/85">Нажмите, чтобы раскрыть таблицу и диаграмму</p>
+              <div className="hidden rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground sm:block">
+                Период: {periodLabel}
+              </div>
             </div>
-            <div className="hidden rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground sm:block">
-              Период: {periodLabel}
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 pt-0">
+            <div className="border-t border-border/40 pt-3 sm:hidden">
+              <div className="inline-flex rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                Период: {periodLabel}
+              </div>
             </div>
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="px-0 pb-0 pt-3">
-          <div className="sm:hidden">
-            <div className="inline-flex rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-              Период: {periodLabel}
-            </div>
-          </div>
 
-          {rows.length === 0 ? (
-            <div className="pt-3 text-sm text-muted-foreground">Нет данных по инвестиционным займам.</div>
-          ) : (
-            <div className="grid items-stretch gap-3 pt-3 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-              <InvestmentLoanTableCard periodLabel={periodLabel} rows={rows} />
-              <InvestmentLoanDistributionCard
-                rows={rows}
-                total={rows.reduce((sum, row) => sum + row.amount, 0)}
-              />
-            </div>
-          )}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+            {rows.length === 0 ? (
+              <div className="border-t border-border/40 pt-3 text-sm text-muted-foreground">Нет данных по инвестиционным займам.</div>
+            ) : (
+              <div className="grid items-stretch gap-3 border-t border-border/40 pt-3 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+                <InvestmentLoanTableCard periodLabel={periodLabel} rows={rows} />
+                <InvestmentLoanDistributionCard
+                  rows={rows}
+                  total={rows.reduce((sum, row) => sum + row.amount, 0)}
+                />
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </Card>
   );
 }
 
@@ -2896,7 +2894,7 @@ function LoanCounterpartyTableCard({
             <LoanCompactMetricCard icon={ArrowDown} label="Займы полученные" value={endingReceivedTotal} tone="success" />
             <LoanCompactMetricCard
               icon={RefreshCcw}
-              label="Остаток на конец периода"
+              label="Остаток"
               value={endingClosingTotal}
               tone={endingClosingTotal < 0 ? "accent" : endingClosingTotal > 0 ? "success" : "primary"}
             />
