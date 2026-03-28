@@ -2204,6 +2204,23 @@ function CashWaterfallChartCard({
           </BarChart>
         </ChartContainer>
 
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 px-1 text-[11px]">
+          {[
+            { label: "Начало", color: "rgba(37, 99, 235, 0.8)" },
+            { label: "Поступления", color: "rgba(22, 163, 74, 0.78)" },
+            { label: "Выплаты", color: "rgba(239, 68, 68, 0.8)" },
+            { label: "Доли", color: "rgba(239, 68, 68, 0.8)" },
+            { label: "Прочие поступления", color: "rgba(22, 163, 74, 0.78)" },
+            { label: "Прочие выплаты", color: "rgba(239, 68, 68, 0.8)" },
+            { label: "Конец", color: "rgba(37, 99, 235, 0.8)" },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: item.color }} />
+              <span className="text-muted-foreground">{item.label}</span>
+            </div>
+          ))}
+        </div>
+
         {!hasMovement ? (
           <p className="mt-2 text-xs text-muted-foreground">
             За выбранный период нет движений, которые меняли денежный остаток.
@@ -2560,12 +2577,16 @@ function StructureCard({
   );
 }
 
-const RESTAURANT_COLORS = [
-  "hsl(152, 50%, 38%)",  // green
-  "hsl(210, 55%, 52%)",  // blue
+const RESTAURANT_COLOR_MAP: Record<string, string> = {
+  "Долгоруковская": "hsl(210, 65%, 55%)",   // голубой
+  "РестПрМ": "hsl(152, 55%, 42%)",          // зеленый
+  "Солнцево": "hsl(45, 85%, 50%)",          // желтый
+};
+
+const RESTAURANT_COLORS_FALLBACK = [
+  "hsl(260, 48%, 55%)",  // purple
   "hsl(0, 58%, 56%)",    // red/coral
   "hsl(38, 85%, 50%)",   // orange
-  "hsl(260, 48%, 55%)",  // purple
 ];
 
 const MONTH_LABELS_RU: Record<number, string> = {
@@ -2643,7 +2664,7 @@ function RestaurantProfitChart({
   if (chartData.length === 0 || allRestaurants.length === 0) return null;
 
   const restaurantColorMap = Object.fromEntries(
-    allRestaurants.map((name, idx) => [name, RESTAURANT_COLORS[idx % RESTAURANT_COLORS.length]])
+    allRestaurants.map((name, idx) => [name, RESTAURANT_COLOR_MAP[name] ?? RESTAURANT_COLORS_FALLBACK[idx % RESTAURANT_COLORS_FALLBACK.length]])
   );
 
   const chartConfig: ChartConfig = {
@@ -3602,7 +3623,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
   return (
     <div className="space-y-3">
-      <div className="grid items-start gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,1fr)]">
+      <div className="grid items-stretch gap-2 xl:grid-cols-[minmax(0,1.05fr)_minmax(460px,1fr)]">
         <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
           <CardContent className="flex flex-wrap items-start gap-2 px-3 py-3">
             {!scope?.hideRestaurantFilter && (
@@ -3627,7 +3648,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
 
-        <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           <TransferKpiCard
             icon={Wallet}
             label="Денег всего"
