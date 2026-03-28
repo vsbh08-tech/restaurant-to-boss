@@ -4406,32 +4406,32 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             <CardContent className="px-0 pt-0">
                 <Table className="min-w-[462px] table-fixed sm:min-w-max">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="sticky left-0 z-30 w-[106px] min-w-[106px] bg-card px-2 text-[10px] shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                  <TableRow className="bg-gradient-to-r from-primary/8 to-accent/8 border-b-2 border-primary/15">
+                    <TableHead className="sticky left-0 z-30 w-[106px] min-w-[106px] bg-gradient-to-r from-primary/10 to-primary/5 px-2 text-[10px] font-semibold text-foreground uppercase tracking-wide shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
                       Статья
                     </TableHead>
-                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Ост. нач.</span>
                       <span className="hidden sm:inline">Остаток на начало</span>
                     </TableHead>
-                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Начисл.</span>
                       <span className="hidden sm:inline">Начислено / получено / в пути</span>
                     </TableHead>
-                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Выплата</span>
                       <span className="hidden sm:inline">Выплачено / возврат</span>
                     </TableHead>
-                    <TableHead className="h-9 w-[92px] min-w-[92px] px-2 text-right text-[10px] sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
+                    <TableHead className="h-9 w-[92px] min-w-[92px] px-2 text-right text-[10px] font-semibold text-foreground uppercase tracking-wide sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Ост. кон.</span>
                       <span className="hidden sm:inline">Остаток на конец</span>
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {reportRows.map((row) => (
-                    <TableRow key={row.article}>
-                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] bg-background px-2 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                  {reportRows.map((row, idx) => (
+                    <TableRow key={row.article} className={cn(idx % 2 === 0 ? "bg-background" : "bg-muted/20", "hover:bg-primary/5 transition-colors")}>
+                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] px-2 py-2 text-[10px] font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs" style={{ background: idx % 2 === 0 ? 'hsl(var(--background))' : 'hsl(var(--muted) / 0.2)' }}>
                         {row.article}
                       </TableCell>
                         <TableCell
@@ -4442,12 +4442,12 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                         >
                           {formatOwnersWholeCurrency(row.opening)} ₽
                         </TableCell>
-                        <TableCell className="w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">{formatOwnersWholeCurrency(row.accrued)} ₽</TableCell>
-                        <TableCell className="w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">{formatOwnersWholeCurrency(row.paid)} ₽</TableCell>
+                        <TableCell className={cn("w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs", row.accrued < 0 ? "text-destructive" : "text-success")}>{formatOwnersWholeCurrency(row.accrued)} ₽</TableCell>
+                        <TableCell className={cn("w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs", row.paid < 0 ? "text-destructive" : "text-destructive/80")}>{formatOwnersWholeCurrency(row.paid)} ₽</TableCell>
                         <TableCell
                           className={cn(
-                            "w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
-                            row.closing < 0 ? "text-destructive" : "text-foreground",
+                            "w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono font-semibold whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
+                            row.closing < 0 ? "text-destructive" : "text-primary",
                           )}
                         >
                           {formatOwnersWholeCurrency(row.closing)} ₽
@@ -4456,13 +4456,13 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                     ))}
                   </TableBody>
                   <TableFooter>
-                    <TableRow className="font-bold hover:bg-muted/50">
-                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] bg-muted px-2 py-2 text-[10px] font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                    <TableRow className="bg-gradient-to-r from-primary/10 to-accent/10 border-t-2 border-primary/20 hover:from-primary/12 hover:to-accent/12">
+                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] bg-gradient-to-r from-primary/12 to-primary/6 px-2 py-2.5 text-[10px] font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
                         Общий итог
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
+                          "w-[88px] min-w-[88px] px-2 py-2.5 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
                           totals.opening < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
@@ -4470,24 +4470,24 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs",
-                          totals.accrued < 0 ? "text-destructive" : "text-foreground",
+                          "w-[88px] min-w-[88px] px-2 py-2.5 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs",
+                          totals.accrued < 0 ? "text-destructive" : "text-success",
                         )}
                       >
                         {formatOwnersWholeCurrency(totals.accrued)} ₽
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs",
-                          totals.paid < 0 ? "text-destructive" : "text-foreground",
+                          "w-[88px] min-w-[88px] px-2 py-2.5 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs",
+                          totals.paid < 0 ? "text-destructive" : "text-destructive/80",
                         )}
                       >
                         {formatOwnersWholeCurrency(totals.paid)} ₽
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
-                          totals.closing < 0 ? "text-destructive" : "text-foreground",
+                          "w-[92px] min-w-[92px] px-2 py-2.5 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
+                          totals.closing < 0 ? "text-destructive" : "text-primary",
                         )}
                       >
                         {formatOwnersWholeCurrency(totals.closing)} ₽
