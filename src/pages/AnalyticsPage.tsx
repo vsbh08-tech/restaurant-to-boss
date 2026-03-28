@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/roles";
-import { Area, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts";
+import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Legend, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 
 type FinanceFlow = {
   id: string;
