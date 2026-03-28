@@ -2329,7 +2329,7 @@ function LoanCounterpartyTableCard({
   totals: { opening: number; received: number; issued: number; closing: number };
 }) {
   return (
-    <Card className="min-w-0 overflow-hidden">
+    <Card className="min-w-0 overflow-hidden rounded-xl border border-border/60 shadow-lg">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
         <div>
           <CardTitle className="text-sm font-serif">Позиция по займам</CardTitle>
@@ -2344,89 +2344,93 @@ function LoanCounterpartyTableCard({
         <div className="overflow-x-auto">
           <Table className="min-w-[548px] table-fixed sm:min-w-max">
             <TableHeader>
-              <TableRow>
-                <TableHead className="sticky left-0 z-20 w-[148px] min-w-[148px] border-r border-border bg-muted px-3 py-2 text-xs font-semibold text-foreground sm:text-sm">
+              <TableRow className="bg-primary/10 border-b-2 border-primary/20">
+                <TableHead className="sticky left-0 z-20 w-[148px] min-w-[148px] border-r border-primary/15 bg-primary/12 px-3 py-2 text-[10px] font-bold text-primary uppercase tracking-wider shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:text-xs">
                   Контрагент
                 </TableHead>
-                <TableHead className="w-[104px] min-w-[104px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[104px] min-w-[104px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:text-xs">
                   Остаток на начало
                 </TableHead>
-                <TableHead className="w-[88px] min-w-[88px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:text-xs">
                   Получено
                 </TableHead>
-                <TableHead className="w-[88px] min-w-[88px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:text-xs">
                   Выдано
                 </TableHead>
-                <TableHead className="w-[104px] min-w-[104px] px-2 py-2 text-right text-xs font-semibold text-foreground sm:text-sm">
+                <TableHead className="w-[104px] min-w-[104px] px-2 py-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:text-xs">
                   Остаток на конец
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((row) => (
-                <TableRow key={row.counterparty}>
-                  <TableCell className="sticky left-0 z-10 border-r border-border bg-muted px-3 py-2 text-sm font-medium">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "inline-block h-2 w-2 rounded-full",
-                          row.closing > 0
-                            ? "bg-emerald-500"
-                            : row.closing < 0
-                              ? "bg-destructive"
-                              : "bg-muted-foreground/40",
-                        )}
-                      />
-                      <span>{row.counterparty}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2 text-right text-sm font-mono whitespace-nowrap",
-                      row.opening > 0 ? "text-emerald-700" : row.opening < 0 ? "text-destructive" : "text-foreground",
-                    )}
-                  >
-                    {formatRoundedMoneyText(row.opening)}
-                  </TableCell>
-                  <TableCell className="px-3 py-2 text-right text-sm font-mono whitespace-nowrap text-emerald-700">
-                    {formatRoundedMoneyText(row.received)}
-                  </TableCell>
-                  <TableCell className="px-3 py-2 text-right text-sm font-mono whitespace-nowrap text-destructive">
-                    {formatRoundedMoneyText(row.issued)}
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2 text-right text-sm font-mono font-semibold whitespace-nowrap",
-                      row.closing > 0 ? "text-emerald-700" : row.closing < 0 ? "text-destructive" : "text-foreground",
-                    )}
-                  >
-                    {formatRoundedMoneyText(row.closing)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {rows.map((row, idx) => {
+                const stripeBg = idx % 2 === 0 ? "bg-card" : "bg-muted/15";
+                const stickyBg = idx % 2 === 0 ? "bg-card" : "bg-muted/20";
+                return (
+                  <TableRow key={row.counterparty} className={cn(stripeBg, "hover:bg-primary/5 transition-colors")}>
+                    <TableCell className={cn("sticky left-0 z-10 border-r border-border/40 px-3 py-2 text-xs font-medium shadow-[8px_0_10px_-8px_rgba(15,23,42,0.1)] sm:text-sm", stickyBg)}>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "inline-block h-2 w-2 rounded-full",
+                            row.closing > 0
+                              ? "bg-emerald-500"
+                              : row.closing < 0
+                                ? "bg-destructive"
+                                : "bg-muted-foreground/40",
+                          )}
+                        />
+                        <span>{row.counterparty}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "px-3 py-2 text-right text-xs font-mono whitespace-nowrap sm:text-sm",
+                        row.opening > 0 ? "text-emerald-700" : row.opening < 0 ? "text-destructive" : "text-foreground",
+                      )}
+                    >
+                      {formatRoundedMoneyText(row.opening)}
+                    </TableCell>
+                    <TableCell className="px-3 py-2 text-right text-xs font-mono whitespace-nowrap text-emerald-700 sm:text-sm">
+                      {formatRoundedMoneyText(row.received)}
+                    </TableCell>
+                    <TableCell className="px-3 py-2 text-right text-xs font-mono whitespace-nowrap text-destructive sm:text-sm">
+                      {formatRoundedMoneyText(row.issued)}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "px-3 py-2 text-right text-xs font-mono font-semibold whitespace-nowrap sm:text-sm",
+                        row.closing > 0 ? "text-emerald-700" : row.closing < 0 ? "text-destructive" : "text-foreground",
+                      )}
+                    >
+                      {formatRoundedMoneyText(row.closing)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
             <TableFooter>
-              <TableRow className="bg-muted/20 hover:bg-muted/30">
-                <TableCell className="sticky left-0 z-20 border-r border-border bg-muted px-3 py-2 text-sm font-bold">
+              <TableRow className="bg-primary/12 border-t-2 border-primary/25 hover:bg-primary/15">
+                <TableCell className="sticky left-0 z-20 border-r border-primary/15 bg-primary/15 px-3 py-2.5 text-xs font-bold text-primary shadow-[8px_0_10px_-8px_rgba(15,23,42,0.25)] sm:text-sm">
                   Итого
                 </TableCell>
                 <TableCell
                   className={cn(
-                    "px-3 py-2 text-right text-sm font-mono font-bold whitespace-nowrap",
+                    "px-3 py-2.5 text-right text-xs font-mono font-bold whitespace-nowrap sm:text-sm",
                     totals.opening > 0 ? "text-emerald-700" : totals.opening < 0 ? "text-destructive" : "text-foreground",
                   )}
                 >
                   {formatRoundedMoneyText(totals.opening)}
                 </TableCell>
-                <TableCell className="px-3 py-2 text-right text-sm font-mono font-bold whitespace-nowrap text-emerald-700">
+                <TableCell className="px-3 py-2.5 text-right text-xs font-mono font-bold whitespace-nowrap text-emerald-700 sm:text-sm">
                   {formatRoundedMoneyText(totals.received)}
                 </TableCell>
-                <TableCell className="px-3 py-2 text-right text-sm font-mono font-bold whitespace-nowrap text-destructive">
+                <TableCell className="px-3 py-2.5 text-right text-xs font-mono font-bold whitespace-nowrap text-destructive sm:text-sm">
                   {formatRoundedMoneyText(totals.issued)}
                 </TableCell>
                 <TableCell
                   className={cn(
-                    "px-3 py-2 text-right text-sm font-mono font-bold whitespace-nowrap",
+                    "px-3 py-2.5 text-right text-xs font-mono font-bold whitespace-nowrap sm:text-sm",
                     totals.closing > 0 ? "text-emerald-700" : totals.closing < 0 ? "text-destructive" : "text-foreground",
                   )}
                 >
