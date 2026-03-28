@@ -2685,9 +2685,9 @@ function RestaurantProfitChart({
                       </div>
                     ))}
                     {yoyChange !== null && yoyChange !== undefined && (
-                      <div className={cn("mt-1 pt-1 border-t border-border/30 text-[11px] flex items-center gap-1", yoyChange >= 0 ? "text-success" : "text-destructive")}>
+                      <div className={cn("mt-1 pt-1 border-t border-border/30 text-[11px] flex items-center gap-1 flex-wrap", yoyChange >= 0 ? "text-success" : "text-destructive")}>
                         <span>{yoyChange >= 0 ? "↑" : "↓"}</span>
-                        <span>{yoyChange > 0 ? "+" : ""}{yoyChange}% к {payload[0]?.payload?.yoyLabel}</span>
+                        <span>{yoyChange > 0 ? "+" : ""}{yoyChange}% ({(() => { const diff = (payload[0]?.payload?.["ИТОГО СЕТЬ"] ?? 0) - (payload[0]?.payload?.yoyPrev ?? 0); return (diff >= 0 ? "+" : "") + formatCurrency(diff) + " ₽"; })()}) к {payload[0]?.payload?.yoyLabel}</span>
                       </div>
                     )}
                   </div>
