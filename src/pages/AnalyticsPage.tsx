@@ -2702,7 +2702,7 @@ function RestaurantProfitChart({
                 </div>
               )}
             />
-            {activeRestaurants.map((restaurant) => (
+            {allRestaurants.map((restaurant) => (
               <Bar
                 key={restaurant}
                 dataKey={restaurant}
