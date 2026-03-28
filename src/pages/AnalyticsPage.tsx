@@ -2500,58 +2500,53 @@ function StructureCard({
 
   return (
     <Card className="overflow-hidden border-0 shadow-md">
-      <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
-        <CardTitle className="text-sm font-serif flex items-center gap-2">
-          <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
+      <CardHeader className="px-3 py-2 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <CardTitle className="text-xs font-serif flex items-center gap-2">
+          <div className="h-4 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
           {title}
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="px-4 pb-4 pt-0">
+      <CardContent className="px-3 pb-2 pt-0">
         {rows.length === 0 ? (
-          <div className="py-6 text-sm text-muted-foreground">Нет данных по выбранному срезу.</div>
+          <div className="py-4 text-xs text-muted-foreground">Нет данных по выбранному срезу.</div>
         ) : (
           <>
-            <div className="max-h-[320px] overflow-y-auto pr-1">
-              <div className="divide-y divide-border/30">
-                {rows.map((row, idx) => {
-                  const barWidth = maxMagnitude === 0 ? 0 : Math.max((row.magnitude / maxMagnitude) * 100, 4);
-                  const sharePercent = totalValue === 0 ? 0 : Math.round((Math.abs(row.value) / totalValue) * 100);
+            <div className="divide-y divide-border/30">
+              {rows.map((row) => {
+                const barWidth = maxMagnitude === 0 ? 0 : Math.max((row.magnitude / maxMagnitude) * 100, 4);
+                const sharePercent = totalValue === 0 ? 0 : Math.round((Math.abs(row.value) / totalValue) * 100);
 
-                  return (
-                    <div
-                      key={row.article}
-                      className="py-2.5 group hover:bg-muted/20 transition-colors -mx-1 px-1 rounded"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm flex-1 min-w-0 break-words leading-snug">{row.article}</p>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className={cn("text-sm font-mono font-medium whitespace-nowrap", row.value < 0 && "text-destructive")}>
-                            {formatCurrency(roundMoneyDisplayAmount(row.value))} ₽
+                return (
+                  <div key={row.article} className="py-1.5 hover:bg-muted/20 transition-colors rounded">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs flex-1 min-w-0 break-words leading-snug">{row.article}</p>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={cn("text-xs font-mono font-medium whitespace-nowrap", row.value < 0 && "text-destructive")}>
+                          {formatCurrency(roundMoneyDisplayAmount(row.value))} ₽
+                        </span>
+                        {showShare ? (
+                          <span className="inline-flex items-center justify-center min-w-[32px] rounded-full bg-primary/10 text-primary text-[9px] font-semibold px-1 py-0.5">
+                            {Math.round(row.share)}%
                           </span>
-                          {showShare ? (
-                            <span className="inline-flex items-center justify-center min-w-[38px] rounded-full bg-primary/10 text-primary text-[10px] font-semibold px-1.5 py-0.5">
-                              {Math.round(row.share)}%
-                            </span>
-                          ) : null}
-                        </div>
+                        ) : null}
                       </div>
-                      {showBars ? (
-                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted/70">
-                          <div
-                            className={cn("h-full rounded-full transition-all duration-500", barClassName)}
-                            style={{ width: `${barWidth}%` }}
-                          />
-                        </div>
-                      ) : null}
                     </div>
-                  );
-                })}
-              </div>
+                    {showBars ? (
+                      <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted/70">
+                        <div
+                          className={cn("h-full rounded-full transition-all duration-500", barClassName)}
+                          style={{ width: `${barWidth}%` }}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
 
             {typeof footerValue === "number" && footerLabel ? (
-              <div className="mt-2 flex items-center justify-between border-t-2 border-primary/20 pt-3 text-sm font-bold">
+              <div className="mt-1 flex items-center justify-between border-t-2 border-primary/20 pt-2 text-xs font-bold">
                 <span>{footerLabel}</span>
                 <span className={cn("font-mono", footerValue < 0 ? "text-destructive" : "text-primary")}>
                   {formatCurrency(roundMoneyDisplayAmount(footerValue))} ₽
