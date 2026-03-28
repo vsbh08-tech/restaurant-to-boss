@@ -2720,10 +2720,10 @@ function InvestmentLoanSectionCard({
       collapsible
       value={open ? "investment-loans" : undefined}
       onValueChange={(value) => onOpenChange(value === "investment-loans")}
-      className="rounded-xl border border-dashed border-border/50 bg-muted/10"
+      className="rounded-xl border border-dashed border-border/50 bg-muted/10 p-3"
     >
       <AccordionItem value="investment-loans" className="border-none">
-        <AccordionTrigger className="group px-4 py-3 text-left transition-colors hover:bg-background/40 hover:no-underline">
+        <AccordionTrigger className="group rounded-xl border border-border/50 bg-background px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/5 hover:no-underline">
           <div className="flex min-w-0 flex-1 items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -2742,17 +2742,17 @@ function InvestmentLoanSectionCard({
             </div>
           </div>
         </AccordionTrigger>
-        <AccordionContent className="px-4 pb-4 pt-0">
-          <div className="border-t border-border/40 pt-4 sm:hidden">
+        <AccordionContent className="px-0 pb-0 pt-3">
+          <div className="sm:hidden">
             <div className="inline-flex rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
               Период: {periodLabel}
             </div>
           </div>
 
           {rows.length === 0 ? (
-            <div className="border-t border-border/40 pt-4 text-sm text-muted-foreground">Нет данных по инвестиционным займам.</div>
+            <div className="pt-3 text-sm text-muted-foreground">Нет данных по инвестиционным займам.</div>
           ) : (
-            <div className="grid items-stretch gap-3 border-t border-border/40 pt-4 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
+            <div className="grid items-stretch gap-3 pt-3 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
               <InvestmentLoanTableCard periodLabel={periodLabel} rows={rows} />
               <InvestmentLoanDistributionCard
                 rows={rows}
