@@ -1665,22 +1665,22 @@ function TransferKpiCard({ icon: Icon, label, value, subtitle, tone }: TransferK
   const toneConfig = toneMap[tone];
 
   return (
-    <div className={cn("min-h-[80px] px-3 py-2.5", toneConfig.cardClass)}>
-      <div className="flex items-start gap-2.5">
-        <div className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-sm", toneConfig.iconClassName)}>
-          <Icon className="h-4 w-4" />
+    <div className={cn("px-3 py-2", toneConfig.cardClass)}>
+      <div className="flex items-start gap-2">
+        <div className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg shadow-sm", toneConfig.iconClassName)}>
+          <Icon className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0">
           <p className="text-xs leading-snug text-muted-foreground">{label}</p>
           <p
             className={cn(
-              "mt-0.5 text-xl font-bold leading-tight tracking-tight xl:text-2xl",
+              "mt-0.5 text-lg font-bold leading-tight tracking-tight",
               toneConfig.valueClassName,
             )}
           >
             {value}
           </p>
-          {subtitle ? <p className="mt-0.5 text-[11px] text-muted-foreground">{subtitle}</p> : null}
+          {subtitle ? <p className="mt-0.5 text-[10px] text-muted-foreground">{subtitle}</p> : null}
         </div>
       </div>
     </div>
