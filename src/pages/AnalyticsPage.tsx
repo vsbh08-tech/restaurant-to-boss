@@ -4459,8 +4459,8 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                     ))}
                   </TableBody>
                   <TableFooter>
-                    <TableRow className="bg-gradient-to-r from-primary/10 to-accent/10 border-t-2 border-primary/20 hover:from-primary/12 hover:to-accent/12">
-                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] bg-gradient-to-r from-primary/12 to-primary/6 px-2 py-2.5 text-[10px] font-bold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
+                    <TableRow className="bg-primary/12 border-t-2 border-primary/25 hover:bg-primary/15">
+                      <TableCell className="sticky left-0 z-20 w-[106px] min-w-[106px] bg-primary/15 px-2 py-2.5 text-[10px] font-bold text-primary shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs">
                         Общий итог
                       </TableCell>
                       <TableCell
