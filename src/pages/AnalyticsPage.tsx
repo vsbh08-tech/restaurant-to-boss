@@ -4478,7 +4478,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                         <TableCell
                           className={cn(
                             "w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
-                            row.opening < 0 ? "text-destructive" : "text-foreground",
+                            row.opening < 0 ? "text-destructive" : "text-primary",
                           )}
                         >
                           {formatOwnersWholeCurrency(row.opening)} ₽
@@ -4507,7 +4507,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                       <TableCell
                         className={cn(
                           "w-[88px] min-w-[88px] px-2 py-2.5 text-right text-[10px] font-mono font-bold whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
-                          totals.opening < 0 ? "text-destructive" : "text-foreground",
+                          totals.opening < 0 ? "text-destructive" : "text-primary",
                         )}
                       >
                         {formatOwnersWholeCurrency(totals.opening)} ₽
@@ -4974,7 +4974,7 @@ function OwnersDetailTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                       <TableCell
                         className={cn(
                           "w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[110px] sm:min-w-[110px] sm:px-2 sm:text-[11px]",
-                          row.opening < 0 ? "text-destructive" : "text-foreground",
+                          row.opening < 0 ? "text-destructive" : "text-primary",
                         )}
                       >
                         {formatCurrency(roundMoneyDisplayAmount(row.opening))} ₽
