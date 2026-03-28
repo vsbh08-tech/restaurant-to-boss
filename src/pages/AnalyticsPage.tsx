@@ -2708,7 +2708,7 @@ function RestaurantProfitChart({
   );
 }
 
-
+function calculateRentability(metrics: MetricSummary) {
   if (metrics.income === 0) return 0;
   return (metrics.profit / metrics.income) * 100;
 }
