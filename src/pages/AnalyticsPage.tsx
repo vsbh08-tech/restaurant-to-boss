@@ -1756,11 +1756,11 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                   Итого выдано
                 </TableHead>
               </TableRow>
-              <TableRow className="bg-gradient-to-r from-primary/5 to-accent/5 border-b-2 border-primary/15">
+              <TableRow className="bg-primary/6 border-b-2 border-primary/20">
                 {summary.restaurants.map((restaurant) => (
                   <TableHead
                     key={restaurant}
-                    className="w-[118px] min-w-[118px] px-2 py-2 text-center text-[10px] font-semibold leading-tight whitespace-nowrap text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
+                    className="w-[118px] min-w-[118px] px-2 py-2 text-center text-[10px] font-bold leading-tight whitespace-nowrap text-primary sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
                   >
                     {restaurant}
                   </TableHead>
