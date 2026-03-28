@@ -2575,25 +2575,43 @@ const MONTH_LABELS_RU: Record<number, string> = {
 
 function RestaurantProfitChart({
   flowRows,
-  activeRestaurants,
+  allRestaurants,
   periodOptions,
+  selectedPeriodKey,
 }: {
   flowRows: FinancialFlowRow[];
-  activeRestaurants: string[];
+  allRestaurants: string[];
   periodOptions: PeriodOption[];
+  selectedPeriodKey: string | null;
 }) {
   const chartData = useMemo(() => {
-    const sortedPeriods = [...periodOptions].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-6);
+    // Determine anchor period: use selectedPeriodKey or latest available
+    let anchorDate: Date | null = null;
+    if (selectedPeriodKey) {
+      const found = periodOptions.find((o) => o.key === selectedPeriodKey);
+      if (found) anchorDate = found.date;
+    }
+    if (!anchorDate && periodOptions.length > 0) {
+      anchorDate = [...periodOptions].sort((a, b) => b.date.getTime() - a.date.getTime())[0].date;
+    }
+    if (!anchorDate) return [];
 
-    return sortedPeriods.map((period) => {
+    // Build 6-month window ending at anchor
+    const windowPeriods = Array.from({ length: 6 }, (_, i) => {
+      const offset = 5 - i;
+      const d = new Date(anchorDate!.getFullYear(), anchorDate!.getMonth() - offset, 1);
+      return { key: makePeriodKey(d), date: d };
+    });
+
+    return windowPeriods.map((period) => {
       const datum: Record<string, any> = {
         periodKey: period.key,
-        label: MONTH_LABELS_RU[period.date.getMonth()] ?? period.label,
+        label: MONTH_LABELS_RU[period.date.getMonth()] ?? period.key,
       };
 
       let networkTotal = 0;
 
-      activeRestaurants.forEach((restaurant) => {
+      allRestaurants.forEach((restaurant) => {
         const restaurantFlows = flowRows.filter(
           (row) => row.restaurant === restaurant && row.periodKey === period.key,
         );
@@ -2607,7 +2625,7 @@ function RestaurantProfitChart({
       // YoY comparison
       const prevYearKey = `${period.date.getFullYear() - 1}-${String(period.date.getMonth() + 1).padStart(2, "0")}`;
       const prevYearFlows = flowRows.filter(
-        (row) => activeRestaurants.includes(row.restaurant) && row.periodKey === prevYearKey,
+        (row) => allRestaurants.includes(row.restaurant) && row.periodKey === prevYearKey,
       );
       const prevMetrics = summarizeFinancialMetrics(prevYearFlows);
       datum["yoyPrev"] = Math.round(prevMetrics.profit);
@@ -2617,7 +2635,7 @@ function RestaurantProfitChart({
 
       return datum;
     });
-  }, [flowRows, activeRestaurants, periodOptions]);
+  }, [flowRows, allRestaurants, periodOptions, selectedPeriodKey]);
 
   if (chartData.length === 0 || activeRestaurants.length === 0) return null;
 
