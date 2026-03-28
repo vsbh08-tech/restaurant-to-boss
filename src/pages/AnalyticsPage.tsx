@@ -2560,7 +2560,155 @@ function StructureCard({
   );
 }
 
-function calculateRentability(metrics: MetricSummary) {
+const RESTAURANT_COLORS = [
+  "hsl(152, 50%, 38%)",  // green
+  "hsl(210, 55%, 52%)",  // blue
+  "hsl(0, 58%, 56%)",    // red/coral
+  "hsl(38, 85%, 50%)",   // orange
+  "hsl(260, 48%, 55%)",  // purple
+];
+
+const MONTH_LABELS_RU: Record<number, string> = {
+  0: "Янв", 1: "Фев", 2: "Мар", 3: "Апр", 4: "Май", 5: "Июн",
+  6: "Июл", 7: "Авг", 8: "Сен", 9: "Окт", 10: "Ноя", 11: "Дек",
+};
+
+function RestaurantProfitChart({
+  flowRows,
+  activeRestaurants,
+  periodOptions,
+}: {
+  flowRows: FinancialFlowRow[];
+  activeRestaurants: string[];
+  periodOptions: PeriodOption[];
+}) {
+  const chartData = useMemo(() => {
+    const sortedPeriods = [...periodOptions].sort((a, b) => a.date.getTime() - b.date.getTime()).slice(-6);
+
+    return sortedPeriods.map((period) => {
+      const datum: Record<string, any> = {
+        periodKey: period.key,
+        label: MONTH_LABELS_RU[period.date.getMonth()] ?? period.label,
+      };
+
+      let networkTotal = 0;
+
+      activeRestaurants.forEach((restaurant) => {
+        const restaurantFlows = flowRows.filter(
+          (row) => row.restaurant === restaurant && row.periodKey === period.key,
+        );
+        const metrics = summarizeFinancialMetrics(restaurantFlows);
+        datum[restaurant] = Math.round(metrics.profit);
+        networkTotal += metrics.profit;
+      });
+
+      datum["ИТОГО СЕТЬ"] = Math.round(networkTotal);
+
+      // YoY comparison
+      const prevYearKey = `${period.date.getFullYear() - 1}-${String(period.date.getMonth() + 1).padStart(2, "0")}`;
+      const prevYearFlows = flowRows.filter(
+        (row) => activeRestaurants.includes(row.restaurant) && row.periodKey === prevYearKey,
+      );
+      const prevMetrics = summarizeFinancialMetrics(prevYearFlows);
+      datum["yoyPrev"] = Math.round(prevMetrics.profit);
+      datum["yoyChange"] = prevMetrics.profit !== 0
+        ? Math.round(((networkTotal - prevMetrics.profit) / Math.abs(prevMetrics.profit)) * 100)
+        : null;
+
+      return datum;
+    });
+  }, [flowRows, activeRestaurants, periodOptions]);
+
+  if (chartData.length === 0 || activeRestaurants.length === 0) return null;
+
+  const restaurantColorMap = Object.fromEntries(
+    activeRestaurants.map((name, idx) => [name, RESTAURANT_COLORS[idx % RESTAURANT_COLORS.length]])
+  );
+
+  const chartConfig: ChartConfig = {
+    ...Object.fromEntries(activeRestaurants.map((name) => [name, { label: name, color: restaurantColorMap[name] }])),
+    "ИТОГО СЕТЬ": { label: "ИТОГО СЕТЬ", color: "hsl(0, 0%, 15%)" },
+  };
+
+  return (
+    <Card className="overflow-hidden border-0 shadow-md">
+      <CardHeader className="px-4 py-3 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+        <CardTitle className="text-sm font-serif flex items-center gap-2">
+          <div className="h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
+          Вклад ресторанов в общую прибыль сети (6 месяцев)
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pb-4 pt-4">
+        <ChartContainer config={chartConfig} className="aspect-[2/1] w-full">
+          <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(228, 18%, 88%)" />
+            <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${Math.round(v / 1000)}т`} />
+            <ReferenceLine y={0} stroke="hsl(228, 12%, 48%)" strokeDasharray="4 4" />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                const yoyChange = payload[0]?.payload?.yoyChange;
+                return (
+                  <div className="rounded-lg border border-border/50 bg-card px-3 py-2 shadow-xl text-xs">
+                    <p className="font-semibold mb-1.5">{label}</p>
+                    {payload.map((entry: any) => (
+                      <div key={entry.dataKey} className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-1.5">
+                          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                          <span className="text-muted-foreground">{entry.name}</span>
+                        </div>
+                        <span className="font-mono font-medium">
+                          {formatCurrency(entry.value)} ₽
+                        </span>
+                      </div>
+                    ))}
+                    {yoyChange !== null && yoyChange !== undefined && (
+                      <div className={cn("mt-1 pt-1 border-t border-border/30 text-[11px]", yoyChange >= 0 ? "text-success" : "text-destructive")}>
+                        YoY: {yoyChange > 0 ? "+" : ""}{yoyChange}%
+                      </div>
+                    )}
+                  </div>
+                );
+              }}
+            />
+            <Legend
+              content={({ payload }) => (
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 pt-3 text-xs">
+                  {payload?.map((entry: any) => (
+                    <div key={entry.value} className="flex items-center gap-1.5 cursor-pointer">
+                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                      <span>{entry.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            />
+            {activeRestaurants.map((restaurant) => (
+              <Bar
+                key={restaurant}
+                dataKey={restaurant}
+                fill={restaurantColorMap[restaurant]}
+                radius={[3, 3, 0, 0]}
+                maxBarSize={40}
+              />
+            ))}
+            <Line
+              type="monotone"
+              dataKey="ИТОГО СЕТЬ"
+              stroke="hsl(0, 0%, 15%)"
+              strokeWidth={2.5}
+              dot={{ r: 4, fill: "hsl(0, 0%, 15%)", stroke: "white", strokeWidth: 2 }}
+              activeDot={{ r: 6 }}
+            />
+          </ComposedChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+
   if (metrics.income === 0) return 0;
   return (metrics.profit / metrics.income) * 100;
 }
