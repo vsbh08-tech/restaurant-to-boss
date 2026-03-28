@@ -2390,13 +2390,15 @@ function LoanCounterpartyTableCard({
   periodLabel,
   rows,
   totals,
+  endingIssuedTotal,
+  endingReceivedTotal,
 }: {
   periodLabel: string;
   rows: LoanCounterpartyRow[];
   totals: { opening: number; received: number; issued: number; closing: number };
+  endingIssuedTotal: number;
+  endingReceivedTotal: number;
 }) {
-  const endingIssuedTotal = rows.reduce((sum, row) => (row.closing < 0 ? sum + Math.abs(row.closing) : sum), 0);
-  const endingReceivedTotal = rows.reduce((sum, row) => (row.closing > 0 ? sum + row.closing : sum), 0);
   const endingClosingTotal = endingReceivedTotal - endingIssuedTotal;
 
   return (
@@ -3809,6 +3811,12 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       return fetchAllRows<OwnersFact>("owners_fact");
     },
   });
+  const { data: balances = [], isLoading: balancesLoading } = useQuery({
+    queryKey: ["balance_fact"],
+    queryFn: async () => {
+      return fetchAllRows<BalanceFact>("balance_fact");
+    },
+  });
 
   const loanRows = useMemo<LoanFactRow[]>(
     () =>
@@ -3854,6 +3862,27 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         .filter((row): row is LoanFactRow => row !== null)
         .filter((row) => accessibleRestaurantNameSet.has(row.restaurant)),
     [accessibleRestaurantNameSet, owners],
+  );
+  const balanceRows = useMemo<BalanceFactRow[]>(
+    () =>
+      balances
+        .map((row) => {
+          const periodDate = parsePeriodDate(row["Период"]);
+          if (!periodDate) return null;
+
+          return {
+            id: row.id,
+            restaurant: row["Ресторан"] || "Без ресторана",
+            periodDate,
+            periodKey: makePeriodKey(periodDate),
+            balanceType: row["БалансТип"] || "",
+            article: normalizeBalanceArticle(row["СтатьяKey"] || "Без статьи"),
+            amount: parseTextNumeric(row["Сумма"]),
+          };
+        })
+        .filter((row): row is BalanceFactRow => row !== null)
+        .filter((row) => accessibleRestaurantNameSet.has(row.restaurant)),
+    [accessibleRestaurantNameSet, balances],
   );
 
   const restaurantOptions = useMemo(
@@ -3913,10 +3942,44 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
   const issuedTotal = loanSummary.totals.issued;
   const periodChange = receivedTotal - issuedTotal;
   const closingPosition = loanSummary.totals.closing;
+  const accumulatedBalanceRows = useMemo(() => {
+    if (!selectedPeriodOption) return [];
+
+    const nextMonthStart = new Date(selectedPeriodOption.date.getFullYear(), selectedPeriodOption.date.getMonth() + 1, 1);
+
+    return balanceRows.filter(
+      (row) =>
+        activeRestaurants.includes(row.restaurant) &&
+        row.periodDate.getTime() < nextMonthStart.getTime(),
+    );
+  }, [activeRestaurants, balanceRows, selectedPeriodOption]);
+  const endingIssuedBalanceTotal = useMemo(
+    () =>
+      accumulatedBalanceRows
+        .filter(
+          (row) =>
+            row.balanceType === "Актив" &&
+            (isLoanIssuedArticle(row.article) || isGenericLoanArticle(row.article)),
+        )
+        .reduce((sum, row) => sum + row.amount, 0),
+    [accumulatedBalanceRows],
+  );
+  const endingReceivedBalanceTotal = useMemo(
+    () =>
+      accumulatedBalanceRows
+        .filter(
+          (row) =>
+            row.balanceType === "Обязательство" &&
+            (isLoanReceivedArticle(row.article) || isGenericLoanArticle(row.article)),
+        )
+        .reduce((sum, row) => sum + row.amount, 0),
+    [accumulatedBalanceRows],
+  );
   const timelineData = useMemo(
     () => buildLoanPositionTimelineData(restaurantScopedRows, selectedPeriodOption?.date ?? null),
     [restaurantScopedRows, selectedPeriodOption],
   );
+  const isLoansLoading = isLoading || balancesLoading;
 
   return (
     <div className="space-y-3">
@@ -3957,7 +4020,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoansLoading ? (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">Загрузка...</CardContent>
         </Card>
@@ -3985,6 +4048,8 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             periodLabel={selectedPeriodOption.label}
             rows={loanSummary.rows}
             totals={loanSummary.totals}
+            endingIssuedTotal={endingIssuedBalanceTotal}
+            endingReceivedTotal={endingReceivedBalanceTotal}
           />
           <LoanPositionChartCard data={timelineData} />
         </div>
