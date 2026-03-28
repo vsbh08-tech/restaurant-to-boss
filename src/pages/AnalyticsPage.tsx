@@ -2497,21 +2497,46 @@ function InvestmentLoanDistributionCard({
       elbowX,
       elbowY,
       desiredY: Math.max(topLimit, Math.min(bottomLimit, elbowY - labelHeight / 2)),
-      isTopCluster: startY < chartCenter - 24 && Math.abs(startX - chartCenter) < 44,
+      topClusterPriority: Math.abs(startX - chartCenter),
+      isTopCluster: startY < chartCenter - 14 && Math.abs(startX - chartCenter) < 56,
     };
   });
 
-  let leftUpperCount = rawCallouts.filter((item) => item.naturalSide === "left" && item.startY < chartCenter).length;
-  let rightUpperCount = rawCallouts.filter((item) => item.naturalSide === "right" && item.startY < chartCenter).length;
+  const pickTopClusterShiftCandidate = (items: (typeof rawCallouts)[number][]) =>
+    [...items].sort((a, b) => a.magnitude - b.magnitude || a.topClusterPriority - b.topClusterPriority)[0];
 
-  const balancedCallouts = rawCallouts.map((item) => {
-    let side = item.naturalSide;
+  const forcedSideByKey = new Map<string, "left" | "right">();
+  const leftTopCluster = rawCallouts.filter((item) => item.naturalSide === "left" && item.isTopCluster);
+  const rightTopCluster = rawCallouts.filter((item) => item.naturalSide === "right" && item.isTopCluster);
 
-    if (item.isTopCluster && item.naturalSide === "left" && leftUpperCount > rightUpperCount + 1) {
+  if (leftTopCluster.length >= 2 && leftTopCluster.length > rightTopCluster.length) {
+    const candidate = pickTopClusterShiftCandidate(leftTopCluster);
+    if (candidate) {
+      forcedSideByKey.set(candidate.chartKey, "right");
+    }
+  } else if (rightTopCluster.length >= 2 && rightTopCluster.length > leftTopCluster.length) {
+    const candidate = pickTopClusterShiftCandidate(rightTopCluster);
+    if (candidate) {
+      forcedSideByKey.set(candidate.chartKey, "left");
+    }
+  }
+
+  const preBalancedCallouts = rawCallouts.map((item) => ({
+    ...item,
+    provisionalSide: forcedSideByKey.get(item.chartKey) ?? item.naturalSide,
+  }));
+
+  let leftUpperCount = preBalancedCallouts.filter((item) => item.provisionalSide === "left" && item.startY < chartCenter).length;
+  let rightUpperCount = preBalancedCallouts.filter((item) => item.provisionalSide === "right" && item.startY < chartCenter).length;
+
+  const balancedCallouts = preBalancedCallouts.map((item) => {
+    let side = item.provisionalSide;
+
+    if (item.isTopCluster && side === "left" && leftUpperCount > rightUpperCount + 1) {
       side = "right";
       leftUpperCount -= 1;
       rightUpperCount += 1;
-    } else if (item.isTopCluster && item.naturalSide === "right" && rightUpperCount > leftUpperCount + 1) {
+    } else if (item.isTopCluster && side === "right" && rightUpperCount > leftUpperCount + 1) {
       side = "left";
       rightUpperCount -= 1;
       leftUpperCount += 1;
