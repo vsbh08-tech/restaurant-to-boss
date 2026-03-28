@@ -2409,6 +2409,7 @@ function LoanCounterpartyTableCard({
   investmentRows: InvestmentLoanRow[];
 }) {
   const endingClosingTotal = endingReceivedTotal - endingIssuedTotal;
+  const investmentTotal = investmentRows.reduce((sum, row) => sum + row.amount, 0);
 
   return (
     <Card className="min-w-0 overflow-hidden rounded-xl border border-border/60 shadow-lg">
@@ -2544,15 +2545,15 @@ function LoanCounterpartyTableCard({
           </div>
         </div>
 
-        <div className="border-t border-border/50">
+        <div className="mx-3 mb-3 mt-6 rounded-xl border border-dashed border-border/50 bg-muted/10">
           <div className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
             <div>
-              <h3 className="text-sm font-serif">Инвестиционные займы</h3>
+              <h3 className="text-sm font-serif text-foreground/90">Инвестиционные займы</h3>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Долгоруковская, накопленный итог на конец выбранного периода.
+                Долгоруковская, накопленный итог на конец выбранного периода. Справочно.
               </p>
             </div>
-            <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+            <div className="rounded-full border border-border/60 bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
               Период: {periodLabel}
             </div>
           </div>
@@ -2563,14 +2564,14 @@ function LoanCounterpartyTableCard({
             <div className="overflow-x-auto">
               <Table className="min-w-[420px] table-fixed">
                 <TableHeader>
-                  <TableRow className="bg-primary/10 border-b-2 border-primary/20">
-                    <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                  <TableRow className="border-b border-border/50 bg-muted/30">
+                    <TableHead className="px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
                       Контрагент
                     </TableHead>
-                    <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                    <TableHead className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
                       Сумма
                     </TableHead>
-                    <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                    <TableHead className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
                       Доля (%)
                     </TableHead>
                   </TableRow>
@@ -2579,13 +2580,13 @@ function LoanCounterpartyTableCard({
                   {investmentRows.map((row, idx) => (
                     <TableRow
                       key={row.counterparty}
-                      className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors")}
+                      className={cn(idx % 2 === 0 ? "bg-background/80" : "bg-muted/10", "hover:bg-muted/20 transition-colors")}
                     >
                       <TableCell className="px-4 py-2.5 text-sm font-medium">{row.counterparty}</TableCell>
                       <TableCell
                         className={cn(
                           "px-3 py-2.5 text-right text-sm font-mono font-semibold whitespace-nowrap",
-                          row.amount < 0 ? "text-destructive" : "text-primary",
+                          row.amount < 0 ? "text-destructive" : "text-foreground",
                         )}
                       >
                         {formatRoundedMoneyText(row.amount)}
@@ -2596,6 +2597,22 @@ function LoanCounterpartyTableCard({
                     </TableRow>
                   ))}
                 </TableBody>
+                <TableFooter className="bg-muted/20">
+                  <TableRow className="border-t border-border/40 bg-muted/20 hover:bg-muted/25">
+                    <TableCell className="px-4 py-2.5 text-sm font-semibold text-foreground">Итого</TableCell>
+                    <TableCell
+                      className={cn(
+                        "px-3 py-2.5 text-right text-sm font-mono font-semibold whitespace-nowrap",
+                        investmentTotal < 0 ? "text-destructive" : "text-foreground",
+                      )}
+                    >
+                      {formatRoundedMoneyText(investmentTotal)}
+                    </TableCell>
+                    <TableCell className="px-3 py-2.5 text-right text-sm font-mono whitespace-nowrap text-muted-foreground">
+                      100%
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
               </Table>
             </div>
           )}
