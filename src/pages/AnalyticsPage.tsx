@@ -2419,10 +2419,10 @@ function InvestmentLoanDistributionCard({
   const chartCenter = chartSize / 2;
   const outerRadius = 72;
   const labelWidth = 84;
-  const labelHeight = 24;
-  const topLimit = 20;
-  const bottomLimit = chartSize - labelHeight - 20;
-  const verticalGap = 28;
+  const labelHeight = 28;
+  const topLimit = 16;
+  const bottomLimit = chartSize - labelHeight - 16;
+  const verticalGap = 34;
 
   const chartData = rows.map((row, index) => ({
     ...row,
@@ -2586,7 +2586,7 @@ function InvestmentLoanDistributionCard({
           {callouts.map((item) => (
             <div
               key={item.chartKey}
-              className="absolute px-1"
+              className="absolute rounded-sm bg-background/95 px-1"
               style={{
                 left: item.boxX,
                 top: item.adjustedY,
