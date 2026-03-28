@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/roles";
-import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Legend, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Legend, Line, LineChart, Pie, PieChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 
 type FinanceFlow = {
   id: string;
@@ -933,6 +933,17 @@ const loanPositionChartConfig = {
     color: "#2563eb",
   },
 } satisfies ChartConfig;
+
+const INVESTMENT_LOAN_CHART_COLORS = [
+  "#2563EB",
+  "#0F766E",
+  "#D97706",
+  "#7C3AED",
+  "#DC2626",
+  "#0891B2",
+  "#4F46E5",
+  "#BE123C",
+];
 
 function buildTransferNetChartData(summary: TransferMatrixSummary): TransferNetChartDatum[] {
   return summary.restaurants.map((restaurant, index) => {
@@ -2394,6 +2405,109 @@ function LoanCompactMetricCard({
   );
 }
 
+function InvestmentLoanDistributionCard({
+  rows,
+  total,
+}: {
+  rows: InvestmentLoanRow[];
+  total: number;
+}) {
+  const chartData = rows.map((row, index) => ({
+    ...row,
+    chartKey: `investment_${index + 1}`,
+    magnitude: Math.abs(row.amount),
+    fill: INVESTMENT_LOAN_CHART_COLORS[index % INVESTMENT_LOAN_CHART_COLORS.length],
+  }));
+
+  const chartConfig = Object.fromEntries(
+    chartData.map((row) => [
+      row.chartKey,
+      {
+        label: row.counterparty,
+        color: row.fill,
+      },
+    ]),
+  ) as ChartConfig;
+
+  return (
+    <div className="rounded-xl border border-border/40 bg-background/65 p-3">
+      <div className="mb-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary sm:text-xs">Структура по контрагентам</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">Кто, сколько и какую долю занимает в инвестиционных займах.</p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,180px)_minmax(0,1fr)] xl:grid-cols-1">
+        <div className="relative mx-auto w-full max-w-[220px]">
+          <ChartContainer config={chartConfig} className="mx-auto h-[220px] w-full max-w-[220px]">
+            <PieChart>
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    hideLabel
+                    hideIndicator
+                    formatter={(_, __, item) => {
+                      const payload = item.payload as (typeof chartData)[number];
+                      return (
+                        <div className="flex w-full items-center justify-between gap-4">
+                          <div className="grid gap-0.5">
+                            <span className="text-muted-foreground">{payload.counterparty}</span>
+                            <span className="text-[11px] text-muted-foreground">{Math.round(payload.share)}%</span>
+                          </div>
+                          <span className={cn("font-mono font-medium", payload.amount < 0 ? "text-destructive" : "text-foreground")}>
+                            {formatRoundedMoneyText(payload.amount)}
+                          </span>
+                        </div>
+                      );
+                    }}
+                  />
+                }
+              />
+              <Pie
+                data={chartData}
+                dataKey="magnitude"
+                nameKey="chartKey"
+                innerRadius={54}
+                outerRadius={84}
+                paddingAngle={2}
+                cornerRadius={6}
+              >
+                {chartData.map((row) => (
+                  <Cell key={row.chartKey} fill={row.fill} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ChartContainer>
+
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="rounded-full border border-border/50 bg-background/95 px-3 py-2 text-center shadow-sm">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Итого</p>
+              <p className="mt-0.5 text-sm font-mono font-semibold text-foreground">{formatRoundedMoneyText(total)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {chartData.map((row) => (
+            <div key={row.chartKey} className="flex items-start gap-3 rounded-lg border border-border/30 bg-background/70 px-3 py-2">
+              <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: row.fill }} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="truncate text-xs font-medium text-primary sm:text-sm">{row.counterparty}</p>
+                  <p className="shrink-0 text-xs font-mono text-muted-foreground">{Math.round(row.share)}%</p>
+                </div>
+                <p className={cn("mt-1 text-xs font-mono sm:text-sm", row.amount < 0 ? "text-destructive" : "text-foreground/80")}>
+                  {formatRoundedMoneyText(row.amount)}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LoanCounterpartyTableCard({
   periodLabel,
   rows,
@@ -2577,59 +2691,63 @@ function LoanCounterpartyTableCard({
               {investmentRows.length === 0 ? (
                 <div className="px-4 pb-4 text-sm text-muted-foreground">Нет данных по инвестиционным займам.</div>
               ) : (
-                <div className="overflow-x-auto border-t border-border/40">
-                  <Table className="min-w-[420px] table-fixed">
-                    <TableHeader>
-                      <TableRow className="border-b border-border/40 bg-background/60">
-                        <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                          Контрагент
-                        </TableHead>
-                        <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                          Сумма
-                        </TableHead>
-                        <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                          Доля (%)
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {investmentRows.map((row, idx) => (
-                        <TableRow
-                          key={row.counterparty}
-                          className={cn(idx % 2 === 0 ? "bg-background/75" : "bg-muted/5", "hover:bg-muted/10 transition-colors")}
-                        >
-                          <TableCell className="px-4 py-2.5 text-xs font-medium text-primary sm:text-sm">{row.counterparty}</TableCell>
+                <div className="grid gap-4 border-t border-border/40 px-4 pb-4 pt-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(260px,0.85fr)]">
+                  <div className="min-w-0 overflow-x-auto">
+                    <Table className="min-w-[420px] table-fixed">
+                      <TableHeader>
+                        <TableRow className="border-b border-border/40 bg-background/60">
+                          <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                            Контрагент
+                          </TableHead>
+                          <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                            Сумма
+                          </TableHead>
+                          <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                            Доля (%)
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {investmentRows.map((row, idx) => (
+                          <TableRow
+                            key={row.counterparty}
+                            className={cn(idx % 2 === 0 ? "bg-background/75" : "bg-muted/5", "hover:bg-muted/10 transition-colors")}
+                          >
+                            <TableCell className="px-4 py-2.5 text-xs font-medium text-primary sm:text-sm">{row.counterparty}</TableCell>
+                            <TableCell
+                              className={cn(
+                                "px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap sm:text-sm",
+                                row.amount < 0 ? "text-destructive" : "text-foreground/75",
+                              )}
+                            >
+                              {formatRoundedMoneyText(row.amount)}
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
+                              {Math.round(row.share)}%
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                      <TableFooter className="bg-muted/15">
+                        <TableRow className="border-t border-border/40 bg-muted/15 hover:bg-muted/20">
+                          <TableCell className="px-4 py-2.5 text-xs font-medium text-primary sm:text-sm">Итого</TableCell>
                           <TableCell
                             className={cn(
-                              "px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap sm:text-sm",
-                              row.amount < 0 ? "text-destructive" : "text-foreground/75",
+                              "px-3 py-2.5 text-right text-xs font-mono font-medium whitespace-nowrap sm:text-sm",
+                              investmentTotal < 0 ? "text-destructive" : "text-foreground/80",
                             )}
                           >
-                            {formatRoundedMoneyText(row.amount)}
+                            {formatRoundedMoneyText(investmentTotal)}
                           </TableCell>
                           <TableCell className="px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
-                            {Math.round(row.share)}%
+                            100%
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                    <TableFooter className="bg-muted/15">
-                      <TableRow className="border-t border-border/40 bg-muted/15 hover:bg-muted/20">
-                        <TableCell className="px-4 py-2.5 text-xs font-medium text-primary sm:text-sm">Итого</TableCell>
-                        <TableCell
-                          className={cn(
-                            "px-3 py-2.5 text-right text-xs font-mono font-medium whitespace-nowrap sm:text-sm",
-                            investmentTotal < 0 ? "text-destructive" : "text-foreground/80",
-                          )}
-                        >
-                          {formatRoundedMoneyText(investmentTotal)}
-                        </TableCell>
-                        <TableCell className="px-3 py-2.5 text-right text-xs font-mono whitespace-nowrap text-muted-foreground sm:text-sm">
-                          100%
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
+                      </TableFooter>
+                    </Table>
+                  </div>
+
+                  <InvestmentLoanDistributionCard rows={investmentRows} total={investmentTotal} />
                 </div>
               )}
             </AccordionContent>
