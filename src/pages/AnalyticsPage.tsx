@@ -2204,6 +2204,23 @@ function CashWaterfallChartCard({
           </BarChart>
         </ChartContainer>
 
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 px-1 text-[11px]">
+          {[
+            { label: "Начало", color: "rgba(37, 99, 235, 0.8)" },
+            { label: "Поступления", color: "rgba(22, 163, 74, 0.78)" },
+            { label: "Выплаты", color: "rgba(239, 68, 68, 0.8)" },
+            { label: "Доли", color: "rgba(239, 68, 68, 0.8)" },
+            { label: "Прочие поступления", color: "rgba(22, 163, 74, 0.78)" },
+            { label: "Прочие выплаты", color: "rgba(239, 68, 68, 0.8)" },
+            { label: "Конец", color: "rgba(37, 99, 235, 0.8)" },
+          ].map((item) => (
+            <div key={item.label} className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: item.color }} />
+              <span className="text-muted-foreground">{item.label}</span>
+            </div>
+          ))}
+        </div>
+
         {!hasMovement ? (
           <p className="mt-2 text-xs text-muted-foreground">
             За выбранный период нет движений, которые меняли денежный остаток.
