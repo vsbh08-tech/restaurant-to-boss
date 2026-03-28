@@ -3631,7 +3631,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           </CardContent>
         </Card>
 
-        <div className="grid gap-2 self-start sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           <TransferKpiCard
             icon={Wallet}
             label="Денег всего"
