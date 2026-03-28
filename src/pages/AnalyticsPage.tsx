@@ -243,6 +243,12 @@ type LoanTimelineDatum = {
   position: number;
 };
 
+type InvestmentLoanRow = {
+  counterparty: string;
+  amount: number;
+  share: number;
+};
+
 type SaveFilePickerWindow = Window & {
   showSaveFilePicker?: (options?: {
     suggestedName?: string;
@@ -393,6 +399,7 @@ const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные"];
 const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные"];
 const LOAN_GENERIC_ARTICLE_ALIASES = ["займы"];
 const LOAN_RENT_ARTICLE_ALIASES = ["аренда"];
+const INVESTMENT_LOAN_ARTICLE_ALIASES = ["займы полученные кап", "займы кап"];
 const STICKY_HEADER_SURFACE_STYLE = {
   background: "linear-gradient(hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.1)), hsl(var(--card))",
 };
@@ -2392,12 +2399,14 @@ function LoanCounterpartyTableCard({
   totals,
   endingIssuedTotal,
   endingReceivedTotal,
+  investmentRows,
 }: {
   periodLabel: string;
   rows: LoanCounterpartyRow[];
   totals: { opening: number; received: number; issued: number; closing: number };
   endingIssuedTotal: number;
   endingReceivedTotal: number;
+  investmentRows: InvestmentLoanRow[];
 }) {
   const endingClosingTotal = endingReceivedTotal - endingIssuedTotal;
 
@@ -2405,7 +2414,7 @@ function LoanCounterpartyTableCard({
     <Card className="min-w-0 overflow-hidden rounded-xl border border-border/60 shadow-lg">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
         <div>
-          <CardTitle className="text-sm font-serif">Позиция по займам</CardTitle>
+          <CardTitle className="text-sm font-serif">Операционные займы</CardTitle>
           <p className="mt-0.5 text-xs text-muted-foreground">По контрагентам за выбранный период.</p>
         </div>
         <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
@@ -2533,6 +2542,63 @@ function LoanCounterpartyTableCard({
               tone={endingClosingTotal < 0 ? "accent" : endingClosingTotal > 0 ? "success" : "primary"}
             />
           </div>
+        </div>
+
+        <div className="border-t border-border/50">
+          <div className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
+            <div>
+              <h3 className="text-sm font-serif">Инвестиционные займы</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Долгоруковская, накопленный итог на конец выбранного периода.
+              </p>
+            </div>
+            <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+              Период: {periodLabel}
+            </div>
+          </div>
+
+          {investmentRows.length === 0 ? (
+            <div className="px-4 pb-4 text-sm text-muted-foreground">Нет данных по инвестиционным займам.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table className="min-w-[420px] table-fixed">
+                <TableHeader>
+                  <TableRow className="bg-primary/10 border-b-2 border-primary/20">
+                    <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                      Контрагент
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                      Сумма
+                    </TableHead>
+                    <TableHead className="px-3 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                      Доля (%)
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {investmentRows.map((row, idx) => (
+                    <TableRow
+                      key={row.counterparty}
+                      className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors")}
+                    >
+                      <TableCell className="px-4 py-2.5 text-sm font-medium">{row.counterparty}</TableCell>
+                      <TableCell
+                        className={cn(
+                          "px-3 py-2.5 text-right text-sm font-mono font-semibold whitespace-nowrap",
+                          row.amount < 0 ? "text-destructive" : "text-primary",
+                        )}
+                      >
+                        {formatRoundedMoneyText(row.amount)}
+                      </TableCell>
+                      <TableCell className="px-3 py-2.5 text-right text-sm font-mono whitespace-nowrap text-muted-foreground">
+                        {Math.round(row.share)}%
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -3975,6 +4041,50 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         .reduce((sum, row) => sum + row.amount, 0),
     [accumulatedBalanceRows],
   );
+  const investmentLoanRows = useMemo<InvestmentLoanRow[]>(() => {
+    if (!selectedPeriodOption) return [];
+
+    const nextMonthStart = new Date(selectedPeriodOption.date.getFullYear(), selectedPeriodOption.date.getMonth() + 1, 1);
+    const grouped = new Map<string, number>();
+
+    owners.forEach((row) => {
+      const periodDate = parsePeriodDate(row["Период"]);
+      const restaurant = row["Ресторан"]?.trim() ?? "";
+      const counterparty = row["Псевдо"]?.trim() ?? "Без контрагента";
+      const article = normalizeLookupText(row["Группа"]);
+
+      if (!periodDate || restaurant !== "Долгоруковская") {
+        return;
+      }
+
+      if (periodDate.getTime() >= nextMonthStart.getTime()) {
+        return;
+      }
+
+      if (!INVESTMENT_LOAN_ARTICLE_ALIASES.includes(article)) {
+        return;
+      }
+
+      grouped.set(counterparty, (grouped.get(counterparty) ?? 0) + parseTextNumeric(row["Движение"]));
+    });
+
+    const prepared = Array.from(grouped.entries())
+      .map(([counterparty, amount]) => ({
+        counterparty,
+        amount,
+        magnitude: Math.abs(amount),
+      }))
+      .filter((row) => !isNearlyZero(row.amount))
+      .sort((a, b) => b.amount - a.amount);
+
+    const totalMagnitude = prepared.reduce((sum, row) => sum + row.magnitude, 0);
+
+    return prepared.map((row) => ({
+      counterparty: row.counterparty,
+      amount: row.amount,
+      share: totalMagnitude === 0 ? 0 : (row.magnitude / totalMagnitude) * 100,
+    }));
+  }, [owners, selectedPeriodOption]);
   const timelineData = useMemo(
     () => buildLoanPositionTimelineData(restaurantScopedRows, selectedPeriodOption?.date ?? null),
     [restaurantScopedRows, selectedPeriodOption],
@@ -4050,6 +4160,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             totals={loanSummary.totals}
             endingIssuedTotal={endingIssuedBalanceTotal}
             endingReceivedTotal={endingReceivedBalanceTotal}
+            investmentRows={investmentLoanRows}
           />
           <LoanPositionChartCard data={timelineData} />
         </div>
