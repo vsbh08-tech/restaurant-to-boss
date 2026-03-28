@@ -2632,6 +2632,9 @@ function RestaurantProfitChart({
       datum["yoyChange"] = prevMetrics.profit !== 0
         ? Math.round(((networkTotal - prevMetrics.profit) / Math.abs(prevMetrics.profit)) * 100)
         : null;
+      // Store previous year month label for tooltip
+      const prevMonthLabel = MONTH_LABELS_RU[period.date.getMonth()]?.toLowerCase() ?? "";
+      datum["yoyLabel"] = `${prevMonthLabel} ${period.date.getFullYear() - 1} г.`;
 
       return datum;
     });
@@ -2658,10 +2661,10 @@ function RestaurantProfitChart({
       </CardHeader>
       <CardContent className="px-2 pb-4 pt-4">
         <ChartContainer config={chartConfig} className="aspect-[2/1] w-full">
-          <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+          <ComposedChart data={chartData} barGap={0} barCategoryGap="20%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(228, 18%, 88%)" />
             <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${Math.round(v / 1000)}т`} />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${Math.round(v / 1000)}т`} label={{ value: "Прибыль/Убыток (тыс.руб.)", angle: -90, position: "insideLeft", offset: 0, style: { fontSize: 11, fill: "hsl(228, 12%, 48%)", textAnchor: "middle" } }} />
             <ReferenceLine y={0} stroke="hsl(228, 12%, 48%)" strokeDasharray="4 4" />
             <Tooltip
               content={({ active, payload, label }) => {
@@ -2682,8 +2685,9 @@ function RestaurantProfitChart({
                       </div>
                     ))}
                     {yoyChange !== null && yoyChange !== undefined && (
-                      <div className={cn("mt-1 pt-1 border-t border-border/30 text-[11px]", yoyChange >= 0 ? "text-success" : "text-destructive")}>
-                        YoY: {yoyChange > 0 ? "+" : ""}{yoyChange}%
+                      <div className={cn("mt-1 pt-1 border-t border-border/30 text-[11px] flex items-center gap-1", yoyChange >= 0 ? "text-success" : "text-destructive")}>
+                        <span>{yoyChange >= 0 ? "↑" : "↓"}</span>
+                        <span>{yoyChange > 0 ? "+" : ""}{yoyChange}% к {payload[0]?.payload?.yoyLabel}</span>
                       </div>
                     )}
                   </div>
