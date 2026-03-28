@@ -2339,6 +2339,53 @@ function LoanMetricCard({
   );
 }
 
+function LoanCompactMetricCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: any;
+  label: string;
+  value: number;
+  tone: "success" | "accent" | "primary";
+}) {
+  const toneMap = {
+    primary: {
+      cardClass: "border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card",
+      iconClassName: "text-primary bg-primary/10",
+      valueClassName: "text-primary",
+    },
+    accent: {
+      cardClass: "border-destructive/20 bg-gradient-to-br from-destructive/5 via-card to-card",
+      iconClassName: "text-destructive bg-destructive/10",
+      valueClassName: "text-destructive",
+    },
+    success: {
+      cardClass: "border-success/20 bg-gradient-to-br from-success/6 via-card to-card",
+      iconClassName: "text-success bg-success/10",
+      valueClassName: "text-success",
+    },
+  } as const;
+
+  const toneConfig = toneMap[tone];
+
+  return (
+    <div className={cn("flex min-h-[54px] items-center gap-3 rounded-xl border px-3 py-2 shadow-sm", toneConfig.cardClass)}>
+      <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", toneConfig.iconClassName)}>
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold leading-tight text-foreground sm:text-xs">{label}</p>
+        <p className={cn("mt-0.5 text-lg font-bold leading-none whitespace-nowrap", toneConfig.valueClassName)}>
+          {formatRoundedMoneyText(value)}
+        </p>
+        <p className="mt-0.5 text-[10px] leading-none text-muted-foreground">на конец периода</p>
+      </div>
+    </div>
+  );
+}
+
 function LoanCounterpartyTableCard({
   periodLabel,
   rows,
@@ -2348,6 +2395,10 @@ function LoanCounterpartyTableCard({
   rows: LoanCounterpartyRow[];
   totals: { opening: number; received: number; issued: number; closing: number };
 }) {
+  const endingIssuedTotal = rows.reduce((sum, row) => (row.closing < 0 ? sum + Math.abs(row.closing) : sum), 0);
+  const endingReceivedTotal = rows.reduce((sum, row) => (row.closing > 0 ? sum + row.closing : sum), 0);
+  const endingChangeTotal = endingReceivedTotal - endingIssuedTotal;
+
   return (
     <Card className="min-w-0 overflow-hidden rounded-xl border border-border/60 shadow-lg">
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 px-4 py-3">
@@ -2467,6 +2518,19 @@ function LoanCounterpartyTableCard({
               </TableRow>
             </TableFooter>
           </Table>
+        </div>
+
+        <div className="border-t border-border/50 px-3 py-2">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <LoanCompactMetricCard icon={ArrowUp} label="Займы выданные" value={endingIssuedTotal} tone="accent" />
+            <LoanCompactMetricCard icon={ArrowDown} label="Займы полученные" value={endingReceivedTotal} tone="success" />
+            <LoanCompactMetricCard
+              icon={RefreshCcw}
+              label="Изменение"
+              value={endingChangeTotal}
+              tone={endingChangeTotal < 0 ? "accent" : endingChangeTotal > 0 ? "success" : "primary"}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>
