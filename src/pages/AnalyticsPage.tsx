@@ -1751,7 +1751,7 @@ function TransferMatrixCard({ title, periodLabel, summary, description }: Transf
                 </TableHead>
                 <TableHead
                   rowSpan={2}
-                  className="w-[112px] min-w-[112px] px-2 py-2 text-right text-xs font-semibold uppercase tracking-wide leading-tight text-foreground sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
+                  className="w-[112px] min-w-[112px] px-2 py-2 text-right text-xs font-bold uppercase tracking-wider leading-tight text-primary sm:w-[112px] sm:min-w-[112px] sm:px-2 sm:py-2.5 sm:text-sm"
                 >
                   Итого выдано
                 </TableHead>
