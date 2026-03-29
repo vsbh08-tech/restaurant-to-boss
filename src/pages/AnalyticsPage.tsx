@@ -2485,10 +2485,12 @@ function LoanCompactMetricCard({
 }
 
 function ReconciliationCompactBalanceCard({
+  icon: Icon,
   valueText,
   subtitle,
   className,
 }: {
+  icon: any;
   valueText: string;
   subtitle: string;
   className?: string;
@@ -2496,11 +2498,16 @@ function ReconciliationCompactBalanceCard({
   return (
     <div
       className={cn(
-        "w-full min-h-[88px] rounded-lg border border-destructive/20 bg-gradient-to-br from-destructive/6 via-card to-card p-2 pb-3 shadow-sm sm:w-[188px]",
+        "w-full min-h-[88px] rounded-lg border border-destructive/25 bg-gradient-to-br from-destructive/10 via-destructive/5 to-card p-2 pb-3 shadow-sm sm:w-[188px]",
         className,
       )}
     >
-      <p className="text-xs font-semibold text-muted-foreground">Остаток</p>
+      <div className="flex items-center gap-2">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <Icon className="h-4 w-4" />
+        </div>
+        <p className="text-xs font-semibold text-muted-foreground">Остаток</p>
+      </div>
       <p className="mt-2 text-lg font-bold leading-none whitespace-nowrap text-destructive">{valueText}</p>
       <p className="mt-1 text-[10px] leading-none text-muted-foreground">{subtitle}</p>
     </div>
@@ -6363,10 +6370,12 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
           {!isLoading && selectedPeriod && summaryTableRows.length > 0 ? (
             <>
               <ReconciliationCompactBalanceCard
+                icon={Wallet}
                 valueText={formatReconciliationWholeCurrency(summaryTotals.opening)}
                 subtitle="на начало периода"
               />
               <ReconciliationCompactBalanceCard
+                icon={ArrowUp}
                 valueText={formatReconciliationWholeCurrency(summaryTotals.closing)}
                 subtitle="на конец периода"
               />
@@ -6528,11 +6537,13 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
 
                 <div className="grid w-full gap-2 sm:grid-cols-2 xl:w-auto">
                   <ReconciliationCompactBalanceCard
+                    icon={Wallet}
                     valueText={formatReconciliationWholeCurrency(detailOpening)}
                     subtitle="на начало периода"
                     className="sm:w-[188px]"
                   />
                   <ReconciliationCompactBalanceCard
+                    icon={ArrowUp}
                     valueText={formatReconciliationWholeCurrency(detailClosing)}
                     subtitle="на конец периода"
                     className="sm:w-[188px]"
