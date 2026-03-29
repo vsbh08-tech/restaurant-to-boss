@@ -899,7 +899,10 @@ const upsertMutation = useMutation({
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                 <DollarSign className="h-4 w-4 text-primary" />
               </div>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Открытые</p>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Открытые</p>
+                <p className="text-[10px] leading-tight text-muted-foreground">{periodContextLabel}</p>
+              </div>
             </div>
             <p className="mt-2 text-xl font-bold leading-none text-primary">{formatCurrency(stats.openSum)} ₽</p>
             <p className="mt-1 text-sm text-primary/70">{stats.openCount} шт.</p>
