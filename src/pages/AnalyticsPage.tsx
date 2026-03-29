@@ -6064,7 +6064,17 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
     () => restaurantScopedRows.filter((row) => !selectedPeriodKey || row.periodKey === selectedPeriodKey),
     [restaurantScopedRows, selectedPeriodKey],
   );
-  const selectedRestaurant = activeRestaurants[0] ?? null;
+  const selectedRestaurantLabel = useMemo(() => {
+    if (activeRestaurants.length === 0) {
+      return null;
+    }
+
+    if (restaurantOptions.length > 1 && activeRestaurants.length === restaurantOptions.length) {
+      return "Все рестораны";
+    }
+
+    return activeRestaurants.join(", ");
+  }, [activeRestaurants, restaurantOptions.length]);
   const selectedPeriod = useMemo(
     () => periodOptions.find((option) => option.key === selectedPeriodKey) ?? null,
     [periodOptions, selectedPeriodKey],
@@ -6277,8 +6287,7 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
               options={restaurantOptions}
               selection={selectedRestaurants}
               onChange={setSelectedRestaurants}
-              singleSelect
-              toggleSelect
+              allowSelectAll
               compact
               matchPeriodHeight
             />
@@ -6313,7 +6322,7 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
       ) : summaryTableRows.length === 0 ? (
         <AnalyticsPlaceholderSection
           title={selectedArticle}
-          description={`По фильтру ${selectedRestaurant ?? "ресторан не выбран"} • ${selectedPeriodLabel} данных нет.`}
+          description={`По фильтру ${selectedRestaurantLabel ?? "ресторан не выбран"} • ${selectedPeriodLabel} данных нет.`}
         />
       ) : (
         <Card className="overflow-hidden border border-border/60 shadow-lg rounded-xl">
@@ -6323,7 +6332,7 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
               <div>
                 <CardTitle className="text-sm font-serif">{selectedArticle}</CardTitle>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {selectedRestaurant ?? "Ресторан не выбран"} • Нажмите на строку, чтобы открыть детализацию
+                  {selectedRestaurantLabel ?? "Ресторан не выбран"} • Нажмите на строку, чтобы открыть детализацию
                 </p>
               </div>
             </div>
@@ -6412,12 +6421,12 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
       {detailCounterparty ? (
         !detailFromPeriodDate || !detailToPeriodDate ? (
           <AnalyticsPlaceholderSection
-            title={`Детализация (${selectedRestaurant ?? "Ресторан"}, ${detailCounterparty})`}
+            title={`Детализация (${selectedRestaurantLabel ?? "Ресторан"}, ${detailCounterparty})`}
             description="Выберите период детализации."
           />
         ) : hasInvalidDetailRange ? (
           <AnalyticsPlaceholderSection
-            title={`Детализация (${selectedRestaurant ?? "Ресторан"}, ${detailCounterparty})`}
+            title={`Детализация (${selectedRestaurantLabel ?? "Ресторан"}, ${detailCounterparty})`}
             description="Начальный период не может быть позже конечного."
           />
         ) : (
@@ -6429,7 +6438,7 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
                   <div className="space-y-2">
                     <div>
                       <CardTitle className="text-sm font-serif">
-                        Детализация ({selectedRestaurant ?? "Ресторан"}, {detailCounterparty})
+                        Детализация ({selectedRestaurantLabel ?? "Ресторан"}, {detailCounterparty})
                       </CardTitle>
                       <p className="mt-0.5 text-xs text-muted-foreground">Период: {detailPeriodLabel}</p>
                     </div>
