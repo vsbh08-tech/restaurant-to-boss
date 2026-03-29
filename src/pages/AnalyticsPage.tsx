@@ -6175,7 +6175,8 @@ function AnalyticsWorkspacePage() {
           <h1 className="text-2xl font-bold font-serif">{meta.title}</h1>
           {meta.description ? <p className="text-sm text-muted-foreground">{meta.description}</p> : null}
         </div>
-        {view === "financial" || view === "reconciliation" ? <AnalyticsImportDialog /> : null}
+        {view === "financial" ? <AnalyticsImportDialog mode="analytics" /> : null}
+        {view === "reconciliation" ? <AnalyticsImportDialog mode="reconciliation" /> : null}
       </div>
 
       {view === "financial" ? <FinancialResultTab /> : null}
@@ -6196,7 +6197,7 @@ function AnalyticsTabbedPage({ scope }: AnalyticsPageProps) {
           <h1 className="text-2xl font-bold font-serif">{scope?.title ?? "Аналитика"}</h1>
           {scope?.description ? <p className="text-sm text-muted-foreground">{scope.description}</p> : null}
         </div>
-        {!scope?.hideImportAction && <AnalyticsImportDialog />}
+        {!scope?.hideImportAction && <AnalyticsImportDialog mode="analytics" />}
       </div>
       <Tabs defaultValue="financial" className="space-y-4">
         <ScrollArea className="w-full whitespace-nowrap">

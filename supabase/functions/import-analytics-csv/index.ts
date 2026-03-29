@@ -65,6 +65,8 @@ const TABLE_CONFIGS: TableConfig[] = [
   },
 ];
 
+const ANALYTICS_TABLES: TableName[] = ["finance_flows", "balance_fact", "owners_fact"];
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -366,18 +368,29 @@ Deno.serve(async (request) => {
     const payload = (await request.json()) as ImportRequest;
     const serviceClient = await requireAdmin(request, supabaseUrl, supabasePublishableKey, supabaseServiceRoleKey);
 
-    const parsedByTable = TABLE_CONFIGS.map((config) => {
+    const parsedByTable = TABLE_CONFIGS.flatMap((config) => {
       const csv = payload[config.payloadKey];
 
       if (!csv || !csv.trim()) {
-        throw new Error(`Файл для ${config.tableName} не передан.`);
+        return [];
       }
 
-      return {
+      return [{
         config,
         rows: parseCsvRows(csv, config),
-      };
+      }];
     });
+
+    if (parsedByTable.length === 0) {
+      throw new Error("Не передан ни один файл для импорта.");
+    }
+
+    const parsedTableNames = new Set(parsedByTable.map(({ config }) => config.tableName));
+    const providedAnalyticsCount = ANALYTICS_TABLES.filter((tableName) => parsedTableNames.has(tableName)).length;
+
+    if (providedAnalyticsCount > 0 && providedAnalyticsCount !== ANALYTICS_TABLES.length) {
+      throw new Error("Для аналитики нужно передать вместе finance_flows, balance_fact и owners_fact.");
+    }
 
     const summaryEntries = await Promise.all(
       parsedByTable.map(async ({ config, rows }) => [config.tableName, await replaceTableSlices(serviceClient, config, rows)] as const),

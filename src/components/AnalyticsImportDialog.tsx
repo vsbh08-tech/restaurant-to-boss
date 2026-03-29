@@ -15,30 +15,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+type ImportSummaryEntry = {
+  rowCount: number;
+  sliceCount: number;
+  periods: string[];
+};
+
 type ImportResult = {
   ok: true;
-  summary: {
-    finance_flows: {
-      rowCount: number;
-      sliceCount: number;
-      periods: string[];
-    };
-    balance_fact: {
-      rowCount: number;
-      sliceCount: number;
-      periods: string[];
-    };
-    owners_fact: {
-      rowCount: number;
-      sliceCount: number;
-      periods: string[];
-    };
-    Check_Kontragent: {
-      rowCount: number;
-      sliceCount: number;
-      periods: string[];
-    };
-  };
+  summary: Partial<{
+    finance_flows: ImportSummaryEntry;
+    balance_fact: ImportSummaryEntry;
+    owners_fact: ImportSummaryEntry;
+    Check_Kontragent: ImportSummaryEntry;
+  }>;
 };
 
 type FileState = {
@@ -46,6 +36,10 @@ type FileState = {
   balanceFact: File | null;
   ownersFact: File | null;
   checkKontragent: File | null;
+};
+
+type AnalyticsImportDialogProps = {
+  mode?: "analytics" | "reconciliation";
 };
 
 const EMPTY_FILES: FileState = {
@@ -108,11 +102,12 @@ function FileField({
   );
 }
 
-export function AnalyticsImportDialog() {
+export function AnalyticsImportDialog({ mode = "analytics" }: AnalyticsImportDialogProps) {
   const queryClient = useQueryClient();
   const { role, isDemoSession } = useRole();
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<FileState>(EMPTY_FILES);
+  const isAnalyticsMode = mode === "analytics";
 
   const importMutation = useMutation({
     mutationFn: async () => {
@@ -124,22 +119,43 @@ export function AnalyticsImportDialog() {
         throw new Error("Для загрузки нужен реальный вход под админом, а не тестовый режим.");
       }
 
-      if (!files.financeFlows || !files.balanceFact || !files.ownersFact || !files.checkKontragent) {
-        throw new Error("Выберите все 4 файла.");
+      if (isAnalyticsMode) {
+        if (!files.financeFlows || !files.balanceFact || !files.ownersFact) {
+          throw new Error("Выберите 3 файла: finance_flows, balance_fact и owners_fact.");
+        }
+
+        const [financeFlowsCsv, balanceFactCsv, ownersFactCsv] = await Promise.all([
+          files.financeFlows.text(),
+          files.balanceFact.text(),
+          files.ownersFact.text(),
+        ]);
+
+        const { data, error } = await supabase.functions.invoke<ImportResult>("import-analytics-csv", {
+          body: {
+            financeFlowsCsv,
+            balanceFactCsv,
+            ownersFactCsv,
+          },
+        });
+
+        if (error) {
+          throw new Error(await getInvokeErrorMessage(error));
+        }
+
+        if (!data?.ok) {
+          throw new Error("Импорт завершился с ошибкой.");
+        }
+
+        return data;
       }
 
-      const [financeFlowsCsv, balanceFactCsv, ownersFactCsv, checkKontragentCsv] = await Promise.all([
-        files.financeFlows.text(),
-        files.balanceFact.text(),
-        files.ownersFact.text(),
-        files.checkKontragent.text(),
-      ]);
+      if (!files.checkKontragent) {
+        throw new Error("Выберите файл Check_Kontragent.csv.");
+      }
 
+      const checkKontragentCsv = await files.checkKontragent.text();
       const { data, error } = await supabase.functions.invoke<ImportResult>("import-analytics-csv", {
         body: {
-          financeFlowsCsv,
-          balanceFactCsv,
-          ownersFactCsv,
           checkKontragentCsv,
         },
       });
@@ -155,21 +171,24 @@ export function AnalyticsImportDialog() {
       return data;
     },
     onSuccess: (result) => {
-      void queryClient.invalidateQueries({ queryKey: ["finance_flows"] });
-      void queryClient.invalidateQueries({ queryKey: ["balance_fact"] });
-      void queryClient.invalidateQueries({ queryKey: ["owners_fact"] });
-      void queryClient.invalidateQueries({ queryKey: ["Check_Kontragent"] });
+      if (result.summary.finance_flows) {
+        void queryClient.invalidateQueries({ queryKey: ["finance_flows"] });
+      }
+      if (result.summary.balance_fact) {
+        void queryClient.invalidateQueries({ queryKey: ["balance_fact"] });
+      }
+      if (result.summary.owners_fact) {
+        void queryClient.invalidateQueries({ queryKey: ["owners_fact"] });
+      }
+      if (result.summary.Check_Kontragent) {
+        void queryClient.invalidateQueries({ queryKey: ["Check_Kontragent"] });
+      }
 
       setFiles(EMPTY_FILES);
       setOpen(false);
 
       const importedPeriods = Array.from(
-        new Set([
-          ...result.summary.finance_flows.periods,
-          ...result.summary.balance_fact.periods,
-          ...result.summary.owners_fact.periods,
-          ...result.summary.Check_Kontragent.periods,
-        ]),
+        new Set(Object.values(result.summary).flatMap((entry) => entry?.periods ?? [])),
       ).sort();
 
       toast.success(`Импорт завершен. Обновлены периоды: ${importedPeriods.join(", ") || "без периода"}.`);
@@ -200,17 +219,26 @@ export function AnalyticsImportDialog() {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className={isAnalyticsMode ? "sm:max-w-4xl" : "sm:max-w-xl"}>
         <DialogHeader>
-          <DialogTitle>Загрузка данных аналитики</DialogTitle>
+          <DialogTitle>{isAnalyticsMode ? "Загрузка данных аналитики" : "Загрузка данных сверки"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
           <div className="rounded-lg border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
-            Загружайте только те периоды, которые хотите заменить.
-            <br />
-            Если добавляете новый месяц, достаточно выгрузить его по всем таблицам. Если пришла корректировка за старый
-            период, загрузите только этот период по всем четырем CSV.
+            {isAnalyticsMode ? (
+              <>
+                Загружайте только те периоды, которые хотите заменить.
+                <br />
+                Для аналитики здесь нужны только 3 файла: `finance_flows`, `balance_fact` и `owners_fact`.
+              </>
+            ) : (
+              <>
+                В этом разделе обновляется только файл сверки.
+                <br />
+                Загрузите `Check_Kontragent.csv` за те периоды, которые нужно заменить.
+              </>
+            )}
           </div>
 
           {isDemoSession ? (
@@ -219,28 +247,31 @@ export function AnalyticsImportDialog() {
             </div>
           ) : null}
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <FileField
-              label="finance_flows.csv"
-              file={files.financeFlows}
-              onChange={(file) => setFiles((current) => ({ ...current, financeFlows: file }))}
-            />
-            <FileField
-              label="balance_fact.csv"
-              file={files.balanceFact}
-              onChange={(file) => setFiles((current) => ({ ...current, balanceFact: file }))}
-            />
-            <FileField
-              label="owners_fact.csv"
-              file={files.ownersFact}
-              onChange={(file) => setFiles((current) => ({ ...current, ownersFact: file }))}
-            />
+          {isAnalyticsMode ? (
+            <div className="grid gap-4 md:grid-cols-3">
+              <FileField
+                label="finance_flows.csv"
+                file={files.financeFlows}
+                onChange={(file) => setFiles((current) => ({ ...current, financeFlows: file }))}
+              />
+              <FileField
+                label="balance_fact.csv"
+                file={files.balanceFact}
+                onChange={(file) => setFiles((current) => ({ ...current, balanceFact: file }))}
+              />
+              <FileField
+                label="owners_fact.csv"
+                file={files.ownersFact}
+                onChange={(file) => setFiles((current) => ({ ...current, ownersFact: file }))}
+              />
+            </div>
+          ) : (
             <FileField
               label="Check_Kontragent.csv"
               file={files.checkKontragent}
               onChange={(file) => setFiles((current) => ({ ...current, checkKontragent: file }))}
             />
-          </div>
+          )}
 
           <div className="flex justify-end">
             <Button onClick={() => importMutation.mutate()} disabled={importMutation.isPending || isDemoSession}>
