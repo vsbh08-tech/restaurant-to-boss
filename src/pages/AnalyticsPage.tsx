@@ -1132,39 +1132,20 @@ function isRentLoanArticle(article: string) {
   return matchesArticleAlias(article, LOAN_RENT_ARTICLE_ALIASES);
 }
 
-function isInvestmentLoanArticle(article: string) {
-  return matchesArticleAlias(article, INVESTMENT_LOAN_ARTICLE_ALIASES);
-}
-
-function isCashMovementLoanArticle(article: string) {
-  return (
-    isLoanReceivedArticle(article) ||
-    isLoanIssuedArticle(article) ||
-    isGenericLoanArticle(article) ||
-    isInvestmentLoanArticle(article)
-  );
-}
-
-function resolveCashMovementLoanDelta(article: string, flowType: string, amount: number) {
-  const absoluteAmount = Math.abs(amount);
-
-  if (isLoanReceivedArticle(article) || isInvestmentLoanArticle(article)) {
-    return absoluteAmount;
+function resolveLoanMovementDelta(article: string, movement: number) {
+  if (isLoanReceivedArticle(article)) {
+    return movement;
   }
 
   if (isLoanIssuedArticle(article)) {
-    return absoluteAmount * -1;
+    return movement * -1;
   }
 
-  if (flowType === "Поступления") {
-    return absoluteAmount;
+  if (isGenericLoanArticle(article) || isRentLoanArticle(article)) {
+    return movement;
   }
 
-  if (flowType === "Платежи") {
-    return absoluteAmount * -1;
-  }
-
-  return amount;
+  return null;
 }
 
 function normalizeInvestmentLoanCounterparty(counterparty: string | null | undefined) {
@@ -4253,12 +4234,26 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     [closingCashRowsWithOwnerNote],
   );
   const closingCashTotalWithoutOwners = closingCashTotal - ownerWithdrawalTotal;
+  const loansPeriodChange = useMemo(
+    () =>
+      ownerRows
+        .filter(
+          (row) =>
+            activeRestaurants.includes(row.restaurant) &&
+            activePeriods.includes(row.periodKey),
+        )
+        .reduce((sum, row) => {
+          const delta = resolveLoanMovementDelta(row.article, row.amount);
+          return delta === null ? sum : sum + delta;
+        }, 0),
+    [activePeriods, activeRestaurants, ownerRows],
+  );
 
   const cashMovementBreakdown = useMemo(() => {
     let income = 0;
     let expense = 0;
     let dividends = 0;
-    let loans = 0;
+    const loans = loansPeriodChange;
     let futureExpenses = 0;
     let other = 0;
 
@@ -4275,11 +4270,6 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
       if (row.finType === "Операционная" && row.flowType === "Платежи") {
         expense += Math.abs(row.amount);
-        return;
-      }
-
-      if (isCashMovementLoanArticle(row.article)) {
-        loans += resolveCashMovementLoanDelta(row.article, row.flowType, row.amount);
         return;
       }
 
@@ -4306,7 +4296,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       other,
       unidentified,
     };
-  }, [closingCashTotal, filteredFlowRows, openingCashTotal]);
+  }, [closingCashTotal, filteredFlowRows, loansPeriodChange, openingCashTotal]);
 
   const waterfallData = useMemo(
     () =>
@@ -4457,14 +4447,13 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           let delta: number | null = null;
           let counterparty = baseCounterparty;
 
-          if (isLoanReceivedArticle(article)) {
-            delta = rawMovement;
-          } else if (isLoanIssuedArticle(article)) {
-            delta = rawMovement * -1;
-          } else if (isGenericLoanArticle(article)) {
-            delta = rawMovement;
-          } else if (isRentLoanArticle(article)) {
-            delta = rawMovement;
+          const resolvedDelta = resolveLoanMovementDelta(article, rawMovement);
+
+          if (resolvedDelta !== null) {
+            delta = resolvedDelta;
+          }
+
+          if (isRentLoanArticle(article) && resolvedDelta !== null) {
             counterparty = `${baseCounterparty} ар`;
           }
 
