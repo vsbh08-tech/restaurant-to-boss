@@ -5287,7 +5287,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                             <div className="whitespace-nowrap">{formatOwnersWholeCurrency(row.paid)} ₽</div>
                             {isCashWithdrawal ? (
                               <div className="text-[9px] leading-tight text-muted-foreground">
-                                {selectedOwnerLabel ? `перечислено (${selectedOwnerLabel}) на р/с` : "перечислено на р/с"}
+                                {selectedOwnerLabel ? `перечислено ${selectedOwnerLabel} на р/с` : "перечислено на р/с"}
                               </div>
                             ) : null}
                           </div>
