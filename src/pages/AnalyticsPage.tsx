@@ -327,6 +327,10 @@ type CashWaterfallDatum = {
   delta: number;
   total: number;
   kind: "total" | "positive" | "negative";
+  color: string;
+  legendLabel?: string;
+  note?: string;
+  showInLegend?: boolean;
 };
 
 type MetricKind = "income" | "expense" | "profit" | "rentability";
@@ -422,8 +426,18 @@ const CASH_REQUIRED_PAYMENT_GROUPS: CashArticleGroup[] = [
   { label: "Комиссия начисленная", aliases: ["комиссия начисленная", "комиссия нач"] },
 ];
 const CASH_DIVIDEND_ARTICLE_ALIASES = ["доли"];
-const CASH_EXPLICIT_OTHER_INFLOW_ALIASES = ["займы полученные", "предоплата", "предоплаты"];
-const CASH_EXPLICIT_OTHER_OUTFLOW_ALIASES = ["п/о суммы", "расходы будущих периодов", "займы выданные"];
+const CASH_FUTURE_EXPENSE_ARTICLE_ALIASES = ["расходы будущих периодов"];
+const CASH_OTHER_ARTICLE_ALIASES = [
+  "предоплата",
+  "предоплаты",
+  "п/о суммы",
+  "авансы",
+  "зп нач",
+  "зп. нач",
+  "зп начисленная",
+  "комиссия нач",
+  "комиссия начисленная",
+];
 const CASH_OWNER_WITHDRAWAL_GROUP_ALIASES = ["снятие с р/с", "снятие с р\\с"];
 const RECONCILIATION_PO_SUMS_GROUP_ALIASES = ["п/о суммы"];
 const RECONCILIATION_ARTICLE_OPTIONS: ReconciliationArticle[] = ["Снятие с р/с", "П/О суммы"];
@@ -986,6 +1000,17 @@ const loanPositionChartConfig = {
   },
 } satisfies ChartConfig;
 
+const CASH_WATERFALL_COLORS = {
+  total: "#3B82F6",
+  income: "#0F766E",
+  expense: "#EF4444",
+  dividends: "#F97316",
+  loans: "#14B8A6",
+  futureExpenses: "#8B5CF6",
+  other: "#64748B",
+  unidentified: "#D97706",
+} as const;
+
 const INVESTMENT_LOAN_CHART_COLORS = [
   "#2563EB",
   "#0F766E",
@@ -1225,49 +1250,81 @@ function buildCashWaterfallData({
   income,
   expense,
   dividends,
-  otherInflows,
-  otherOutflows,
+  loans,
+  futureExpenses,
+  other,
+  unidentified,
   closingTotal,
 }: {
   openingTotal: number;
   income: number;
   expense: number;
   dividends: number;
-  otherInflows: number;
-  otherOutflows: number;
+  loans: number;
+  futureExpenses: number;
+  other: number;
+  unidentified: number;
   closingTotal: number;
 }) {
   const normalizedExpense = expense === 0 ? 0 : -Math.abs(expense);
   const steps = [
     {
       key: "income",
-      label: "Доход",
-      fullLabel: "Поступления (Доход)",
+      label: "Опер. +",
+      legendLabel: "Операционные поступления",
+      fullLabel: "Операционные поступления",
       delta: income,
+      color: CASH_WATERFALL_COLORS.income,
     },
     {
       key: "expense",
-      label: "Расход",
-      fullLabel: "Выплаты (Расход)",
+      label: "Опер. -",
+      legendLabel: "Операционные расходы",
+      fullLabel: "Операционные расходы",
       delta: normalizedExpense,
+      color: CASH_WATERFALL_COLORS.expense,
     },
     {
       key: "dividends",
       label: "Доли",
+      legendLabel: "Доли",
       fullLabel: "Доли",
       delta: dividends,
+      color: CASH_WATERFALL_COLORS.dividends,
     },
     {
-      key: "otherInflows",
-      label: "Прочие +",
-      fullLabel: "Прочие поступления",
-      delta: otherInflows,
+      key: "loans",
+      label: "Займы",
+      legendLabel: "Займы",
+      fullLabel: "Займы",
+      delta: loans,
+      color: CASH_WATERFALL_COLORS.loans,
     },
     {
-      key: "otherOutflows",
-      label: "Прочие -",
-      fullLabel: "Прочие выплаты",
-      delta: otherOutflows,
+      key: "futureExpenses",
+      label: "РБП",
+      legendLabel: "Расходы будущих периодов",
+      fullLabel: "Расходы будущих периодов",
+      delta: futureExpenses,
+      color: CASH_WATERFALL_COLORS.futureExpenses,
+    },
+    {
+      key: "other",
+      label: "Прочее",
+      legendLabel: "Прочее",
+      fullLabel: "Прочее",
+      delta: other,
+      color: CASH_WATERFALL_COLORS.other,
+      note: "включая предоплаты, п/о суммы, ЗП нач, Комиссия нач",
+    },
+    {
+      key: "unidentified",
+      label: "Неид.",
+      legendLabel: "Неидентифицировано",
+      fullLabel: "Неидентифицировано",
+      delta: unidentified,
+      color: CASH_WATERFALL_COLORS.unidentified,
+      note: "разница между изменением денег и суммой всех классифицированных движений",
     },
   ];
 
@@ -1281,6 +1338,8 @@ function buildCashWaterfallData({
       delta: openingTotal,
       total: openingTotal,
       kind: "total",
+      color: CASH_WATERFALL_COLORS.total,
+      showInLegend: false,
     },
   ];
 
@@ -1297,6 +1356,10 @@ function buildCashWaterfallData({
       delta: step.delta,
       total: nextTotal,
       kind: step.delta >= 0 ? "positive" : "negative",
+      color: step.color,
+      legendLabel: step.legendLabel,
+      note: "note" in step ? step.note : undefined,
+      showInLegend: true,
     });
     runningTotal = nextTotal;
   });
@@ -1310,6 +1373,8 @@ function buildCashWaterfallData({
     delta: closingTotal,
     total: closingTotal,
     kind: "total",
+    color: CASH_WATERFALL_COLORS.total,
+    showInLegend: false,
   });
 
   return data;
@@ -2241,6 +2306,7 @@ function CashWaterfallChartCard({
   periodLabel: string;
 }) {
   const hasMovement = data.some((item) => item.kind !== "total" && item.value !== 0);
+  const legendItems = data.filter((item) => item.showInLegend);
 
   return (
     <Card className="overflow-hidden">
@@ -2309,35 +2375,37 @@ function CashWaterfallChartCard({
             />
             <Bar dataKey="offset" stackId="cash-waterfall" fill="transparent" isAnimationActive={false} />
             <Bar dataKey="value" stackId="cash-waterfall" radius={6} isAnimationActive={false}>
-              {data.map((entry) => {
-                const fill =
-                  entry.kind === "total"
-                    ? "rgba(37, 99, 235, 0.8)"
-                    : entry.kind === "positive"
-                      ? "rgba(22, 163, 74, 0.78)"
-                      : "rgba(239, 68, 68, 0.8)";
-
-                return <Cell key={entry.key} fill={fill} />;
-              })}
+              {data.map((entry) => (
+                <Cell key={entry.key} fill={entry.color} />
+              ))}
             </Bar>
           </BarChart>
         </ChartContainer>
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 px-1 text-[11px]">
-          {[
-            { label: "Начало", color: "rgba(37, 99, 235, 0.8)" },
-            { label: "Поступления", color: "rgba(22, 163, 74, 0.78)" },
-            { label: "Выплаты", color: "rgba(239, 68, 68, 0.8)" },
-            { label: "Доли", color: "rgba(239, 68, 68, 0.8)" },
-            { label: "Прочие поступления", color: "rgba(22, 163, 74, 0.78)" },
-            { label: "Прочие выплаты", color: "rgba(239, 68, 68, 0.8)" },
-            { label: "Конец", color: "rgba(37, 99, 235, 0.8)" },
-          ].map((item) => (
-            <div key={item.label} className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: item.color }} />
-              <span className="text-muted-foreground">{item.label}</span>
-            </div>
-          ))}
+        <div className="mt-4 space-y-2">
+          {legendItems.map((item) => {
+            const roundedDelta = roundMoneyDisplayAmount(item.delta);
+            const amountText = `${roundedDelta > 0 ? "+" : ""}${formatCurrency(roundedDelta)} ₽`;
+
+            return (
+              <div key={item.key} className="rounded-lg border border-border/50 bg-muted/15 p-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div
+                    className="inline-flex min-w-0 items-center rounded-md px-2.5 py-1 text-[11px] font-semibold text-white"
+                    style={{ backgroundColor: item.color }}
+                  >
+                    {item.legendLabel ?? item.fullLabel}
+                  </div>
+                  <div className="text-xs font-semibold" style={{ color: item.color }}>
+                    {amountText}
+                  </div>
+                </div>
+                {item.note ? (
+                  <p className="mt-1 text-[10px] text-muted-foreground">{item.note}</p>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
 
         {!hasMovement ? (
@@ -4151,8 +4219,9 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     let income = 0;
     let expense = 0;
     let dividends = 0;
-    let otherInflows = 0;
-    let otherOutflows = 0;
+    let loans = 0;
+    let futureExpenses = 0;
+    let other = 0;
 
     filteredFlowRows.forEach((row) => {
       if (matchesArticleAlias(row.article, CASH_DIVIDEND_ARTICLE_ALIASES)) {
@@ -4170,41 +4239,39 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         return;
       }
 
-      if (matchesArticleAlias(row.article, CASH_EXPLICIT_OTHER_INFLOW_ALIASES)) {
-        otherInflows += row.amount;
+      if (
+        matchesArticleAlias(row.article, [
+          ...LOAN_RECEIVED_ARTICLE_ALIASES,
+          ...LOAN_ISSUED_ARTICLE_ALIASES,
+          ...LOAN_GENERIC_ARTICLE_ALIASES,
+        ])
+      ) {
+        loans += row.amount;
         return;
       }
 
-      if (matchesArticleAlias(row.article, CASH_EXPLICIT_OTHER_OUTFLOW_ALIASES)) {
-        otherOutflows += row.amount;
+      if (matchesArticleAlias(row.article, CASH_FUTURE_EXPENSE_ARTICLE_ALIASES)) {
+        futureExpenses += row.amount;
         return;
       }
 
-      if (row.amount > 0) {
-        otherInflows += row.amount;
-      } else if (row.amount < 0) {
-        otherOutflows += row.amount;
+      if (matchesArticleAlias(row.article, CASH_OTHER_ARTICLE_ALIASES)) {
+        other += row.amount;
       }
     });
 
-    const classifiedDelta = income - expense + dividends + otherInflows + otherOutflows;
+    const classifiedDelta = income - expense + dividends + loans + futureExpenses + other;
     const targetDelta = closingCashTotal - openingCashTotal;
-    const residualDelta = targetDelta - classifiedDelta;
-
-    if (!isNearlyZero(residualDelta)) {
-      if (residualDelta > 0) {
-        otherInflows += residualDelta;
-      } else {
-        otherOutflows += residualDelta;
-      }
-    }
+    const unidentified = targetDelta - classifiedDelta;
 
     return {
       income,
       expense,
       dividends,
-      otherInflows,
-      otherOutflows,
+      loans,
+      futureExpenses,
+      other,
+      unidentified,
     };
   }, [closingCashTotal, filteredFlowRows, openingCashTotal]);
 
@@ -4216,8 +4283,10 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         income: cashMovementBreakdown.income,
         expense: cashMovementBreakdown.expense,
         dividends: cashMovementBreakdown.dividends,
-        otherInflows: cashMovementBreakdown.otherInflows,
-        otherOutflows: cashMovementBreakdown.otherOutflows,
+        loans: cashMovementBreakdown.loans,
+        futureExpenses: cashMovementBreakdown.futureExpenses,
+        other: cashMovementBreakdown.other,
+        unidentified: cashMovementBreakdown.unidentified,
       }),
     [cashMovementBreakdown, closingCashTotal, openingCashTotal],
   );
