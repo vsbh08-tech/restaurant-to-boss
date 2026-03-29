@@ -358,7 +358,11 @@ export default function PrepaymentPage() {
     const banquetPeriodRows = prepayments.filter((item) =>
       (item["Дата банкета"] || "").startsWith(selectedPeriodKey),
     );
-    const openRows = periodFiltered.filter((item) => item["Статус"] === "Открыт");
+    const openRows = prepayments.filter(
+      (item) =>
+        item["Статус"] === "Открыт" &&
+        (item["Дата банкета"] || "").startsWith(selectedPeriodKey),
+    );
     const closedRows = periodFiltered.filter((item) => item["Статус"] === "Закрыт");
     const refundRows = periodFiltered.filter((item) => item["Статус"] === "Возврат");
 
