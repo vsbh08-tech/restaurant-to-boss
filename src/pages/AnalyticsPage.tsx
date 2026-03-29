@@ -6138,8 +6138,8 @@ function ReconciliationTabContent({
 
     filteredRows.forEach((row) => {
       const prepared = ensureRow(row.counterparty);
-      prepared.transferred += row.paid;
-      prepared.received += row.accrued;
+      prepared.transferred += row.accrued;
+      prepared.received += row.paid;
       prepared.movement += row.movement;
     });
 
@@ -6250,8 +6250,8 @@ function ReconciliationTabContent({
         }
 
         const prepared = grouped.get(key)!;
-        prepared.transferred += row.paid;
-        prepared.received += row.accrued;
+        prepared.transferred += row.accrued;
+        prepared.received += row.paid;
       });
 
     return Array.from(grouped.values()).sort((a, b) => {
@@ -6282,6 +6282,20 @@ function ReconciliationTabContent({
     if (detailFromPeriodKey === detailToPeriodKey) return formatPeriodRangeLabel(detailFromPeriodDate);
     return `${formatPeriodRangeLabel(detailFromPeriodDate)} - ${formatPeriodRangeLabel(detailToPeriodDate)}`;
   }, [detailFromPeriodDate, detailFromPeriodKey, detailToPeriodDate, detailToPeriodKey]);
+  const detailTotals = useMemo(
+    () =>
+      detailRows.reduce(
+        (acc, row) => ({
+          transferred: acc.transferred + row.transferred,
+          received: acc.received + row.received,
+        }),
+        {
+          transferred: 0,
+          received: 0,
+        },
+      ),
+    [detailRows],
+  );
 
   return (
     <div className="space-y-4">
@@ -6561,6 +6575,17 @@ function ReconciliationTabContent({
                       </TableRow>
                     ))}
                   </TableBody>
+                  <TableFooter className="bg-muted/20">
+                    <TableRow className="border-t border-border/40 bg-muted/20 hover:bg-muted/25">
+                      <TableCell className="px-3 py-2.5 text-xs font-bold text-foreground">Итого</TableCell>
+                      <TableCell className={cn("px-2 py-2.5 text-right text-[11px] font-mono font-bold whitespace-nowrap sm:text-xs", detailTotals.transferred < 0 ? "text-success" : "text-destructive/80")}>
+                        {formatReconciliationWholeCurrency(detailTotals.transferred)}
+                      </TableCell>
+                      <TableCell className={cn("px-2 py-2.5 text-right text-[11px] font-mono font-bold whitespace-nowrap sm:text-xs", detailTotals.received < 0 ? "text-destructive" : "text-success")}>
+                        {formatReconciliationWholeCurrency(detailTotals.received)}
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
                 </Table>
               )}
             </CardContent>
