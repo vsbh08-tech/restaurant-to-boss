@@ -144,7 +144,7 @@ type CheckKontragentRow = {
   paid: number;
 };
 
-type ReconciliationMode = "bank-withdrawals" | "po-sums";
+type ReconciliationArticle = "Снятие с р/с" | "П/О суммы";
 
 type OwnersReportRow = {
   article: string;
@@ -424,6 +424,8 @@ const CASH_DIVIDEND_ARTICLE_ALIASES = ["доли"];
 const CASH_EXPLICIT_OTHER_INFLOW_ALIASES = ["займы полученные", "предоплата", "предоплаты"];
 const CASH_EXPLICIT_OTHER_OUTFLOW_ALIASES = ["п/о суммы", "расходы будущих периодов", "займы выданные"];
 const CASH_OWNER_WITHDRAWAL_GROUP_ALIASES = ["снятие с р/с", "снятие с р\\с"];
+const RECONCILIATION_PO_SUMS_GROUP_ALIASES = ["п/о суммы"];
+const RECONCILIATION_ARTICLE_OPTIONS: ReconciliationArticle[] = ["Снятие с р/с", "П/О суммы"];
 const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные"];
 const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные"];
 const LOAN_GENERIC_ARTICLE_ALIASES = ["займы"];
@@ -5954,18 +5956,10 @@ function AnalyticsOwnersSection({ scope }: { scope?: AnalyticsScopeConfig }) {
   );
 }
 
-function ReconciliationTabContent({
-  scope,
-  title,
-  mode,
-}: {
-  scope?: AnalyticsScopeConfig;
-  title: string;
-  mode: ReconciliationMode;
-}) {
+function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
+  const [selectedArticle, setSelectedArticle] = useState<ReconciliationArticle>("Снятие с р/с");
   const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | null>(null);
-  const [selectedCounterparty, setSelectedCounterparty] = useState("__all");
   const [selectedSummaryCounterparty, setSelectedSummaryCounterparty] = useState<string | null>(null);
   const [detailFromPeriodKey, setDetailFromPeriodKey] = useState<string | null>(null);
   const [detailToPeriodKey, setDetailToPeriodKey] = useState<string | null>(null);
@@ -6012,25 +6006,26 @@ function ReconciliationTabContent({
         .filter((row) => accessibleRestaurantNameSet.has(row.restaurant)),
     [accessibleRestaurantNameSet, checks],
   );
-  const modeRows = useMemo(
+  const isPoSums = selectedArticle === "П/О суммы";
+  const articleRows = useMemo(
     () =>
       checkRows.filter((row) => {
         const normalizedGroup = normalizeLookupText(row.group);
-        return mode === "bank-withdrawals"
-          ? CASH_OWNER_WITHDRAWAL_GROUP_ALIASES.includes(normalizedGroup)
-          : normalizedGroup === "п/о суммы";
+        return isPoSums
+          ? RECONCILIATION_PO_SUMS_GROUP_ALIASES.includes(normalizedGroup)
+          : CASH_OWNER_WITHDRAWAL_GROUP_ALIASES.includes(normalizedGroup);
       }),
-    [checkRows, mode],
+    [checkRows, isPoSums],
   );
 
   const restaurantOptions = useMemo(
     () =>
       getUniqueValues(
         fixedRestaurantNames.length > 0
-          ? [...fixedRestaurantNames, ...modeRows.map((row) => row.restaurant)]
-          : [...accessibleRestaurantNames, ...modeRows.map((row) => row.restaurant)],
+          ? [...fixedRestaurantNames, ...articleRows.map((row) => row.restaurant)]
+          : [...accessibleRestaurantNames, ...articleRows.map((row) => row.restaurant)],
       ).sort((a, b) => a.localeCompare(b, "ru")),
-    [accessibleRestaurantNames, fixedRestaurantNames, modeRows],
+    [accessibleRestaurantNames, articleRows, fixedRestaurantNames],
   );
 
   useInitializeSingleSelection({
@@ -6045,8 +6040,8 @@ function ReconciliationTabContent({
     [fixedRestaurantNames, restaurantOptions, selectedRestaurants],
   );
   const restaurantScopedRows = useMemo(
-    () => modeRows.filter((row) => activeRestaurants.includes(row.restaurant)),
-    [activeRestaurants, modeRows],
+    () => articleRows.filter((row) => activeRestaurants.includes(row.restaurant)),
+    [activeRestaurants, articleRows],
   );
   const periodOptions = useMemo(() => buildPeriodOptions(restaurantScopedRows.map((row) => row.periodDate)), [restaurantScopedRows]);
   const periodKeys = useMemo(() => periodOptions.map((option) => option.key), [periodOptions]);
@@ -6069,46 +6064,21 @@ function ReconciliationTabContent({
     () => restaurantScopedRows.filter((row) => !selectedPeriodKey || row.periodKey === selectedPeriodKey),
     [restaurantScopedRows, selectedPeriodKey],
   );
-  const counterpartyOptions = useMemo(
-    () => getUniqueValues(periodScopedRows.map((row) => row.counterparty)).sort((a, b) => a.localeCompare(b, "ru")),
-    [periodScopedRows],
-  );
-
-  useEffect(() => {
-    setSelectedCounterparty((current) => (current === "__all" || counterpartyOptions.includes(current) ? current : "__all"));
-  }, [counterpartyOptions]);
-
-  const filteredRows = useMemo(
-    () =>
-      selectedCounterparty === "__all"
-        ? periodScopedRows
-        : periodScopedRows.filter((row) => row.counterparty === selectedCounterparty),
-    [periodScopedRows, selectedCounterparty],
-  );
-
   const selectedRestaurant = activeRestaurants[0] ?? null;
   const selectedPeriod = useMemo(
     () => periodOptions.find((option) => option.key === selectedPeriodKey) ?? null,
     [periodOptions, selectedPeriodKey],
   );
   const selectedPeriodLabel = selectedPeriod ? formatPeriodRangeLabel(selectedPeriod.date) : "Период не выбран";
-  const selectedCounterpartyLabel =
-    selectedCounterparty === "__all" ? (mode === "bank-withdrawals" ? "Все контрагенты" : "Все сотрудники") : selectedCounterparty;
-  const counterpartyLabel = mode === "bank-withdrawals" ? "Контрагент" : "Сотрудник";
-  const selectedCounterpartyPlaceholder = mode === "bank-withdrawals" ? "Выберите контрагента" : "Выберите сотрудника";
-  const scopedRowsForSummary = useMemo(
-    () =>
-      selectedCounterparty === "__all"
-        ? restaurantScopedRows
-        : restaurantScopedRows.filter((row) => row.counterparty === selectedCounterparty),
-    [restaurantScopedRows, selectedCounterparty],
-  );
+  const counterpartyLabel = isPoSums ? "Сотрудник" : "Контрагент";
+  const outgoingLabel = isPoSums ? "Выдано" : "Перечислено";
+  const incomingLabel = isPoSums ? "Отчитано" : "Получено";
   const openingRows = useMemo(() => {
     if (!selectedPeriod) return [];
-    return scopedRowsForSummary.filter((row) => row.periodDate.getTime() < selectedPeriod.date.getTime());
-  }, [scopedRowsForSummary, selectedPeriod]);
-  const withdrawalTableRows = useMemo(() => {
-    if (mode !== "bank-withdrawals" || !selectedPeriod) return [];
+    return restaurantScopedRows.filter((row) => row.periodDate.getTime() < selectedPeriod.date.getTime());
+  }, [restaurantScopedRows, selectedPeriod]);
+  const summaryTableRows = useMemo(() => {
+    if (!selectedPeriod) return [];
 
     const grouped = new Map<string, {
       counterparty: string;
@@ -6136,7 +6106,7 @@ function ReconciliationTabContent({
       ensureRow(row.counterparty).opening += row.movement;
     });
 
-    filteredRows.forEach((row) => {
+    periodScopedRows.forEach((row) => {
       const prepared = ensureRow(row.counterparty);
       prepared.transferred += row.accrued;
       prepared.received += row.paid;
@@ -6153,10 +6123,10 @@ function ReconciliationTabContent({
       }))
       .filter((row) => !isNearlyZero(row.opening) || !isNearlyZero(row.transferred) || !isNearlyZero(row.received) || !isNearlyZero(row.closing))
       .sort((a, b) => a.counterparty.localeCompare(b.counterparty, "ru"));
-  }, [filteredRows, mode, openingRows, selectedPeriod]);
-  const withdrawalTotals = useMemo(
+  }, [openingRows, periodScopedRows, selectedPeriod]);
+  const summaryTotals = useMemo(
     () =>
-      withdrawalTableRows.reduce(
+      summaryTableRows.reduce(
         (acc, row) => ({
           opening: acc.opening + row.opening,
           transferred: acc.transferred + row.transferred,
@@ -6170,19 +6140,12 @@ function ReconciliationTabContent({
           closing: 0,
         },
       ),
-    [withdrawalTableRows],
+    [summaryTableRows],
   );
   const formatReconciliationWholeCurrency = (value: number) => `${formatCurrency(roundMoneyDisplayAmount(value))} ₽`;
-  const summaryCounterpartyOptions = useMemo(
-    () => withdrawalTableRows.map((row) => row.counterparty),
-    [withdrawalTableRows],
-  );
+  const summaryCounterpartyOptions = useMemo(() => summaryTableRows.map((row) => row.counterparty), [summaryTableRows]);
 
   useEffect(() => {
-    if (mode !== "bank-withdrawals") {
-      return;
-    }
-
     setSelectedSummaryCounterparty((current) => {
       if (summaryCounterpartyOptions.length === 0) {
         return null;
@@ -6190,18 +6153,14 @@ function ReconciliationTabContent({
 
       return current && summaryCounterpartyOptions.includes(current) ? current : summaryCounterpartyOptions[0];
     });
-  }, [mode, summaryCounterpartyOptions]);
+  }, [summaryCounterpartyOptions]);
 
   useEffect(() => {
-    if (mode !== "bank-withdrawals") {
-      return;
-    }
-
     setDetailFromPeriodKey(selectedPeriodKey);
     setDetailToPeriodKey(selectedPeriodKey);
-  }, [mode, selectedPeriodKey, selectedSummaryCounterparty]);
+  }, [selectedArticle, selectedPeriodKey, selectedSummaryCounterparty]);
 
-  const detailCounterparty = mode === "bank-withdrawals" ? selectedSummaryCounterparty : null;
+  const detailCounterparty = selectedSummaryCounterparty;
   const detailCounterpartyRows = useMemo(
     () =>
       detailCounterparty
@@ -6301,6 +6260,17 @@ function ReconciliationTabContent({
     <div className="space-y-4">
       <Card className="overflow-hidden border-primary/15 bg-gradient-to-br from-primary/3 via-card to-accent/3">
         <CardContent className="flex flex-wrap items-start gap-2 px-3 py-3">
+          <FilterChipGroup
+            label="Статья"
+            options={RECONCILIATION_ARTICLE_OPTIONS}
+            selection={[selectedArticle]}
+            onChange={(next) => setSelectedArticle((next[0] as ReconciliationArticle | undefined) ?? "Снятие с р/с")}
+            singleSelect
+            toggleSelect
+            compact
+            matchPeriodHeight
+          />
+
           {!scope?.hideRestaurantFilter && (
             <FilterChipGroup
               label="Ресторан"
@@ -6331,149 +6301,115 @@ function ReconciliationTabContent({
               </SelectContent>
             </Select>
           </div>
-
-          {mode === "po-sums" ? (
-            <div className="w-full rounded-lg border bg-muted/20 p-2 pb-3 sm:w-auto sm:min-w-[260px]">
-              <div className="mb-1.5 flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold sm:text-sm">{counterpartyLabel}</p>
-              </div>
-              <Select value={selectedCounterparty} onValueChange={setSelectedCounterparty}>
-                <SelectTrigger className="h-9 w-full min-w-0 bg-background/85">
-                  <SelectValue placeholder={selectedCounterpartyPlaceholder} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all">Все сотрудники</SelectItem>
-                  {counterpartyOptions.map((counterparty) => (
-                    <SelectItem key={counterparty} value={counterparty}>
-                      {counterparty}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : null}
         </CardContent>
       </Card>
 
-      {mode === "bank-withdrawals" ? (
-        isLoading ? (
-          <AnalyticsPlaceholderSection title={title} description="Загружаю данные для сверки." />
-        ) : modeRows.length === 0 ? (
-          <AnalyticsPlaceholderSection title={title} description="Нет данных. Импортируйте CSV в таблицу check_kontragent." />
-        ) : !selectedPeriod ? (
-          <AnalyticsPlaceholderSection title={title} description="Выберите период." />
-        ) : withdrawalTableRows.length === 0 ? (
-          <AnalyticsPlaceholderSection
-            title={title}
-            description={`По фильтру ${selectedRestaurant ?? "ресторан не выбран"} • ${selectedPeriodLabel} • ${selectedCounterpartyLabel} данных нет.`}
-          />
-        ) : (
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-xl">
-            <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 border-b-2 border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 px-4 py-3">
-              <div className="flex items-start gap-2">
-                <div className="mt-0.5 h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
-                <div>
-                  <CardTitle className="text-sm font-serif">{title}</CardTitle>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {selectedRestaurant ?? "Ресторан не выбран"} • {selectedCounterpartyLabel}
-                  </p>
-                </div>
-              </div>
-              <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
-                Период: {selectedPeriodLabel}
-              </div>
-            </CardHeader>
-
-            <CardContent className="px-0 pt-0">
-              <Table className="min-w-[640px] table-fixed sm:min-w-max">
-                <TableHeader>
-                  <TableRow className="border-b border-primary/20 bg-primary/10">
-                    <TableHead className="h-10 w-[180px] min-w-[180px] px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                      Контрагент
-                    </TableHead>
-                    <TableHead className="h-10 w-[120px] min-w-[120px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                      Остаток на начало
-                    </TableHead>
-                    <TableHead className="h-10 w-[110px] min-w-[110px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                      Перечислено
-                    </TableHead>
-                    <TableHead className="h-10 w-[110px] min-w-[110px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                      Получено
-                    </TableHead>
-                    <TableHead className="h-10 w-[120px] min-w-[120px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                      Остаток на конец
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {withdrawalTableRows.map((row, index) => (
-                    <TableRow
-                      key={row.counterparty}
-                      className={cn(
-                        selectedSummaryCounterparty === row.counterparty
-                          ? "bg-primary/5"
-                          : index % 2 === 0
-                            ? "bg-card"
-                            : "bg-muted/15",
-                        "border-b border-border/30 transition-colors hover:bg-primary/5",
-                      )}
-                      onClick={() => setSelectedSummaryCounterparty(row.counterparty)}
-                    >
-                      <TableCell className="cursor-pointer px-3 py-2 text-xs font-medium text-primary sm:text-sm">
-                        {row.counterparty}
-                      </TableCell>
-                      <TableCell className={cn("px-2 py-2 text-right text-[11px] font-mono whitespace-nowrap sm:text-xs", row.opening < 0 ? "text-destructive" : "text-primary")}>
-                        {formatReconciliationWholeCurrency(row.opening)}
-                      </TableCell>
-                      <TableCell className={cn("px-2 py-2 text-right text-[11px] font-mono whitespace-nowrap sm:text-xs", row.transferred < 0 ? "text-success" : "text-destructive/80")}>
-                        {formatReconciliationWholeCurrency(row.transferred)}
-                      </TableCell>
-                      <TableCell className={cn("px-2 py-2 text-right text-[11px] font-mono whitespace-nowrap sm:text-xs", row.received < 0 ? "text-destructive" : "text-success")}>
-                        {formatReconciliationWholeCurrency(row.received)}
-                      </TableCell>
-                      <TableCell className={cn("px-2 py-2 text-right text-[11px] font-mono font-semibold whitespace-nowrap sm:text-xs", row.closing < 0 ? "text-destructive" : "text-primary")}>
-                        {formatReconciliationWholeCurrency(row.closing)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-
-                <TableFooter className="bg-muted/20">
-                  <TableRow className="border-t border-border/40 bg-muted/20 hover:bg-muted/25">
-                    <TableCell className="px-3 py-2.5 text-xs font-bold text-foreground">Итого</TableCell>
-                    <TableCell className={cn("px-2 py-2.5 text-right text-[11px] font-mono font-bold whitespace-nowrap sm:text-xs", withdrawalTotals.opening < 0 ? "text-destructive" : "text-primary")}>
-                      {formatReconciliationWholeCurrency(withdrawalTotals.opening)}
-                    </TableCell>
-                    <TableCell className={cn("px-2 py-2.5 text-right text-[11px] font-mono font-bold whitespace-nowrap sm:text-xs", withdrawalTotals.transferred < 0 ? "text-success" : "text-destructive/80")}>
-                      {formatReconciliationWholeCurrency(withdrawalTotals.transferred)}
-                    </TableCell>
-                    <TableCell className={cn("px-2 py-2.5 text-right text-[11px] font-mono font-bold whitespace-nowrap sm:text-xs", withdrawalTotals.received < 0 ? "text-destructive" : "text-success")}>
-                      {formatReconciliationWholeCurrency(withdrawalTotals.received)}
-                    </TableCell>
-                    <TableCell className={cn("px-2 py-2.5 text-right text-[11px] font-mono font-bold whitespace-nowrap sm:text-xs", withdrawalTotals.closing < 0 ? "text-destructive" : "text-primary")}>
-                      {formatReconciliationWholeCurrency(withdrawalTotals.closing)}
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </CardContent>
-          </Card>
-        )
-      ) : (
+      {isLoading ? (
+        <AnalyticsPlaceholderSection title={selectedArticle} description="Загружаю данные для сверки." />
+      ) : articleRows.length === 0 ? (
+        <AnalyticsPlaceholderSection title={selectedArticle} description="Нет данных. Импортируйте CSV в таблицу check_kontragent." />
+      ) : !selectedPeriod ? (
+        <AnalyticsPlaceholderSection title={selectedArticle} description="Выберите период." />
+      ) : summaryTableRows.length === 0 ? (
         <AnalyticsPlaceholderSection
-          title={title}
-          description={
-            isLoading
-              ? "Загружаю данные для сверки."
-              : modeRows.length === 0
-                ? "Нет данных. Импортируйте CSV в таблицу check_kontragent."
-                : `Фильтры готовы: ${selectedRestaurant ?? "ресторан не выбран"} • ${selectedPeriodLabel} • ${selectedCounterpartyLabel}. Следующим шагом соберем таблицу по П/О суммам.`
-          }
+          title={selectedArticle}
+          description={`По фильтру ${selectedRestaurant ?? "ресторан не выбран"} • ${selectedPeriodLabel} данных нет.`}
         />
+      ) : (
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-xl">
+          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 border-b-2 border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 px-4 py-3">
+            <div className="flex items-start gap-2">
+              <div className="mt-0.5 h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
+              <div>
+                <CardTitle className="text-sm font-serif">{selectedArticle}</CardTitle>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {selectedRestaurant ?? "Ресторан не выбран"} • Нажмите на строку, чтобы открыть детализацию
+                </p>
+              </div>
+            </div>
+            <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+              Период: {selectedPeriodLabel}
+            </div>
+          </CardHeader>
+
+          <CardContent className="px-0 pt-0">
+            <Table className="min-w-[640px] table-fixed sm:min-w-max">
+              <TableHeader>
+                <TableRow className="border-b border-primary/20 bg-primary/10">
+                  <TableHead className="h-10 w-[180px] min-w-[180px] px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                    {counterpartyLabel}
+                  </TableHead>
+                  <TableHead className="h-10 w-[120px] min-w-[120px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                    Остаток на начало
+                  </TableHead>
+                  <TableHead className="h-10 w-[110px] min-w-[110px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                    {outgoingLabel}
+                  </TableHead>
+                  <TableHead className="h-10 w-[110px] min-w-[110px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                    {incomingLabel}
+                  </TableHead>
+                  <TableHead className="h-10 w-[120px] min-w-[120px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                    Остаток на конец
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {summaryTableRows.map((row, index) => (
+                  <TableRow
+                    key={row.counterparty}
+                    className={cn(
+                      selectedSummaryCounterparty === row.counterparty
+                        ? "bg-primary/5"
+                        : index % 2 === 0
+                          ? "bg-card"
+                          : "bg-muted/15",
+                      "border-b border-border/30 transition-colors hover:bg-primary/5",
+                    )}
+                    onClick={() => setSelectedSummaryCounterparty(row.counterparty)}
+                  >
+                    <TableCell className="cursor-pointer px-3 py-2 text-xs font-medium text-primary sm:text-sm">
+                      {row.counterparty}
+                    </TableCell>
+                    <TableCell className={cn("px-2 py-2 text-right text-[11px] font-mono whitespace-nowrap sm:text-xs", row.opening < 0 ? "text-destructive" : "text-primary")}>
+                      {formatReconciliationWholeCurrency(row.opening)}
+                    </TableCell>
+                    <TableCell className={cn("px-2 py-2 text-right text-[11px] font-mono whitespace-nowrap sm:text-xs", row.transferred < 0 ? "text-success" : "text-destructive/80")}>
+                      {formatReconciliationWholeCurrency(row.transferred)}
+                    </TableCell>
+                    <TableCell className={cn("px-2 py-2 text-right text-[11px] font-mono whitespace-nowrap sm:text-xs", row.received < 0 ? "text-destructive" : "text-success")}>
+                      {formatReconciliationWholeCurrency(row.received)}
+                    </TableCell>
+                    <TableCell className={cn("px-2 py-2 text-right text-[11px] font-mono font-semibold whitespace-nowrap sm:text-xs", row.closing < 0 ? "text-destructive" : "text-primary")}>
+                      {formatReconciliationWholeCurrency(row.closing)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+
+              <TableFooter className="bg-muted/20">
+                <TableRow className="border-t border-border/40 bg-muted/20 hover:bg-muted/25">
+                  <TableCell className="px-3 py-2.5 text-xs font-bold text-foreground">Итого</TableCell>
+                  <TableCell className={cn("px-2 py-2.5 text-right text-[11px] font-mono font-bold whitespace-nowrap sm:text-xs", summaryTotals.opening < 0 ? "text-destructive" : "text-primary")}>
+                    {formatReconciliationWholeCurrency(summaryTotals.opening)}
+                  </TableCell>
+                  <TableCell className={cn("px-2 py-2.5 text-right text-[11px] font-mono font-bold whitespace-nowrap sm:text-xs", summaryTotals.transferred < 0 ? "text-success" : "text-destructive/80")}>
+                    {formatReconciliationWholeCurrency(summaryTotals.transferred)}
+                  </TableCell>
+                  <TableCell className={cn("px-2 py-2.5 text-right text-[11px] font-mono font-bold whitespace-nowrap sm:text-xs", summaryTotals.received < 0 ? "text-destructive" : "text-success")}>
+                    {formatReconciliationWholeCurrency(summaryTotals.received)}
+                  </TableCell>
+                  <TableCell className={cn("px-2 py-2.5 text-right text-[11px] font-mono font-bold whitespace-nowrap sm:text-xs", summaryTotals.closing < 0 ? "text-destructive" : "text-primary")}>
+                    {formatReconciliationWholeCurrency(summaryTotals.closing)}
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </CardContent>
+        </Card>
       )}
 
-      {mode === "bank-withdrawals" && detailCounterparty ? (
+      {detailCounterparty ? (
         !detailFromPeriodDate || !detailToPeriodDate ? (
           <AnalyticsPlaceholderSection
             title={`Детализация (${selectedRestaurant ?? "Ресторан"}, ${detailCounterparty})`}
@@ -6546,10 +6482,10 @@ function ReconciliationTabContent({
                         Дата
                       </TableHead>
                       <TableHead className="h-10 w-[120px] min-w-[120px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                        Перечислено
+                        {outgoingLabel}
                       </TableHead>
                       <TableHead className="h-10 w-[120px] min-w-[120px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
-                        Получено
+                        {incomingLabel}
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -6598,36 +6534,13 @@ function ReconciliationTabContent({
 
 function AnalyticsReconciliationSection({ scope }: { scope?: AnalyticsScopeConfig }) {
   return (
-    <Tabs defaultValue="bank-withdrawals" className="space-y-4 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold font-serif">Сверка</h1>
-          <TabsList className="h-auto justify-start gap-1 bg-muted">
-            <TabsTrigger
-              value="bank-withdrawals"
-              className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
-            >
-              Снятие с р/с
-            </TabsTrigger>
-            <TabsTrigger
-              value="po-sums"
-              className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
-            >
-              П/О суммы
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        <h1 className="text-2xl font-bold font-serif">Сверка</h1>
         <AnalyticsImportDialog mode="reconciliation" />
       </div>
-
-      <TabsContent value="bank-withdrawals">
-        <ReconciliationTabContent scope={scope} title="Снятие с р/с" mode="bank-withdrawals" />
-      </TabsContent>
-
-      <TabsContent value="po-sums">
-        <ReconciliationTabContent scope={scope} title="П/О суммы" mode="po-sums" />
-      </TabsContent>
-    </Tabs>
+      <ReconciliationTabContent scope={scope} />
+    </div>
   );
 }
 
