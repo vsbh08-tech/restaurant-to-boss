@@ -56,7 +56,7 @@ type PrepaymentWorkflowFields = {
 type Prepayment = Database["public"]["Tables"]["prepayments"]["Row"] & PrepaymentWorkflowFields;
 type PrepaymentInsert = Database["public"]["Tables"]["prepayments"]["Insert"] & PrepaymentWorkflowFields;
 type PrepaymentUpdate = Database["public"]["Tables"]["prepayments"]["Update"] & PrepaymentWorkflowFields;
-type PrepaymentCalendarKey = "period" | "prepayment" | "banquet" | "transfer";
+type PrepaymentCalendarKey = "prepayment" | "banquet" | "transfer";
 type PrepaymentOptionalColumn = "Сотрудник_Создал" | "Сотрудник_Изменил" | "Дата_Изменения" | "Комментарий";
 
 const PREPAYMENT_OPTIONAL_COLUMNS: PrepaymentOptionalColumn[] = [
@@ -117,6 +117,16 @@ function getPrepaymentBalanceAmount(item: Pick<Prepayment, "Статус" | "С�
 
 function getPrepaymentMetricAmount(item: Pick<Prepayment, "Сумма">) {
   return item["Сумма"] || 0;
+}
+
+function formatPrepaymentMonthLabel(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+
+  if (!year || !month) {
+    return monthKey;
+  }
+
+  return format(new Date(year, month - 1, 1), "LLLL yyyy", { locale: ru });
 }
 
 function extractMissingPrepaymentColumn(message: string) {
@@ -198,17 +208,16 @@ export default function PrepaymentPage() {
   const queryClient = useQueryClient();
   const { role, selectedRestaurantId, userName } = useRole();
   const canManagePrepayments = role === "manager";
+  const currentMonthKey = format(new Date(), "yyyy-MM");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [actionMode, setActionMode] = useState<ActionMode>("create");
-  const [periodDate, setPeriodDate] = useState<Date>(new Date());
-  const [isExactPeriodFilter, setIsExactPeriodFilter] = useState(false);
+  const [selectedPeriodKey, setSelectedPeriodKey] = useState<string>(currentMonthKey);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(DEFAULT_VISIBLE_COLUMNS);
   const [calendarOpen, setCalendarOpen] = useState<Record<PrepaymentCalendarKey, boolean>>({
-    period: false,
     prepayment: false,
     banquet: false,
     transfer: false,
@@ -258,21 +267,34 @@ export default function PrepaymentPage() {
       transfer: false,
     }));
   };
-  const selectedDateKey = format(periodDate, "yyyy-MM-dd");
-  const selectedMonthKey = format(periodDate, "yyyy-MM");
+  const periodOptions = useMemo(() => {
+    const monthMap = new Map<string, string>();
+
+    monthMap.set(currentMonthKey, formatPrepaymentMonthLabel(currentMonthKey));
+
+    prepayments.forEach((item) => {
+      const prepaymentDateKey = item["Дата предоплаты"]?.slice(0, 7);
+      const banquetDateKey = item["Дата банкета"]?.slice(0, 7);
+
+      [prepaymentDateKey, banquetDateKey].forEach((monthKey) => {
+        if (!monthKey) return;
+        monthMap.set(monthKey, formatPrepaymentMonthLabel(monthKey));
+      });
+    });
+
+    return Array.from(monthMap.entries())
+      .map(([key, label]) => ({ key, label }))
+      .sort((left, right) => right.key.localeCompare(left.key));
+  }, [currentMonthKey, prepayments]);
 
   const periodFiltered = useMemo(() => {
     return prepayments.filter((item) => {
       const prepaymentDateKey = item["Дата предоплаты"] || "";
       const banquetDateKey = item["Дата банкета"] || "";
 
-      if (isExactPeriodFilter) {
-        return prepaymentDateKey === selectedDateKey || banquetDateKey === selectedDateKey;
-      }
-
-      return prepaymentDateKey.startsWith(selectedMonthKey) || banquetDateKey.startsWith(selectedMonthKey);
+      return prepaymentDateKey.startsWith(selectedPeriodKey) || banquetDateKey.startsWith(selectedPeriodKey);
     });
-  }, [isExactPeriodFilter, prepayments, selectedDateKey, selectedMonthKey]);
+  }, [prepayments, selectedPeriodKey]);
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -460,9 +482,12 @@ const upsertMutation = useMutation({
     },
   });
 
-  const periodLabel = isExactPeriodFilter
-    ? format(periodDate, "dd.MM.yyyy", { locale: ru })
-    : format(periodDate, "LLLL yyyy", { locale: ru });
+  const periodLabel = useMemo(
+    () =>
+      periodOptions.find((option) => option.key === selectedPeriodKey)?.label ??
+      formatPrepaymentMonthLabel(selectedPeriodKey),
+    [periodOptions, selectedPeriodKey],
+  );
 
   const toggleColumn = (column: ColumnKey) => {
     setVisibleColumns((current) =>
@@ -510,37 +535,22 @@ const upsertMutation = useMutation({
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold font-serif">Предоплаты</h1>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Popover
-            open={calendarOpen.period}
-            onOpenChange={(open) => setCalendarOpen((current) => ({ ...current, period: open }))}
-          >
-            <PopoverTrigger asChild>
-              <Button variant="outline">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {periodLabel}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="single"
-                selected={periodDate}
-                onSelect={(date) => {
-                  if (!date) return;
-                  setPeriodDate(date);
-                  setIsExactPeriodFilter(true);
-                  setCalendarOpen((current) => ({ ...current, period: false }));
-                }}
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-
-          {isExactPeriodFilter ? (
-            <Button variant="outline" size="sm" onClick={() => setIsExactPeriodFilter(false)}>
-              Сбросить дату
-            </Button>
-          ) : null}
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex min-w-[210px] flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Период</Label>
+            <Select value={selectedPeriodKey} onValueChange={setSelectedPeriodKey}>
+              <SelectTrigger>
+                <SelectValue placeholder="Выберите период" />
+              </SelectTrigger>
+              <SelectContent>
+                {periodOptions.map((option) => (
+                  <SelectItem key={option.key} value={option.key}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
