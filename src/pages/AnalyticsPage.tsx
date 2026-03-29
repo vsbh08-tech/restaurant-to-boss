@@ -2440,11 +2440,13 @@ function LoanCompactMetricCard({
   label,
   value,
   tone,
+  subtitle = "на конец периода",
 }: {
   icon: any;
   label: string;
   value: number;
   tone: "success" | "accent" | "primary";
+  subtitle?: string;
 }) {
   const toneMap = {
     primary: {
@@ -2476,7 +2478,7 @@ function LoanCompactMetricCard({
         <p className={cn("mt-0.5 text-lg font-bold leading-none whitespace-nowrap", toneConfig.valueClassName)}>
           {formatRoundedMoneyText(value)}
         </p>
-        <p className="mt-0.5 text-[10px] leading-none text-muted-foreground">на конец периода</p>
+        <p className="mt-0.5 text-[10px] leading-none text-muted-foreground">{subtitle}</p>
       </div>
     </div>
   );
@@ -6350,18 +6352,37 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
         />
       ) : (
         <Card className="overflow-hidden border border-border/60 shadow-lg rounded-xl">
-          <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 border-b-2 border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 px-4 py-3">
-            <div className="flex items-start gap-2">
-              <div className="mt-0.5 h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
-              <div>
-                <CardTitle className="text-sm font-serif">{selectedArticle}</CardTitle>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {selectedRestaurantLabel ?? "Ресторан не выбран"} • Нажмите на строку, чтобы открыть детализацию
-                </p>
+          <CardHeader className="border-b-2 border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 px-4 py-3">
+            <div className="flex flex-row flex-wrap items-start justify-between gap-2">
+              <div className="flex items-start gap-2">
+                <div className="mt-0.5 h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
+                <div>
+                  <CardTitle className="text-sm font-serif">{selectedArticle}</CardTitle>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {selectedRestaurantLabel ?? "Ресторан не выбран"} • Нажмите на строку, чтобы открыть детализацию
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+                Период: {selectedPeriodLabel}
               </div>
             </div>
-            <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
-              Период: {selectedPeriodLabel}
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <LoanCompactMetricCard
+                icon={Wallet}
+                label="Остаток на начало"
+                value={summaryTotals.opening}
+                tone="accent"
+                subtitle="на начало периода"
+              />
+              <LoanCompactMetricCard
+                icon={ArrowUp}
+                label="Остаток на конец"
+                value={summaryTotals.closing}
+                tone="accent"
+                subtitle="на конец периода"
+              />
             </div>
           </CardHeader>
 
