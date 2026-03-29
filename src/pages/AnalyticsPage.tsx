@@ -5254,14 +5254,17 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {reportRows.map((row, idx) => (
-                    <TableRow key={row.article} className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors border-b border-border/30")}>
-                      <TableCell
-                        className="sticky left-0 z-20 w-[106px] min-w-[106px] overflow-hidden border-r border-border/40 px-2 py-2 text-[10px] font-semibold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs"
-                        style={getStripedStickySurfaceStyle(idx)}
-                      >
-                        {row.article}
-                      </TableCell>
+                  {reportRows.map((row, idx) => {
+                    const isCashWithdrawal = isOwnersReversedFlowArticle(row.article);
+
+                    return (
+                      <TableRow key={row.article} className={cn(idx % 2 === 0 ? "bg-card" : "bg-muted/15", "hover:bg-primary/5 transition-colors border-b border-border/30")}>
+                        <TableCell
+                          className="sticky left-0 z-20 w-[106px] min-w-[106px] overflow-hidden border-r border-border/40 px-2 py-2 text-[10px] font-semibold shadow-[8px_0_10px_-8px_rgba(15,23,42,0.2)] sm:w-[152px] sm:min-w-[152px] sm:px-2.5 sm:text-xs"
+                          style={getStripedStickySurfaceStyle(idx)}
+                        >
+                          {row.article}
+                        </TableCell>
                         <TableCell
                           className={cn(
                             "w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
@@ -5270,8 +5273,22 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                         >
                           {formatOwnersWholeCurrency(row.opening)} ₽
                         </TableCell>
-                        <TableCell className={cn("w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs", row.accrued < 0 ? "text-destructive" : "text-success")}>{formatOwnersWholeCurrency(row.accrued)} ₽</TableCell>
-                        <TableCell className={cn("w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono whitespace-nowrap sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs", row.paid < 0 ? "text-destructive" : "text-destructive/80")}>{formatOwnersWholeCurrency(row.paid)} ₽</TableCell>
+                        <TableCell className={cn("w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs", row.accrued < 0 ? "text-destructive" : "text-success")}>
+                          <div className="space-y-0.5">
+                            <div className="whitespace-nowrap">{formatOwnersWholeCurrency(row.accrued)} ₽</div>
+                            {isCashWithdrawal ? (
+                              <div className="text-[9px] leading-tight text-muted-foreground">получено в кассу</div>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                        <TableCell className={cn("w-[88px] min-w-[88px] px-2 py-2 text-right text-[10px] font-mono sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs", row.paid < 0 ? "text-destructive" : "text-destructive/80")}>
+                          <div className="space-y-0.5">
+                            <div className="whitespace-nowrap">{formatOwnersWholeCurrency(row.paid)} ₽</div>
+                            {isCashWithdrawal ? (
+                              <div className="text-[9px] leading-tight text-muted-foreground">переведено на р/с</div>
+                            ) : null}
+                          </div>
+                        </TableCell>
                         <TableCell
                           className={cn(
                             "w-[92px] min-w-[92px] px-2 py-2 text-right text-[10px] font-mono font-semibold whitespace-nowrap sm:w-[104px] sm:min-w-[104px] sm:px-2.5 sm:text-xs",
@@ -5281,7 +5298,8 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                           {formatOwnersWholeCurrency(row.closing)} ₽
                         </TableCell>
                       </TableRow>
-                    ))}
+                    );
+                  })}
                   </TableBody>
                   <TableFooter className="bg-muted/20">
                     <TableRow className="bg-muted/20 border-t border-border/40 hover:bg-muted/25">
