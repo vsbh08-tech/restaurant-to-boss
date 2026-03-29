@@ -1132,6 +1132,41 @@ function isRentLoanArticle(article: string) {
   return matchesArticleAlias(article, LOAN_RENT_ARTICLE_ALIASES);
 }
 
+function isInvestmentLoanArticle(article: string) {
+  return matchesArticleAlias(article, INVESTMENT_LOAN_ARTICLE_ALIASES);
+}
+
+function isCashMovementLoanArticle(article: string) {
+  return (
+    isLoanReceivedArticle(article) ||
+    isLoanIssuedArticle(article) ||
+    isGenericLoanArticle(article) ||
+    isInvestmentLoanArticle(article)
+  );
+}
+
+function resolveCashMovementLoanDelta(article: string, flowType: string, amount: number) {
+  const absoluteAmount = Math.abs(amount);
+
+  if (flowType === "Поступления") {
+    return absoluteAmount;
+  }
+
+  if (flowType === "Платежи") {
+    return absoluteAmount * -1;
+  }
+
+  if (isLoanReceivedArticle(article) || isInvestmentLoanArticle(article)) {
+    return absoluteAmount;
+  }
+
+  if (isLoanIssuedArticle(article)) {
+    return absoluteAmount * -1;
+  }
+
+  return amount;
+}
+
 function normalizeInvestmentLoanCounterparty(counterparty: string | null | undefined) {
   const trimmed = counterparty?.trim() ?? "";
   if (!trimmed) {
@@ -4243,14 +4278,8 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         return;
       }
 
-      if (
-        matchesArticleAlias(row.article, [
-          ...LOAN_RECEIVED_ARTICLE_ALIASES,
-          ...LOAN_ISSUED_ARTICLE_ALIASES,
-          ...LOAN_GENERIC_ARTICLE_ALIASES,
-        ])
-      ) {
-        loans += row.amount;
+      if (isCashMovementLoanArticle(row.article)) {
+        loans += resolveCashMovementLoanDelta(row.article, row.flowType, row.amount);
         return;
       }
 
