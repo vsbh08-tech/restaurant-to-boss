@@ -5022,7 +5022,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     () => resolveScopedSelection(selectedOwners, ownerOptions, fixedOwnerNames),
     [fixedOwnerNames, ownerOptions, selectedOwners],
   );
-  const selectedOwnerLabel = activeOwners[0] ?? null;
+  const selectedOwnerLabel = activeOwners.length === 1 ? activeOwners[0] : null;
 
   const scopeRows = useMemo(
     () =>
