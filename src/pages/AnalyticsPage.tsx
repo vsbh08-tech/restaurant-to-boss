@@ -553,17 +553,13 @@ function normalizeOwnersFactAmounts(article: string, accrued: number, paid: numb
   }
 
   return {
-    accrued: accrued * -1,
-    paid,
+    accrued: paid,
+    paid: accrued,
     net: net * -1,
   };
 }
 
 function calculateOwnersClosing(article: string, opening: number, accrued: number, paid: number) {
-  if (isOwnersReversedFlowArticle(article)) {
-    return opening + accrued + paid;
-  }
-
   return opening + accrued - paid;
 }
 
@@ -5245,7 +5241,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                     </TableHead>
                     <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Начисл.</span>
-                      <span className="hidden sm:inline">Начислено / получено / в пути</span>
+                      <span className="hidden sm:inline">Начислено / получено</span>
                     </TableHead>
                     <TableHead className="h-9 w-[88px] min-w-[88px] px-2 text-right text-[10px] font-bold text-primary uppercase tracking-wider sm:w-[120px] sm:min-w-[120px] sm:px-2.5 sm:text-xs">
                       <span className="sm:hidden">Выплата</span>
