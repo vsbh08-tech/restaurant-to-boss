@@ -1053,11 +1053,12 @@ function buildTransferTimelineData(
   });
 
   return windowOptions.map((option) => {
+    const nextMonthStart = new Date(option.date.getFullYear(), option.date.getMonth() + 1, 1);
     const amount = rows
       .filter((row) =>
         mode === "monthly"
           ? row.periodKey === option.key
-          : row.periodDate.getTime() <= option.date.getTime(),
+          : row.periodDate.getTime() < nextMonthStart.getTime(),
       )
       .reduce((sum, row) => sum + row.amount, 0);
 
@@ -4822,10 +4823,13 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     [selectedPeriodKey, transferRows],
   );
   const accumulatedRows = useMemo(
-    () =>
-      selectedPeriodOption
-        ? transferRows.filter((row) => row.periodDate.getTime() <= selectedPeriodOption.date.getTime())
-        : [],
+    () => {
+      if (!selectedPeriodOption) return [];
+
+      const nextMonthStart = new Date(selectedPeriodOption.date.getFullYear(), selectedPeriodOption.date.getMonth() + 1, 1);
+
+      return transferRows.filter((row) => row.periodDate.getTime() < nextMonthStart.getTime());
+    },
     [selectedPeriodOption, transferRows],
   );
 
