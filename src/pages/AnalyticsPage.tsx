@@ -134,6 +134,7 @@ type CheckKontragentRow = {
   id: string;
   restaurant: string;
   date: string;
+  entryDate: Date | null;
   periodDate: Date;
   periodKey: string;
   counterparty: string;
@@ -460,6 +461,27 @@ function formatPeriodRangeLabel(date: Date) {
 function formatShortMonthYear(date: Date) {
   const monthNames = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
   return `${monthNames[date.getMonth()]} ${String(date.getFullYear()).slice(-2)}`;
+}
+
+function parseCalendarDate(value: string | null | undefined) {
+  const trimmed = value?.trim() ?? "";
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const dotMatch = trimmed.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/);
+  if (dotMatch) {
+    const [, dayText, monthText, yearText] = dotMatch;
+    const year = yearText.length === 2 ? 2000 + Number(yearText) : Number(yearText);
+    const month = Number(monthText) - 1;
+    const day = Number(dayText);
+    const parsed = new Date(year, month, day);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function normalizeFileNamePart(value: string) {
@@ -5944,6 +5966,9 @@ function ReconciliationTabContent({
   const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | null>(null);
   const [selectedCounterparty, setSelectedCounterparty] = useState("__all");
+  const [selectedSummaryCounterparty, setSelectedSummaryCounterparty] = useState<string | null>(null);
+  const [detailFromPeriodKey, setDetailFromPeriodKey] = useState<string | null>(null);
+  const [detailToPeriodKey, setDetailToPeriodKey] = useState<string | null>(null);
   const {
     accessibleRestaurantNames,
     accessibleRestaurantNameSet,
@@ -5973,6 +5998,7 @@ function ReconciliationTabContent({
             id: row.id,
             restaurant,
             date: row["Дата"]?.trim() ?? "",
+            entryDate: parseCalendarDate(row["Дата"]),
             periodDate,
             periodKey: makePeriodKey(periodDate),
             counterparty: row["Псевдо"]?.trim() || "Без контрагента",
@@ -6147,6 +6173,115 @@ function ReconciliationTabContent({
     [withdrawalTableRows],
   );
   const formatReconciliationWholeCurrency = (value: number) => `${formatCurrency(roundMoneyDisplayAmount(value))} ₽`;
+  const summaryCounterpartyOptions = useMemo(
+    () => withdrawalTableRows.map((row) => row.counterparty),
+    [withdrawalTableRows],
+  );
+
+  useEffect(() => {
+    if (mode !== "bank-withdrawals") {
+      return;
+    }
+
+    setSelectedSummaryCounterparty((current) => {
+      if (summaryCounterpartyOptions.length === 0) {
+        return null;
+      }
+
+      return current && summaryCounterpartyOptions.includes(current) ? current : summaryCounterpartyOptions[0];
+    });
+  }, [mode, summaryCounterpartyOptions]);
+
+  useEffect(() => {
+    if (mode !== "bank-withdrawals") {
+      return;
+    }
+
+    setDetailFromPeriodKey(selectedPeriodKey);
+    setDetailToPeriodKey(selectedPeriodKey);
+  }, [mode, selectedPeriodKey, selectedSummaryCounterparty]);
+
+  const detailCounterparty = mode === "bank-withdrawals" ? selectedSummaryCounterparty : null;
+  const detailCounterpartyRows = useMemo(
+    () =>
+      detailCounterparty
+        ? restaurantScopedRows.filter((row) => row.counterparty === detailCounterparty)
+        : [],
+    [detailCounterparty, restaurantScopedRows],
+  );
+  const orderedPeriodOptions = useMemo(
+    () => [...periodOptions].sort((a, b) => a.date.getTime() - b.date.getTime()),
+    [periodOptions],
+  );
+  const detailFromPeriodDate = useMemo(
+    () => orderedPeriodOptions.find((option) => option.key === detailFromPeriodKey)?.date ?? null,
+    [detailFromPeriodKey, orderedPeriodOptions],
+  );
+  const detailToPeriodDate = useMemo(
+    () => orderedPeriodOptions.find((option) => option.key === detailToPeriodKey)?.date ?? null,
+    [detailToPeriodKey, orderedPeriodOptions],
+  );
+  const hasInvalidDetailRange =
+    detailFromPeriodDate !== null && detailToPeriodDate !== null && detailFromPeriodDate.getTime() > detailToPeriodDate.getTime();
+  const detailRows = useMemo(() => {
+    if (!detailCounterparty || !detailFromPeriodDate || !detailToPeriodDate || hasInvalidDetailRange) {
+      return [];
+    }
+
+    const rangeEnd = new Date(detailToPeriodDate.getFullYear(), detailToPeriodDate.getMonth() + 1, 1).getTime();
+    const grouped = new Map<string, {
+      dateLabel: string;
+      entryDate: Date | null;
+      transferred: number;
+      received: number;
+    }>();
+
+    detailCounterpartyRows
+      .filter((row) => row.periodDate.getTime() >= detailFromPeriodDate.getTime() && row.periodDate.getTime() < rangeEnd)
+      .forEach((row) => {
+        const key = row.date || row.id;
+        if (!grouped.has(key)) {
+          grouped.set(key, {
+            dateLabel: row.date || formatPeriodRangeLabel(row.periodDate),
+            entryDate: row.entryDate,
+            transferred: 0,
+            received: 0,
+          });
+        }
+
+        const prepared = grouped.get(key)!;
+        prepared.transferred += row.paid;
+        prepared.received += row.accrued;
+      });
+
+    return Array.from(grouped.values()).sort((a, b) => {
+      const aTime = a.entryDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      const bTime = b.entryDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+      if (aTime !== bTime) {
+        return aTime - bTime;
+      }
+
+      return a.dateLabel.localeCompare(b.dateLabel, "ru");
+    });
+  }, [detailCounterparty, detailCounterpartyRows, detailFromPeriodDate, detailToPeriodDate, hasInvalidDetailRange]);
+  const detailOpening = useMemo(() => {
+    if (!detailCounterparty || !detailFromPeriodDate) return 0;
+    return detailCounterpartyRows
+      .filter((row) => row.periodDate.getTime() < detailFromPeriodDate.getTime())
+      .reduce((sum, row) => sum + row.movement, 0);
+  }, [detailCounterparty, detailCounterpartyRows, detailFromPeriodDate]);
+  const detailClosing = useMemo(() => {
+    if (!detailCounterparty || !detailToPeriodDate) return 0;
+    const rangeEnd = new Date(detailToPeriodDate.getFullYear(), detailToPeriodDate.getMonth() + 1, 1).getTime();
+    return detailCounterpartyRows
+      .filter((row) => row.periodDate.getTime() < rangeEnd)
+      .reduce((sum, row) => sum + row.movement, 0);
+  }, [detailCounterparty, detailCounterpartyRows, detailToPeriodDate]);
+  const detailPeriodLabel = useMemo(() => {
+    if (!detailFromPeriodDate || !detailToPeriodDate) return "Период не выбран";
+    if (detailFromPeriodKey === detailToPeriodKey) return formatPeriodRangeLabel(detailFromPeriodDate);
+    return `${formatPeriodRangeLabel(detailFromPeriodDate)} - ${formatPeriodRangeLabel(detailToPeriodDate)}`;
+  }, [detailFromPeriodDate, detailFromPeriodKey, detailToPeriodDate, detailToPeriodKey]);
 
   return (
     <div className="space-y-4">
@@ -6183,24 +6318,26 @@ function ReconciliationTabContent({
             </Select>
           </div>
 
-          <div className="w-full rounded-lg border bg-muted/20 p-2 pb-3 sm:w-auto sm:min-w-[260px]">
-            <div className="mb-1.5 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold sm:text-sm">{counterpartyLabel}</p>
+          {mode === "po-sums" ? (
+            <div className="w-full rounded-lg border bg-muted/20 p-2 pb-3 sm:w-auto sm:min-w-[260px]">
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold sm:text-sm">{counterpartyLabel}</p>
+              </div>
+              <Select value={selectedCounterparty} onValueChange={setSelectedCounterparty}>
+                <SelectTrigger className="h-9 w-full min-w-0 bg-background/85">
+                  <SelectValue placeholder={selectedCounterpartyPlaceholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all">Все сотрудники</SelectItem>
+                  {counterpartyOptions.map((counterparty) => (
+                    <SelectItem key={counterparty} value={counterparty}>
+                      {counterparty}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={selectedCounterparty} onValueChange={setSelectedCounterparty}>
-              <SelectTrigger className="h-9 w-full min-w-0 bg-background/85">
-                <SelectValue placeholder={selectedCounterpartyPlaceholder} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all">{mode === "bank-withdrawals" ? "Все контрагенты" : "Все сотрудники"}</SelectItem>
-                {counterpartyOptions.map((counterparty) => (
-                  <SelectItem key={counterparty} value={counterparty}>
-                    {counterparty}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -6260,11 +6397,16 @@ function ReconciliationTabContent({
                     <TableRow
                       key={row.counterparty}
                       className={cn(
-                        index % 2 === 0 ? "bg-card" : "bg-muted/15",
+                        selectedSummaryCounterparty === row.counterparty
+                          ? "bg-primary/5"
+                          : index % 2 === 0
+                            ? "bg-card"
+                            : "bg-muted/15",
                         "border-b border-border/30 transition-colors hover:bg-primary/5",
                       )}
+                      onClick={() => setSelectedSummaryCounterparty(row.counterparty)}
                     >
-                      <TableCell className="px-3 py-2 text-xs font-medium text-primary sm:text-sm">
+                      <TableCell className="cursor-pointer px-3 py-2 text-xs font-medium text-primary sm:text-sm">
                         {row.counterparty}
                       </TableCell>
                       <TableCell className={cn("px-2 py-2 text-right text-[11px] font-mono whitespace-nowrap sm:text-xs", row.opening < 0 ? "text-destructive" : "text-primary")}>
@@ -6316,6 +6458,115 @@ function ReconciliationTabContent({
           }
         />
       )}
+
+      {mode === "bank-withdrawals" && detailCounterparty ? (
+        !detailFromPeriodDate || !detailToPeriodDate ? (
+          <AnalyticsPlaceholderSection
+            title={`Детализация (${selectedRestaurant ?? "Ресторан"}, ${detailCounterparty})`}
+            description="Выберите период детализации."
+          />
+        ) : hasInvalidDetailRange ? (
+          <AnalyticsPlaceholderSection
+            title={`Детализация (${selectedRestaurant ?? "Ресторан"}, ${detailCounterparty})`}
+            description="Начальный период не может быть позже конечного."
+          />
+        ) : (
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-xl">
+            <CardHeader className="border-b-2 border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 px-4 py-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-start gap-2">
+                  <div className="mt-0.5 h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
+                  <div className="space-y-2">
+                    <div>
+                      <CardTitle className="text-sm font-serif">
+                        Детализация ({selectedRestaurant ?? "Ресторан"}, {detailCounterparty})
+                      </CardTitle>
+                      <p className="mt-0.5 text-xs text-muted-foreground">Период: {detailPeriodLabel}</p>
+                    </div>
+
+                    <PeriodRangeSelector
+                      fromPeriodKey={detailFromPeriodKey}
+                      toPeriodKey={detailToPeriodKey}
+                      onFromChange={setDetailFromPeriodKey}
+                      onToChange={setDetailToPeriodKey}
+                      onSelectAll={() => {
+                        setDetailFromPeriodKey(orderedPeriodOptions[0]?.key ?? null);
+                        setDetailToPeriodKey(orderedPeriodOptions[orderedPeriodOptions.length - 1]?.key ?? null);
+                      }}
+                      onClear={() => {
+                        setDetailFromPeriodKey(selectedPeriodKey);
+                        setDetailToPeriodKey(selectedPeriodKey);
+                      }}
+                      options={periodOptions}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="kpi-card kpi-card-primary px-3 py-2.5">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на начало</p>
+                    <p className={cn("mt-1 text-lg font-bold leading-none", detailOpening < 0 ? "text-destructive" : "text-primary")}>
+                      {formatReconciliationWholeCurrency(detailOpening)}
+                    </p>
+                  </div>
+                  <div className="kpi-card kpi-card-primary px-3 py-2.5">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на конец</p>
+                    <p className={cn("mt-1 text-lg font-bold leading-none", detailClosing < 0 ? "text-destructive" : "text-primary")}>
+                      {formatReconciliationWholeCurrency(detailClosing)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="px-0 pt-0">
+              {detailRows.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  По выбранному диапазону для {detailCounterparty} данных нет.
+                </div>
+              ) : (
+                <Table className="min-w-[420px] table-fixed sm:min-w-max">
+                  <TableHeader>
+                    <TableRow className="border-b border-primary/20 bg-primary/10">
+                      <TableHead className="h-10 w-[150px] min-w-[150px] px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                        Дата
+                      </TableHead>
+                      <TableHead className="h-10 w-[120px] min-w-[120px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                        Перечислено
+                      </TableHead>
+                      <TableHead className="h-10 w-[120px] min-w-[120px] px-2 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-primary sm:text-xs">
+                        Получено
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+
+                  <TableBody>
+                    {detailRows.map((row, index) => (
+                      <TableRow
+                        key={`${row.dateLabel}-${index}`}
+                        className={cn(
+                          index % 2 === 0 ? "bg-card" : "bg-muted/15",
+                          "border-b border-border/30 transition-colors hover:bg-primary/5",
+                        )}
+                      >
+                        <TableCell className="px-3 py-2 text-xs font-medium text-primary sm:text-sm">
+                          {row.dateLabel}
+                        </TableCell>
+                        <TableCell className={cn("px-2 py-2 text-right text-[11px] font-mono whitespace-nowrap sm:text-xs", row.transferred < 0 ? "text-success" : "text-destructive/80")}>
+                          {formatReconciliationWholeCurrency(row.transferred)}
+                        </TableCell>
+                        <TableCell className={cn("px-2 py-2 text-right text-[11px] font-mono whitespace-nowrap sm:text-xs", row.received < 0 ? "text-destructive" : "text-success")}>
+                          {formatReconciliationWholeCurrency(row.received)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        )
+      ) : null}
     </div>
   );
 }
