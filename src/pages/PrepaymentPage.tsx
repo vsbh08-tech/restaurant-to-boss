@@ -129,6 +129,31 @@ function formatPrepaymentMonthLabel(monthKey: string) {
   return format(new Date(year, month - 1, 1), "LLLL yyyy", { locale: ru });
 }
 
+function formatPrepaymentMonthContextLabel(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+
+  if (!year || !month) {
+    return monthKey;
+  }
+
+  const monthLabels = [
+    "январе",
+    "феврале",
+    "марте",
+    "апреле",
+    "мае",
+    "июне",
+    "июле",
+    "августе",
+    "сентябре",
+    "октябре",
+    "ноябре",
+    "декабре",
+  ];
+
+  return `в ${monthLabels[month - 1] ?? monthKey}`;
+}
+
 function extractMissingPrepaymentColumn(message: string) {
   const match = message.match(/Could not find the '([^']+)' column/);
   const columnName = match?.[1];
@@ -496,6 +521,10 @@ const upsertMutation = useMutation({
       formatPrepaymentMonthLabel(selectedPeriodKey),
     [periodOptions, selectedPeriodKey],
   );
+  const periodContextLabel = useMemo(
+    () => formatPrepaymentMonthContextLabel(selectedPeriodKey),
+    [selectedPeriodKey],
+  );
 
   const toggleColumn = (column: ColumnKey) => {
     setVisibleColumns((current) =>
@@ -836,7 +865,7 @@ const upsertMutation = useMutation({
               </div>
               <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Всего получено</p>
-                <p className="text-[10px] leading-tight text-muted-foreground">в период {periodLabel}</p>
+                <p className="text-[10px] leading-tight text-muted-foreground">{periodContextLabel}</p>
               </div>
             </div>
             <p className="mt-2 text-xl font-bold leading-none">{formatCurrency(stats.receivedPeriodSum)} ₽</p>
@@ -844,7 +873,7 @@ const upsertMutation = useMutation({
           </CardContent>
         </Card>
 
-        <Card className="kpi-card kpi-card-secondary">
+        <Card className="kpi-card kpi-card-success">
           <CardContent className="py-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success/10">
@@ -852,7 +881,7 @@ const upsertMutation = useMutation({
               </div>
               <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Всего банкетов</p>
-                <p className="text-[10px] leading-tight text-muted-foreground">в период {periodLabel}</p>
+                <p className="text-[10px] leading-tight text-muted-foreground">{periodContextLabel}</p>
               </div>
             </div>
             <p className="mt-2 text-xl font-bold leading-none text-success">{formatCurrency(stats.banquetPeriodSum)} ₽</p>
