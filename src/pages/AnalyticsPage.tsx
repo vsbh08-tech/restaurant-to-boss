@@ -1315,7 +1315,7 @@ function buildCashWaterfallData({
       fullLabel: "Прочее",
       delta: other,
       color: CASH_WATERFALL_COLORS.other,
-      note: "включая предоплаты, п/о суммы, ЗП нач, Комиссия нач",
+      note: "включая предоплаты, п/о суммы, расчеты по обязательствам",
     },
     {
       key: "unidentified",
@@ -1346,6 +1346,10 @@ function buildCashWaterfallData({
   let runningTotal = openingTotal;
 
   steps.forEach((step) => {
+    if (isNearlyZero(step.delta)) {
+      return;
+    }
+
     const nextTotal = runningTotal + step.delta;
     data.push({
       key: step.key,
