@@ -327,13 +327,21 @@ export default function PrepaymentPage() {
   }, [paymentFilter, periodFiltered, searchQuery, statusFilter]);
 
   const stats = useMemo(() => {
+    const receivedPeriodRows = prepayments.filter((item) =>
+      (item["Дата предоплаты"] || "").startsWith(selectedPeriodKey),
+    );
+    const banquetPeriodRows = prepayments.filter((item) =>
+      (item["Дата банкета"] || "").startsWith(selectedPeriodKey),
+    );
     const openRows = periodFiltered.filter((item) => item["Статус"] === "Открыт");
     const closedRows = periodFiltered.filter((item) => item["Статус"] === "Закрыт");
     const refundRows = periodFiltered.filter((item) => item["Статус"] === "Возврат");
 
     return {
-      totalCount: periodFiltered.length,
-      totalSum: periodFiltered.reduce((sum, item) => sum + getPrepaymentMetricAmount(item), 0),
+      receivedPeriodCount: receivedPeriodRows.length,
+      receivedPeriodSum: receivedPeriodRows.reduce((sum, item) => sum + getPrepaymentMetricAmount(item), 0),
+      banquetPeriodCount: banquetPeriodRows.length,
+      banquetPeriodSum: banquetPeriodRows.reduce((sum, item) => sum + getPrepaymentMetricAmount(item), 0),
       openCount: openRows.length,
       openSum: openRows.reduce((sum, item) => sum + getPrepaymentMetricAmount(item), 0),
       closedCount: closedRows.length,
@@ -341,7 +349,7 @@ export default function PrepaymentPage() {
       refundCount: refundRows.length,
       refundSum: refundRows.reduce((sum, item) => sum + getPrepaymentMetricAmount(item), 0),
     };
-  }, [periodFiltered]);
+  }, [periodFiltered, prepayments, selectedPeriodKey]);
 
   const openCandidates = useMemo(() => {
     const normalizedQuery = operationSearch.trim().toLowerCase();
@@ -819,61 +827,80 @@ const upsertMutation = useMutation({
          </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Card className="kpi-card kpi-card-muted">
-          <CardContent className="pb-4 pt-4">
+          <CardContent className="py-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
                 <Wallet className="h-4 w-4 text-muted-foreground" />
               </div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Всего</p>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Всего получено</p>
+                <p className="text-[10px] leading-tight text-muted-foreground">в период {periodLabel}</p>
+              </div>
             </div>
-            <p className="mt-2 text-2xl font-bold">{formatCurrency(stats.totalSum)} ₽</p>
-            <p className="text-sm text-muted-foreground">{stats.totalCount} шт.</p>
+            <p className="mt-2 text-xl font-bold leading-none">{formatCurrency(stats.receivedPeriodSum)} ₽</p>
+            <p className="mt-1 text-sm text-muted-foreground">{stats.receivedPeriodCount} шт.</p>
+          </CardContent>
+        </Card>
+
+        <Card className="kpi-card kpi-card-secondary">
+          <CardContent className="py-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success/10">
+                <CalendarIcon className="h-4 w-4 text-success" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Всего банкетов</p>
+                <p className="text-[10px] leading-tight text-muted-foreground">в период {periodLabel}</p>
+              </div>
+            </div>
+            <p className="mt-2 text-xl font-bold leading-none text-success">{formatCurrency(stats.banquetPeriodSum)} ₽</p>
+            <p className="mt-1 text-sm text-success/70">{stats.banquetPeriodCount} шт.</p>
           </CardContent>
         </Card>
 
         <Card className="kpi-card kpi-card-primary">
-          <CardContent className="pb-4 pt-4">
+          <CardContent className="py-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                 <DollarSign className="h-4 w-4 text-primary" />
               </div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Открытые</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Открытые</p>
             </div>
-            <p className="mt-2 text-2xl font-bold text-primary">{formatCurrency(stats.openSum)} ₽</p>
-            <p className="text-sm text-primary/70">{stats.openCount} шт.</p>
+            <p className="mt-2 text-xl font-bold leading-none text-primary">{formatCurrency(stats.openSum)} ₽</p>
+            <p className="mt-1 text-sm text-primary/70">{stats.openCount} шт.</p>
           </CardContent>
         </Card>
 
         <Card className="kpi-card kpi-card-sky">
-          <CardContent className="pb-4 pt-4">
+          <CardContent className="py-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-light">
                 <CheckCircle2 className="h-4 w-4 text-sky" />
               </div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Закрытые</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Закрытые</p>
             </div>
-            <p className="mt-2 text-2xl font-bold text-sky">{formatCurrency(stats.closedSum)} ₽</p>
-            <p className="text-sm text-sky/70">{stats.closedCount} шт.</p>
+            <p className="mt-2 text-xl font-bold leading-none text-sky">{formatCurrency(stats.closedSum)} ₽</p>
+            <p className="mt-1 text-sm text-sky/70">{stats.closedCount} шт.</p>
           </CardContent>
         </Card>
 
         <Card className="kpi-card kpi-card-accent">
-          <CardContent className="pb-4 pt-4">
+          <CardContent className="py-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-coral-light">
                 <RotateCcw className="h-4 w-4 text-accent" />
               </div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Возвраты</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Возвраты</p>
             </div>
-            <p className="mt-2 text-2xl font-bold text-accent">{formatCurrency(stats.refundSum)} ₽</p>
-            <p className="text-sm text-accent/70">{stats.refundCount} шт.</p>
+            <p className="mt-2 text-xl font-bold leading-none text-accent">{formatCurrency(stats.refundSum)} ₽</p>
+            <p className="mt-1 text-sm text-accent/70">{stats.refundCount} шт.</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3"> 
         <div className="relative min-w-[220px] flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
