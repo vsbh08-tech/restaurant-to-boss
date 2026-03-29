@@ -6455,7 +6455,7 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
           />
         ) : (
           <Card className="overflow-hidden border border-border/60 shadow-lg rounded-xl">
-            <CardHeader className="border-b-2 border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/8 px-4 py-3">
+            <CardHeader className="border-b border-border/40 bg-card px-4 py-3">
               <div className="flex flex-wrap items-start justify-between gap-3 xl:flex-nowrap xl:items-center">
                 <div className="flex min-w-0 items-start gap-2">
                   <div className="mt-0.5 h-5 w-1 rounded-full bg-gradient-to-b from-primary to-accent" />
