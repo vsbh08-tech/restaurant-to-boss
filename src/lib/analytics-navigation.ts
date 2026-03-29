@@ -36,7 +36,6 @@ export const ANALYTICS_WORKSPACE_META: Record<
   },
   reconciliation: {
     title: "Сверка",
-    description: "Сверка снятий с расчетного счета и подотчетных сумм по выбранному ресторану и периоду.",
     adminOnly: true,
   },
 };
