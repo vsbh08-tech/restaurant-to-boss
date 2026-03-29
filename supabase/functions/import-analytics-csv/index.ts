@@ -11,9 +11,10 @@ type ImportRequest = {
   financeFlowsCsv?: string;
   balanceFactCsv?: string;
   ownersFactCsv?: string;
+  checkKontragentCsv?: string;
 };
 
-type TableName = "finance_flows" | "balance_fact" | "owners_fact";
+type TableName = "finance_flows" | "balance_fact" | "owners_fact" | "Check_Kontragent";
 
 type TableConfig = {
   tableName: TableName;
@@ -55,6 +56,12 @@ const TABLE_CONFIGS: TableConfig[] = [
     payloadKey: "ownersFactCsv",
     requiredHeaders: ["Ресторан", "Период", "Псевдо", "Группа", "Движение", "Начислено", "Оплачено"],
     allowedHeaders: ["Ресторан", "Период", "Псевдо", "Группа", "Движение", "Начислено", "Оплачено"],
+  },
+  {
+    tableName: "Check_Kontragent",
+    payloadKey: "checkKontragentCsv",
+    requiredHeaders: ["Ресторан", "Дата", "Период", "Псевдо", "Группа", "Движение", "Начислено", "Оплачено"],
+    allowedHeaders: ["Ресторан", "Дата", "Период", "Псевдо", "Группа", "Движение", "Начислено", "Оплачено"],
   },
 ];
 

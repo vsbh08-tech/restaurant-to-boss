@@ -78,6 +78,18 @@ type OwnersFact = {
   "Оплачено": string | null;
 };
 
+type CheckKontragent = {
+  id: string;
+  "Ресторан": string | null;
+  "Дата": string | null;
+  "Период": string | null;
+  "Псевдо": string | null;
+  "Группа": string | null;
+  "Движение": string | null;
+  "Начислено": string | null;
+  "Оплачено": string | null;
+};
+
 type PeriodOption = {
   key: string;
   label: string;
@@ -116,6 +128,19 @@ type OwnersFactRow = {
   accrued: number;
   paid: number;
   net: number;
+};
+
+type CheckKontragentRow = {
+  id: string;
+  restaurant: string;
+  date: string;
+  periodDate: Date;
+  periodKey: string;
+  counterparty: string;
+  group: string;
+  movement: number;
+  accrued: number;
+  paid: number;
 };
 
 type OwnersReportRow = {
@@ -3271,7 +3296,7 @@ function calculateRentability(metrics: MetricSummary) {
   return (metrics.profit / metrics.income) * 100;
 }
 
-async function fetchAllRows<T>(tableName: "finance_flows" | "balance_fact" | "owners_fact") {
+async function fetchAllRows<T>(tableName: "finance_flows" | "balance_fact" | "owners_fact" | "Check_Kontragent") {
   const rows: T[] = [];
   let from = 0;
 
@@ -5905,21 +5930,33 @@ function AnalyticsOwnersSection({ scope }: { scope?: AnalyticsScopeConfig }) {
   );
 }
 
-function AnalyticsReconciliationSection({ scope }: { scope?: AnalyticsScopeConfig }) {
+function ReconciliationTabContent({
+  scope,
+  title,
+}: {
+  scope?: AnalyticsScopeConfig;
+  title: string;
+}) {
   const [selectedRestaurants, setSelectedRestaurants] = useState<string[]>([]);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | null>(null);
-  const { accessibleRestaurantNames, preferredRestaurantSelection, fixedRestaurantNames } = useAnalyticsAccess(scope);
+  const [selectedCounterparty, setSelectedCounterparty] = useState("__all");
+  const {
+    accessibleRestaurantNames,
+    accessibleRestaurantNameSet,
+    preferredRestaurantSelection,
+    fixedRestaurantNames,
+  } = useAnalyticsAccess(scope);
 
-  const { data: owners = [], isLoading } = useQuery({
-    queryKey: ["owners_fact"],
+  const { data: checks = [], isLoading } = useQuery({
+    queryKey: ["Check_Kontragent"],
     queryFn: async () => {
-      return fetchAllRows<OwnersFact>("owners_fact");
+      return fetchAllRows<CheckKontragent>("Check_Kontragent");
     },
   });
 
-  const reconciliationRows = useMemo(
+  const checkRows = useMemo<CheckKontragentRow[]>(
     () =>
-      owners
+      checks
         .map((row) => {
           const periodDate = parsePeriodDate(row["Период"]);
           const restaurant = row["Ресторан"]?.trim() ?? "";
@@ -5929,23 +5966,31 @@ function AnalyticsReconciliationSection({ scope }: { scope?: AnalyticsScopeConfi
           }
 
           return {
+            id: row.id,
             restaurant,
+            date: row["Дата"]?.trim() ?? "",
             periodDate,
             periodKey: makePeriodKey(periodDate),
+            counterparty: row["Псевдо"]?.trim() || "Без контрагента",
+            group: row["Группа"]?.trim() || "Без группы",
+            movement: parseTextNumeric(row["Движение"]),
+            accrued: parseTextNumeric(row["Начислено"]),
+            paid: parseTextNumeric(row["Оплачено"]),
           };
         })
-        .filter((row): row is { restaurant: string; periodDate: Date; periodKey: string } => row !== null),
-    [owners],
+        .filter((row): row is CheckKontragentRow => row !== null)
+        .filter((row) => accessibleRestaurantNameSet.has(row.restaurant)),
+    [accessibleRestaurantNameSet, checks],
   );
 
   const restaurantOptions = useMemo(
     () =>
       getUniqueValues(
         fixedRestaurantNames.length > 0
-          ? [...fixedRestaurantNames, ...reconciliationRows.map((row) => row.restaurant)]
-          : [...accessibleRestaurantNames, ...reconciliationRows.map((row) => row.restaurant)],
+          ? [...fixedRestaurantNames, ...checkRows.map((row) => row.restaurant)]
+          : [...accessibleRestaurantNames, ...checkRows.map((row) => row.restaurant)],
       ).sort((a, b) => a.localeCompare(b, "ru")),
-    [accessibleRestaurantNames, fixedRestaurantNames, reconciliationRows],
+    [accessibleRestaurantNames, checkRows, fixedRestaurantNames],
   );
 
   useInitializeSingleSelection({
@@ -5959,11 +6004,11 @@ function AnalyticsReconciliationSection({ scope }: { scope?: AnalyticsScopeConfi
     () => resolveScopedSelection(selectedRestaurants, restaurantOptions, fixedRestaurantNames),
     [fixedRestaurantNames, restaurantOptions, selectedRestaurants],
   );
-  const scopedRows = useMemo(
-    () => reconciliationRows.filter((row) => activeRestaurants.includes(row.restaurant)),
-    [activeRestaurants, reconciliationRows],
+  const restaurantScopedRows = useMemo(
+    () => checkRows.filter((row) => activeRestaurants.includes(row.restaurant)),
+    [activeRestaurants, checkRows],
   );
-  const periodOptions = useMemo(() => buildPeriodOptions(scopedRows.map((row) => row.periodDate)), [scopedRows]);
+  const periodOptions = useMemo(() => buildPeriodOptions(restaurantScopedRows.map((row) => row.periodDate)), [restaurantScopedRows]);
   const periodKeys = useMemo(() => periodOptions.map((option) => option.key), [periodOptions]);
   const defaultPeriodKey = useMemo(() => {
     const now = new Date();
@@ -5980,12 +6025,34 @@ function AnalyticsReconciliationSection({ scope }: { scope?: AnalyticsScopeConfi
     setSelectedPeriodKey((current) => (current && periodKeys.includes(current) ? current : defaultPeriodKey));
   }, [defaultPeriodKey, periodKeys]);
 
+  const periodScopedRows = useMemo(
+    () => restaurantScopedRows.filter((row) => !selectedPeriodKey || row.periodKey === selectedPeriodKey),
+    [restaurantScopedRows, selectedPeriodKey],
+  );
+  const counterpartyOptions = useMemo(
+    () => getUniqueValues(periodScopedRows.map((row) => row.counterparty)).sort((a, b) => a.localeCompare(b, "ru")),
+    [periodScopedRows],
+  );
+
+  useEffect(() => {
+    setSelectedCounterparty((current) => (current === "__all" || counterpartyOptions.includes(current) ? current : "__all"));
+  }, [counterpartyOptions]);
+
+  const filteredRows = useMemo(
+    () =>
+      selectedCounterparty === "__all"
+        ? periodScopedRows
+        : periodScopedRows.filter((row) => row.counterparty === selectedCounterparty),
+    [periodScopedRows, selectedCounterparty],
+  );
+
   const selectedRestaurant = activeRestaurants[0] ?? null;
   const selectedPeriod = useMemo(
     () => periodOptions.find((option) => option.key === selectedPeriodKey) ?? null,
     [periodOptions, selectedPeriodKey],
   );
   const selectedPeriodLabel = selectedPeriod ? formatPeriodRangeLabel(selectedPeriod.date) : "Период не выбран";
+  const selectedCounterpartyLabel = selectedCounterparty === "__all" ? "Все контрагенты" : selectedCounterparty;
 
   return (
     <div className="space-y-4">
@@ -6004,7 +6071,7 @@ function AnalyticsReconciliationSection({ scope }: { scope?: AnalyticsScopeConfi
             />
           )}
 
-          <div className="w-full rounded-lg border bg-muted/20 p-2 pb-3 sm:w-auto sm:min-w-[240px]">
+          <div className="w-full rounded-lg border bg-muted/20 p-2 pb-3 sm:w-auto sm:min-w-[220px]">
             <div className="mb-1.5 flex items-center justify-between gap-2">
               <p className="text-xs font-semibold sm:text-sm">Период</p>
             </div>
@@ -6021,48 +6088,68 @@ function AnalyticsReconciliationSection({ scope }: { scope?: AnalyticsScopeConfi
               </SelectContent>
             </Select>
           </div>
+
+          <div className="w-full rounded-lg border bg-muted/20 p-2 pb-3 sm:w-auto sm:min-w-[260px]">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold sm:text-sm">Контрагенты</p>
+            </div>
+            <Select value={selectedCounterparty} onValueChange={setSelectedCounterparty}>
+              <SelectTrigger className="h-9 w-full min-w-0 bg-background/85">
+                <SelectValue placeholder="Выберите контрагента" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">Все контрагенты</SelectItem>
+                {counterpartyOptions.map((counterparty) => (
+                  <SelectItem key={counterparty} value={counterparty}>
+                    {counterparty}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="bank-withdrawals" className="space-y-4">
-        <TabsList className="h-auto justify-start gap-1 bg-muted">
-          <TabsTrigger
-            value="bank-withdrawals"
-            className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
-          >
-            Снятие с р/с
-          </TabsTrigger>
-          <TabsTrigger
-            value="po-sums"
-            className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
-          >
-            П/О суммы
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="bank-withdrawals">
-          <AnalyticsPlaceholderSection
-            title="Снятие с р/с"
-            description={
-              isLoading
-                ? "Загружаю данные для сверки."
-                : `Раздел подготовлен. Дальше наполним его логикой по ресторану ${selectedRestaurant ?? "не выбран"} за ${selectedPeriodLabel}.`
-            }
-          />
-        </TabsContent>
-
-        <TabsContent value="po-sums">
-          <AnalyticsPlaceholderSection
-            title="П/О суммы"
-            description={
-              isLoading
-                ? "Загружаю данные для сверки."
-                : `Раздел подготовлен. Дальше наполним его логикой по ресторану ${selectedRestaurant ?? "не выбран"} за ${selectedPeriodLabel}.`
-            }
-          />
-        </TabsContent>
-      </Tabs>
+      <AnalyticsPlaceholderSection
+        title={title}
+        description={
+          isLoading
+            ? "Загружаю данные для сверки."
+            : checkRows.length === 0
+              ? "Нет данных. Импортируйте CSV в таблицу Check_Kontragent."
+              : `Фильтры готовы: ${selectedRestaurant ?? "ресторан не выбран"} • ${selectedPeriodLabel} • ${selectedCounterpartyLabel}. В выборке ${filteredRows.length} строк, следующим шагом наполним саму сверку.`
+        }
+      />
     </div>
+  );
+}
+
+function AnalyticsReconciliationSection({ scope }: { scope?: AnalyticsScopeConfig }) {
+  return (
+    <Tabs defaultValue="bank-withdrawals" className="space-y-4">
+      <TabsList className="h-auto justify-start gap-1 bg-muted">
+        <TabsTrigger
+          value="bank-withdrawals"
+          className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+        >
+          Снятие с р/с
+        </TabsTrigger>
+        <TabsTrigger
+          value="po-sums"
+          className="shrink-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none"
+        >
+          П/О суммы
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="bank-withdrawals">
+        <ReconciliationTabContent scope={scope} title="Снятие с р/с" />
+      </TabsContent>
+
+      <TabsContent value="po-sums">
+        <ReconciliationTabContent scope={scope} title="П/О суммы" />
+      </TabsContent>
+    </Tabs>
   );
 }
 
@@ -6088,7 +6175,7 @@ function AnalyticsWorkspacePage() {
           <h1 className="text-2xl font-bold font-serif">{meta.title}</h1>
           {meta.description ? <p className="text-sm text-muted-foreground">{meta.description}</p> : null}
         </div>
-        {view === "financial" ? <AnalyticsImportDialog /> : null}
+        {view === "financial" || view === "reconciliation" ? <AnalyticsImportDialog /> : null}
       </div>
 
       {view === "financial" ? <FinancialResultTab /> : null}

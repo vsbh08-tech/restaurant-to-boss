@@ -33,6 +33,11 @@ type ImportResult = {
       sliceCount: number;
       periods: string[];
     };
+    Check_Kontragent: {
+      rowCount: number;
+      sliceCount: number;
+      periods: string[];
+    };
   };
 };
 
@@ -40,12 +45,14 @@ type FileState = {
   financeFlows: File | null;
   balanceFact: File | null;
   ownersFact: File | null;
+  checkKontragent: File | null;
 };
 
 const EMPTY_FILES: FileState = {
   financeFlows: null,
   balanceFact: null,
   ownersFact: null,
+  checkKontragent: null,
 };
 
 async function getInvokeErrorMessage(error: unknown) {
@@ -114,17 +121,18 @@ export function AnalyticsImportDialog() {
       }
 
       if (isDemoSession) {
-        throw new Error("Для загрузки нужен реальный вход под админом, не тестовый режим.");
+        throw new Error("Для загрузки нужен реальный вход под админом, а не тестовый режим.");
       }
 
-      if (!files.financeFlows || !files.balanceFact || !files.ownersFact) {
-        throw new Error("Выберите все 3 файла.");
+      if (!files.financeFlows || !files.balanceFact || !files.ownersFact || !files.checkKontragent) {
+        throw new Error("Выберите все 4 файла.");
       }
 
-      const [financeFlowsCsv, balanceFactCsv, ownersFactCsv] = await Promise.all([
+      const [financeFlowsCsv, balanceFactCsv, ownersFactCsv, checkKontragentCsv] = await Promise.all([
         files.financeFlows.text(),
         files.balanceFact.text(),
         files.ownersFact.text(),
+        files.checkKontragent.text(),
       ]);
 
       const { data, error } = await supabase.functions.invoke<ImportResult>("import-analytics-csv", {
@@ -132,6 +140,7 @@ export function AnalyticsImportDialog() {
           financeFlowsCsv,
           balanceFactCsv,
           ownersFactCsv,
+          checkKontragentCsv,
         },
       });
 
@@ -149,6 +158,7 @@ export function AnalyticsImportDialog() {
       void queryClient.invalidateQueries({ queryKey: ["finance_flows"] });
       void queryClient.invalidateQueries({ queryKey: ["balance_fact"] });
       void queryClient.invalidateQueries({ queryKey: ["owners_fact"] });
+      void queryClient.invalidateQueries({ queryKey: ["Check_Kontragent"] });
 
       setFiles(EMPTY_FILES);
       setOpen(false);
@@ -158,12 +168,11 @@ export function AnalyticsImportDialog() {
           ...result.summary.finance_flows.periods,
           ...result.summary.balance_fact.periods,
           ...result.summary.owners_fact.periods,
+          ...result.summary.Check_Kontragent.periods,
         ]),
       ).sort();
 
-      toast.success(
-        `Импорт завершен. Обновлены периоды: ${importedPeriods.join(", ") || "без периода"}.`,
-      );
+      toast.success(`Импорт завершен. Обновлены периоды: ${importedPeriods.join(", ") || "без периода"}.`);
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Не удалось загрузить данные.");
@@ -191,17 +200,17 @@ export function AnalyticsImportDialog() {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Загрузка данных аналитики</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
           <div className="rounded-lg border bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
-            Загружайте полный срез только за те периоды, которые хотите заменить.
+            Загружайте только те периоды, которые хотите заменить.
             <br />
-            Пример: если добавляете февраль 2026, выгружайте только февраль 2026. Если пришла корректировка за
-            декабрь 2025, загружайте только декабрь 2025.
+            Если добавляете новый месяц, достаточно выгрузить его по всем таблицам. Если пришла корректировка за старый
+            период, загрузите только этот период по всем четырем CSV.
           </div>
 
           {isDemoSession ? (
@@ -210,7 +219,7 @@ export function AnalyticsImportDialog() {
             </div>
           ) : null}
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <FileField
               label="finance_flows.csv"
               file={files.financeFlows}
@@ -225,6 +234,11 @@ export function AnalyticsImportDialog() {
               label="owners_fact.csv"
               file={files.ownersFact}
               onChange={(file) => setFiles((current) => ({ ...current, ownersFact: file }))}
+            />
+            <FileField
+              label="Check_Kontragent.csv"
+              file={files.checkKontragent}
+              onChange={(file) => setFiles((current) => ({ ...current, checkKontragent: file }))}
             />
           </div>
 
