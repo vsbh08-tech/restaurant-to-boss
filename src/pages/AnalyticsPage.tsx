@@ -1148,19 +1148,19 @@ function isCashMovementLoanArticle(article: string) {
 function resolveCashMovementLoanDelta(article: string, flowType: string, amount: number) {
   const absoluteAmount = Math.abs(amount);
 
-  if (flowType === "Поступления") {
-    return absoluteAmount;
-  }
-
-  if (flowType === "Платежи") {
-    return absoluteAmount * -1;
-  }
-
   if (isLoanReceivedArticle(article) || isInvestmentLoanArticle(article)) {
     return absoluteAmount;
   }
 
   if (isLoanIssuedArticle(article)) {
+    return absoluteAmount * -1;
+  }
+
+  if (flowType === "Поступления") {
+    return absoluteAmount;
+  }
+
+  if (flowType === "Платежи") {
     return absoluteAmount * -1;
   }
 
