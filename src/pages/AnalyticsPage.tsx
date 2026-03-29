@@ -6375,7 +6375,7 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
                 subtitle="на начало периода"
               />
               <ReconciliationCompactBalanceCard
-                icon={ArrowUp}
+                icon={summaryTotals.closing < summaryTotals.opening ? ArrowDown : ArrowUp}
                 valueText={formatReconciliationWholeCurrency(summaryTotals.closing)}
                 subtitle="на конец периода"
               />
@@ -6543,7 +6543,7 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
                     className="sm:w-[188px]"
                   />
                   <ReconciliationCompactBalanceCard
-                    icon={ArrowUp}
+                    icon={detailClosing < detailOpening ? ArrowDown : ArrowUp}
                     valueText={formatReconciliationWholeCurrency(detailClosing)}
                     subtitle="на конец периода"
                     className="sm:w-[188px]"
