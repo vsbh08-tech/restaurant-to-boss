@@ -3296,7 +3296,7 @@ function calculateRentability(metrics: MetricSummary) {
   return (metrics.profit / metrics.income) * 100;
 }
 
-async function fetchAllRows<T>(tableName: "finance_flows" | "balance_fact" | "owners_fact" | "Check_Kontragent") {
+async function fetchAllRows<T>(tableName: "finance_flows" | "balance_fact" | "owners_fact" | "check_kontragent") {
   const rows: T[] = [];
   let from = 0;
 
@@ -5948,9 +5948,9 @@ function ReconciliationTabContent({
   } = useAnalyticsAccess(scope);
 
   const { data: checks = [], isLoading } = useQuery({
-    queryKey: ["Check_Kontragent"],
+    queryKey: ["check_kontragent"],
     queryFn: async () => {
-      return fetchAllRows<CheckKontragent>("Check_Kontragent");
+      return fetchAllRows<CheckKontragent>("check_kontragent");
     },
   });
 
@@ -6116,7 +6116,7 @@ function ReconciliationTabContent({
           isLoading
             ? "Загружаю данные для сверки."
             : checkRows.length === 0
-              ? "Нет данных. Импортируйте CSV в таблицу Check_Kontragent."
+              ? "Нет данных. Импортируйте CSV в таблицу check_kontragent."
               : `Фильтры готовы: ${selectedRestaurant ?? "ресторан не выбран"} • ${selectedPeriodLabel} • ${selectedCounterpartyLabel}. В выборке ${filteredRows.length} строк, следующим шагом наполним саму сверку.`
         }
       />

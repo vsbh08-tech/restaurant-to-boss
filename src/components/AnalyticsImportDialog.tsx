@@ -27,7 +27,7 @@ type ImportResult = {
     finance_flows: ImportSummaryEntry;
     balance_fact: ImportSummaryEntry;
     owners_fact: ImportSummaryEntry;
-    Check_Kontragent: ImportSummaryEntry;
+    check_kontragent: ImportSummaryEntry;
   }>;
 };
 
@@ -150,7 +150,7 @@ export function AnalyticsImportDialog({ mode = "analytics" }: AnalyticsImportDia
       }
 
       if (!files.checkKontragent) {
-        throw new Error("Выберите файл Check_Kontragent.csv.");
+        throw new Error("Выберите файл check_kontragent.csv.");
       }
 
       const checkKontragentCsv = await files.checkKontragent.text();
@@ -180,8 +180,8 @@ export function AnalyticsImportDialog({ mode = "analytics" }: AnalyticsImportDia
       if (result.summary.owners_fact) {
         void queryClient.invalidateQueries({ queryKey: ["owners_fact"] });
       }
-      if (result.summary.Check_Kontragent) {
-        void queryClient.invalidateQueries({ queryKey: ["Check_Kontragent"] });
+      if (result.summary.check_kontragent) {
+        void queryClient.invalidateQueries({ queryKey: ["check_kontragent"] });
       }
 
       setFiles(EMPTY_FILES);
@@ -236,7 +236,7 @@ export function AnalyticsImportDialog({ mode = "analytics" }: AnalyticsImportDia
               <>
                 В этом разделе обновляется только файл сверки.
                 <br />
-                Загрузите `Check_Kontragent.csv` за те периоды, которые нужно заменить.
+                Загрузите `check_kontragent.csv` за те периоды, которые нужно заменить.
               </>
             )}
           </div>
@@ -267,7 +267,7 @@ export function AnalyticsImportDialog({ mode = "analytics" }: AnalyticsImportDia
             </div>
           ) : (
             <FileField
-              label="Check_Kontragent.csv"
+              label="check_kontragent.csv"
               file={files.checkKontragent}
               onChange={(file) => setFiles((current) => ({ ...current, checkKontragent: file }))}
             />

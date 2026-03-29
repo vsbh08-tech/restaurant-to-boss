@@ -14,7 +14,7 @@ export type Database = {
   }
   public: {
     Tables: {
-      Check_Kontragent: {
+      check_kontragent: {
         Row: {
           id: string
           Р”Р°С‚Р°: string | null
