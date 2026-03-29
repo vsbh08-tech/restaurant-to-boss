@@ -5022,6 +5022,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     () => resolveScopedSelection(selectedOwners, ownerOptions, fixedOwnerNames),
     [fixedOwnerNames, ownerOptions, selectedOwners],
   );
+  const selectedOwnerLabel = activeOwners[0] ?? null;
 
   const scopeRows = useMemo(
     () =>
@@ -5285,7 +5286,9 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
                           <div className="space-y-0.5">
                             <div className="whitespace-nowrap">{formatOwnersWholeCurrency(row.paid)} ₽</div>
                             {isCashWithdrawal ? (
-                              <div className="text-[9px] leading-tight text-muted-foreground">переведено на р/с</div>
+                              <div className="text-[9px] leading-tight text-muted-foreground">
+                                {selectedOwnerLabel ? `перечислено (${selectedOwnerLabel}) на р/с` : "перечислено на р/с"}
+                              </div>
                             ) : null}
                           </div>
                         </TableCell>
