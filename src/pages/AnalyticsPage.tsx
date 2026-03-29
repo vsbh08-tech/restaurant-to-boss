@@ -2484,6 +2484,29 @@ function LoanCompactMetricCard({
   );
 }
 
+function ReconciliationCompactBalanceCard({
+  valueText,
+  subtitle,
+  className,
+}: {
+  valueText: string;
+  subtitle: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "w-full min-h-[88px] rounded-lg border border-destructive/20 bg-gradient-to-br from-destructive/6 via-card to-card p-2 pb-3 shadow-sm sm:w-[188px]",
+        className,
+      )}
+    >
+      <p className="text-xs font-semibold text-muted-foreground">Остаток</p>
+      <p className="mt-2 text-lg font-bold leading-none whitespace-nowrap text-destructive">{valueText}</p>
+      <p className="mt-1 text-[10px] leading-none text-muted-foreground">{subtitle}</p>
+    </div>
+  );
+}
+
 function InvestmentLoanDistributionCard({
   rows,
   total,
@@ -6336,6 +6359,19 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
               </SelectContent>
             </Select>
           </div>
+
+          {!isLoading && selectedPeriod && summaryTableRows.length > 0 ? (
+            <>
+              <ReconciliationCompactBalanceCard
+                valueText={formatReconciliationWholeCurrency(summaryTotals.opening)}
+                subtitle="на начало периода"
+              />
+              <ReconciliationCompactBalanceCard
+                valueText={formatReconciliationWholeCurrency(summaryTotals.closing)}
+                subtitle="на конец периода"
+              />
+            </>
+          ) : null}
         </CardContent>
       </Card>
 
@@ -6366,23 +6402,6 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
               <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
                 Период: {selectedPeriodLabel}
               </div>
-            </div>
-
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <LoanCompactMetricCard
-                icon={Wallet}
-                label="Остаток на начало"
-                value={summaryTotals.opening}
-                tone="accent"
-                subtitle="на начало периода"
-              />
-              <LoanCompactMetricCard
-                icon={ArrowUp}
-                label="Остаток на конец"
-                value={summaryTotals.closing}
-                tone="accent"
-                subtitle="на конец периода"
-              />
             </div>
           </CardHeader>
 
@@ -6508,18 +6527,16 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
                 />
 
                 <div className="grid w-full gap-2 sm:grid-cols-2 xl:w-auto">
-                  <div className="kpi-card kpi-card-primary px-3 py-2.5">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на начало</p>
-                    <p className={cn("mt-1 text-lg font-bold leading-none", detailOpening < 0 ? "text-destructive" : "text-primary")}>
-                      {formatReconciliationWholeCurrency(detailOpening)}
-                    </p>
-                  </div>
-                  <div className="kpi-card kpi-card-primary px-3 py-2.5">
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Остаток на конец</p>
-                    <p className={cn("mt-1 text-lg font-bold leading-none", detailClosing < 0 ? "text-destructive" : "text-primary")}>
-                      {formatReconciliationWholeCurrency(detailClosing)}
-                    </p>
-                  </div>
+                  <ReconciliationCompactBalanceCard
+                    valueText={formatReconciliationWholeCurrency(detailOpening)}
+                    subtitle="на начало периода"
+                    className="sm:w-[188px]"
+                  />
+                  <ReconciliationCompactBalanceCard
+                    valueText={formatReconciliationWholeCurrency(detailClosing)}
+                    subtitle="на конец периода"
+                    className="sm:w-[188px]"
+                  />
                 </div>
               </div>
             </CardHeader>
