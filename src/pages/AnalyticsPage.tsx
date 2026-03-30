@@ -2332,7 +2332,7 @@ function CashWaterfallChartCard({
           <div>
             <CardTitle className="text-sm font-serif">Движение денег</CardTitle>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Из чего изменился остаток денег за выбранный период.
+              Как сформировался остаток денег за период.
             </p>
           </div>
           <div className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
