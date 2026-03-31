@@ -445,10 +445,12 @@ const CASH_OTHER_ARTICLE_ALIASES = [
 const CASH_OWNER_WITHDRAWAL_GROUP_ALIASES = ["снятие с р/с", "снятие с р\\с"];
 const RECONCILIATION_PO_SUMS_GROUP_ALIASES = ["п/о суммы"];
 const RECONCILIATION_ARTICLE_OPTIONS: ReconciliationArticle[] = ["Снятие с р/с", "П/О суммы"];
-const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные", "займы полученные кап"];
-const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные", "займы кап", "займы выданные кап"];
+const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные"];
+const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные"];
 const LOAN_GENERIC_ARTICLE_ALIASES = ["займы"];
 const LOAN_RENT_ARTICLE_ALIASES = ["аренда"];
+const INVESTMENT_LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные кап"];
+const INVESTMENT_LOAN_ISSUED_ARTICLE_ALIASES = ["займы кап", "займы выданные кап"];
 const INVESTMENT_LOAN_ARTICLE_ALIASES = ["займы полученные кап", "займы кап", "займы выданные кап"];
 const STICKY_HEADER_SURFACE_STYLE = {
   background: "linear-gradient(hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.1)), hsl(var(--card))",
@@ -1180,6 +1182,23 @@ function resolveLoanMovementDelta(article: string, movement: number) {
 
   if (isGenericLoanArticle(article) || isRentLoanArticle(article)) {
     return movement;
+  }
+
+  return null;
+}
+
+function resolveCashLoanMovementDelta(article: string, movement: number) {
+  const loanDelta = resolveLoanMovementDelta(article, movement);
+  if (loanDelta !== null) {
+    return loanDelta;
+  }
+
+  if (matchesArticleAlias(article, INVESTMENT_LOAN_RECEIVED_ARTICLE_ALIASES)) {
+    return movement;
+  }
+
+  if (matchesArticleAlias(article, INVESTMENT_LOAN_ISSUED_ARTICLE_ALIASES)) {
+    return movement * -1;
   }
 
   return null;
@@ -4289,7 +4308,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             activePeriods.includes(row.periodKey),
         )
         .reduce((sum, row) => {
-          const delta = resolveLoanMovementDelta(row.article, row.amount);
+          const delta = resolveCashLoanMovementDelta(row.article, row.amount);
           return delta === null ? sum : sum + delta;
         }, 0),
     [activePeriods, activeRestaurants, ownerRows],
