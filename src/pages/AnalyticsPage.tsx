@@ -4071,20 +4071,28 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
           const periodDate = parsePeriodDate(row["Период"]);
           const restaurant = row["Ресторан"]?.trim() ?? "";
           const owner = row["Псевдо"]?.trim() ?? "";
-          const article = row["Группа"]?.trim() ?? "";
+          const rawArticle = row["Группа"]?.trim() ?? "";
 
-          if (!periodDate || !restaurant || !owner || !article) {
+          if (!periodDate || !restaurant || !owner || !rawArticle) {
             return null;
           }
+
+          const normalizedEntry = normalizeOwnersFactEntry(
+            rawArticle,
+            parseTextNumeric(row["Начислено"]),
+            parseTextNumeric(row["Оплачено"]),
+            parseTextNumeric(row["Движение"]),
+          );
 
           return {
             id: row.id,
             restaurant,
             owner,
-            article,
+            article: normalizedEntry.article,
             periodDate,
             periodKey: makePeriodKey(periodDate),
-            amount: parseTextNumeric(row["Движение"]),
+            amount: normalizedEntry.net,
+            paidAmount: normalizedEntry.paid,
           };
         })
         .filter(
@@ -4098,6 +4106,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             periodDate: Date;
             periodKey: string;
             amount: number;
+            paidAmount: number;
           } => row !== null && accessibleRestaurantNameSet.has(row.restaurant),
         ),
     [accessibleRestaurantNameSet, owners],
@@ -4276,21 +4285,28 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         }, 0),
     [activePeriods, activeRestaurants, ownerRows],
   );
+  const dividendsPeriodChange = useMemo(
+    () =>
+      ownerRows
+        .filter(
+          (row) =>
+            activeRestaurants.includes(row.restaurant) &&
+            activePeriods.includes(row.periodKey) &&
+            matchesArticleAlias(row.article, CASH_DIVIDEND_ARTICLE_ALIASES),
+        )
+        .reduce((sum, row) => sum - row.paidAmount, 0),
+    [activePeriods, activeRestaurants, ownerRows],
+  );
 
   const cashMovementBreakdown = useMemo(() => {
     let income = 0;
     let expense = 0;
-    let dividends = 0;
+    const dividends = dividendsPeriodChange;
     const loans = loansPeriodChange;
     let futureExpenses = 0;
     let other = 0;
 
     filteredFlowRows.forEach((row) => {
-      if (matchesArticleAlias(row.article, CASH_DIVIDEND_ARTICLE_ALIASES)) {
-        dividends += row.amount;
-        return;
-      }
-
       if (row.finType === "Операционная" && row.flowType === "Поступления") {
         income += row.amount;
         return;
@@ -4324,7 +4340,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       other,
       unidentified,
     };
-  }, [closingCashTotal, filteredFlowRows, loansPeriodChange, openingCashTotal]);
+  }, [closingCashTotal, dividendsPeriodChange, filteredFlowRows, loansPeriodChange, openingCashTotal]);
 
   const waterfallData = useMemo(
     () =>
