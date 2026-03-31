@@ -430,6 +430,7 @@ const CASH_REQUIRED_PAYMENT_GROUPS: CashArticleGroup[] = [
 ];
 const CASH_DIVIDEND_ARTICLE_ALIASES = ["доли"];
 const CASH_FUTURE_EXPENSE_ARTICLE_ALIASES = ["расходы будущих периодов"];
+const CASH_ASSET_EFFECT_ARTICLE_ALIASES = ["п/о суммы", "расходы будущих периодов"];
 const CASH_OTHER_ARTICLE_ALIASES = [
   "предоплата",
   "предоплаты",
@@ -533,6 +534,14 @@ function sumAmountsByArticleAliases<T extends { article: string; amount: number 
   return rows
     .filter((row) => matchesArticleAlias(row.article, aliases))
     .reduce((sum, row) => sum + row.amount, 0);
+}
+
+function normalizeCashEffectAmount(article: string, amount: number) {
+  if (matchesArticleAlias(article, CASH_ASSET_EFFECT_ARTICLE_ALIASES)) {
+    return amount * -1;
+  }
+
+  return amount;
 }
 
 function buildCashBreakdownRows(rows: BalanceFactRow[], groups: CashArticleGroup[]) {
@@ -4318,12 +4327,12 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       }
 
       if (matchesArticleAlias(row.article, CASH_FUTURE_EXPENSE_ARTICLE_ALIASES)) {
-        futureExpenses += row.amount;
+        futureExpenses += normalizeCashEffectAmount(row.article, row.amount);
         return;
       }
 
       if (matchesArticleAlias(row.article, CASH_OTHER_ARTICLE_ALIASES)) {
-        other += row.amount;
+        other += normalizeCashEffectAmount(row.article, row.amount);
       }
     });
 
