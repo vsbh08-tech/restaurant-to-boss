@@ -409,6 +409,9 @@ const OWNER_OPTIONS = ["ГЛ", "Друзья", "ЗМ", "МЗ"] as const;
 const ANALYTICS_PAGE_SIZE = 1000;
 const SHOW_ANALYTICS_VERIFICATION_TAB = false;
 const OWNERS_REVERSED_FLOW_ARTICLES = new Set(["Снятие с р/с"]);
+const OWNERS_DIVIDEND_ACCRUAL_ARTICLE_ALIASES = ["доли нач", "доли нач."];
+const OWNERS_DIVIDEND_PAYOUT_ARTICLE_ALIASES = ["доли"];
+const OWNERS_DIVIDEND_ARTICLE_LABEL = "Доли";
 const CANONICAL_INTRAGROUP_TRANSFER_GROUP = "займы выданные";
 const LEGACY_INTRAGROUP_TRANSFER_GROUP = "займы";
 const FILTER_CHIP_BASE_CLASS =
@@ -556,6 +559,34 @@ function normalizeOwnersFactAmounts(article: string, accrued: number, paid: numb
     accrued: paid,
     paid: accrued,
     net: net * -1,
+  };
+}
+
+function normalizeOwnersFactEntry(article: string, accrued: number, paid: number, net: number) {
+  const rawArticle = article.trim() || "Без статьи";
+  const normalizedAmounts = normalizeOwnersFactAmounts(rawArticle, accrued, paid, net);
+
+  if (matchesArticleAlias(rawArticle, OWNERS_DIVIDEND_ACCRUAL_ARTICLE_ALIASES)) {
+    return {
+      article: OWNERS_DIVIDEND_ARTICLE_LABEL,
+      accrued: normalizedAmounts.accrued,
+      paid: 0,
+      net: normalizedAmounts.net,
+    };
+  }
+
+  if (matchesArticleAlias(rawArticle, OWNERS_DIVIDEND_PAYOUT_ARTICLE_ALIASES)) {
+    return {
+      article: OWNERS_DIVIDEND_ARTICLE_LABEL,
+      accrued: 0,
+      paid: normalizedAmounts.paid,
+      net: normalizedAmounts.net,
+    };
+  }
+
+  return {
+    article: rawArticle,
+    ...normalizedAmounts,
   };
 }
 
@@ -3504,14 +3535,14 @@ function useOwnersFactRows(scope?: AnalyticsScopeConfig) {
         .map((row) => {
           const periodDate = parsePeriodDate(row["Период"]);
           const owner = row["Псевдо"] || "";
-          const article = row["Группа"] || "Без статьи";
+          const rawArticle = row["Группа"] || "Без статьи";
 
           if (!periodDate || !OWNER_OPTIONS.includes(owner as (typeof OWNER_OPTIONS)[number])) {
             return null;
           }
 
-          const normalizedAmounts = normalizeOwnersFactAmounts(
-            article,
+          const normalizedEntry = normalizeOwnersFactEntry(
+            rawArticle,
             parseTextNumeric(row["Начислено"]),
             parseTextNumeric(row["Оплачено"]),
             parseTextNumeric(row["Движение"]),
@@ -3523,10 +3554,10 @@ function useOwnersFactRows(scope?: AnalyticsScopeConfig) {
             periodDate,
             periodKey: makePeriodKey(periodDate),
             owner,
-            article,
-            accrued: normalizedAmounts.accrued,
-            paid: normalizedAmounts.paid,
-            net: normalizedAmounts.net,
+            article: normalizedEntry.article,
+            accrued: normalizedEntry.accrued,
+            paid: normalizedEntry.paid,
+            net: normalizedEntry.net,
           };
         })
         .filter((row): row is OwnersFactRow => row !== null)
@@ -4957,14 +4988,14 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         .map((row) => {
           const periodDate = parsePeriodDate(row["Период"]);
           const owner = row["Псевдо"] || "";
-          const article = row["Группа"] || "Без статьи";
+          const rawArticle = row["Группа"] || "Без статьи";
 
           if (!periodDate || !OWNER_OPTIONS.includes(owner as (typeof OWNER_OPTIONS)[number])) {
             return null;
           }
 
-          const normalizedAmounts = normalizeOwnersFactAmounts(
-            article,
+          const normalizedEntry = normalizeOwnersFactEntry(
+            rawArticle,
             parseTextNumeric(row["Начислено"]),
             parseTextNumeric(row["Оплачено"]),
             parseTextNumeric(row["Движение"]),
@@ -4976,10 +5007,10 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
             periodDate,
             periodKey: makePeriodKey(periodDate),
             owner,
-            article,
-            accrued: normalizedAmounts.accrued,
-            paid: normalizedAmounts.paid,
-            net: normalizedAmounts.net,
+            article: normalizedEntry.article,
+            accrued: normalizedEntry.accrued,
+            paid: normalizedEntry.paid,
+            net: normalizedEntry.net,
           };
         })
         .filter((row): row is OwnersFactRow => row !== null)
