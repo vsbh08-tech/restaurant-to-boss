@@ -3387,7 +3387,7 @@ function RestaurantProfitChart({
         </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pb-4 pt-4">
-        <ChartContainer config={chartConfig} className="aspect-[2/1] w-full xl:h-[300px] xl:aspect-auto">
+        <ChartContainer config={chartConfig} className="aspect-[2/1] w-full xl:h-[360px] xl:aspect-auto 2xl:h-[380px]">
           <ComposedChart data={chartData} barGap={0} barCategoryGap="20%" margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(228, 18%, 88%)" />
             <XAxis dataKey="label" tick={{ fontSize: 12 }} />
