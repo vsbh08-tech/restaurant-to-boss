@@ -1031,7 +1031,7 @@ const CASH_WATERFALL_COLORS = {
   total: "#3B82F6",
   income: "#0F766E",
   expense: "#EF4444",
-  dividends: "#F97316",
+  dividends: "#DB2777",
   loans: "#14B8A6",
   futureExpenses: "#8B5CF6",
   other: "#64748B",
