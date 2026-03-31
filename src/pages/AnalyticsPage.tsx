@@ -445,11 +445,11 @@ const CASH_OTHER_ARTICLE_ALIASES = [
 const CASH_OWNER_WITHDRAWAL_GROUP_ALIASES = ["снятие с р/с", "снятие с р\\с"];
 const RECONCILIATION_PO_SUMS_GROUP_ALIASES = ["п/о суммы"];
 const RECONCILIATION_ARTICLE_OPTIONS: ReconciliationArticle[] = ["Снятие с р/с", "П/О суммы"];
-const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные"];
-const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные"];
+const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные", "займы полученные кап"];
+const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные", "займы кап", "займы выданные кап"];
 const LOAN_GENERIC_ARTICLE_ALIASES = ["займы"];
 const LOAN_RENT_ARTICLE_ALIASES = ["аренда"];
-const INVESTMENT_LOAN_ARTICLE_ALIASES = ["займы полученные кап", "займы кап"];
+const INVESTMENT_LOAN_ARTICLE_ALIASES = ["займы полученные кап", "займы кап", "займы выданные кап"];
 const STICKY_HEADER_SURFACE_STYLE = {
   background: "linear-gradient(hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.1)), hsl(var(--card))",
 };
