@@ -14,6 +14,7 @@ import type { Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { safeLocalStorage } from "@/lib/storage";
 
 export type UserRole = "bartender" | "manager" | "owner" | "supervisor" | "admin";
 export type AppSection = "bar" | "prepayments" | "analytics";
@@ -170,7 +171,7 @@ export function getDefaultRoute(role: UserRole | null) {
 }
 
 export function rememberPendingRestaurantSelection(restaurantId: string) {
-  localStorage.setItem(PENDING_RESTAURANT_KEY, restaurantId);
+  safeLocalStorage.setItem(PENDING_RESTAURANT_KEY, restaurantId);
 }
 
 export function getProfileRestaurantIds(
@@ -200,30 +201,30 @@ export function getProfileRestaurantIds(
 
 function buildSelectedRestaurantId(userId: string, restaurants: AppRestaurant[]) {
   if (restaurants.length === 0) {
-    localStorage.removeItem(PENDING_RESTAURANT_KEY);
-    localStorage.removeItem(getStoredRestaurantKey(userId));
+    safeLocalStorage.removeItem(PENDING_RESTAURANT_KEY);
+    safeLocalStorage.removeItem(getStoredRestaurantKey(userId));
     return null;
   }
 
   const availableIds = restaurants.map((restaurant) => restaurant.id);
-  const pendingRestaurantId = localStorage.getItem(PENDING_RESTAURANT_KEY);
-  const storedRestaurantId = localStorage.getItem(getStoredRestaurantKey(userId));
+  const pendingRestaurantId = safeLocalStorage.getItem(PENDING_RESTAURANT_KEY);
+  const storedRestaurantId = safeLocalStorage.getItem(getStoredRestaurantKey(userId));
 
   const nextRestaurantId = [pendingRestaurantId, storedRestaurantId, restaurants[0]?.id].find(
     (restaurantId): restaurantId is string => Boolean(restaurantId && availableIds.includes(restaurantId)),
   );
 
   if (nextRestaurantId) {
-    localStorage.setItem(getStoredRestaurantKey(userId), nextRestaurantId);
+    safeLocalStorage.setItem(getStoredRestaurantKey(userId), nextRestaurantId);
   }
 
-  localStorage.removeItem(PENDING_RESTAURANT_KEY);
+  safeLocalStorage.removeItem(PENDING_RESTAURANT_KEY);
 
   return nextRestaurantId ?? null;
 }
 
 function loadDemoAuthState(): StoredDemoAuth | null {
-  const rawValue = localStorage.getItem(DEMO_AUTH_KEY);
+  const rawValue = safeLocalStorage.getItem(DEMO_AUTH_KEY);
 
   if (!rawValue) {
     return null;
@@ -243,11 +244,11 @@ function loadDemoAuthState(): StoredDemoAuth | null {
 }
 
 function persistDemoAuthState(payload: StoredDemoAuth) {
-  localStorage.setItem(DEMO_AUTH_KEY, JSON.stringify(payload));
+  safeLocalStorage.setItem(DEMO_AUTH_KEY, JSON.stringify(payload));
 }
 
 function clearDemoAuthState() {
-  localStorage.removeItem(DEMO_AUTH_KEY);
+  safeLocalStorage.removeItem(DEMO_AUTH_KEY);
 }
 
 async function resolveUserState(session: Session): Promise<ResolvedUserState> {
@@ -325,7 +326,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
           selectedRestaurantId: nextRestaurant.id,
         });
       } else {
-        localStorage.setItem(getStoredRestaurantKey(current.userId), nextRestaurant.id);
+        safeLocalStorage.setItem(getStoredRestaurantKey(current.userId), nextRestaurant.id);
       }
 
       return {
