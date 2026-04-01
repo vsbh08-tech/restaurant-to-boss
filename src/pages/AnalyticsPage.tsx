@@ -539,7 +539,7 @@ function normalizeBalanceArticle(article: string) {
     return "Комиссия начисленная";
   }
 
-  if (matchesArticleAlias(article, ["займы полученные кап"])) {
+  if (matchesArticleAlias(article, ["займы полученные кап", "займы выданные кап", "займы кап"])) {
     return "Инвестиционные займы";
   }
 
