@@ -4358,22 +4358,22 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       }
 
       if (matchesArticleAlias(row.article, CASH_LOAN_RECEIVED_ARTICLE_ALIASES)) {
-        loans += Math.abs(row.amount);
+        loans += row.amount;
         return;
       }
 
       if (matchesArticleAlias(row.article, CASH_LOAN_ISSUED_ARTICLE_ALIASES)) {
-        loans -= Math.abs(row.amount);
+        loans += row.amount * -1;
         return;
       }
 
       if (matchesArticleAlias(row.article, CASH_CAPITAL_LOAN_RECEIVED_ARTICLE_ALIASES)) {
-        capitalLoans += Math.abs(row.amount);
+        capitalLoans += row.amount;
         return;
       }
 
       if (matchesArticleAlias(row.article, CASH_CAPITAL_LOAN_ISSUED_ARTICLE_ALIASES)) {
-        capitalLoans -= Math.abs(row.amount);
+        capitalLoans += row.amount * -1;
         return;
       }
 
