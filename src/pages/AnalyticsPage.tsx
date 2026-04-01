@@ -533,6 +533,20 @@ function normalizeBalanceArticle(article: string) {
   return article;
 }
 
+function normalizeAnalyticsRestaurantName(value: string | null | undefined) {
+  const trimmed = (value ?? "").trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const normalized = normalizeLookupText(trimmed);
+  if (normalized === "солнцево" || normalized.includes("олнцево") || normalized.includes("лнцево")) {
+    return "Солнцево";
+  }
+
+  return trimmed;
+}
+
 function sumAmountsByArticleAliases<T extends { article: string; amount: number }>(rows: T[], aliases: string[]) {
   return rows
     .filter((row) => matchesArticleAlias(row.article, aliases))
@@ -3593,7 +3607,7 @@ function useOwnersFactRows(scope?: AnalyticsScopeConfig) {
 
           return {
             id: row.id,
-            restaurant: row["Ресторан"] || "Без ресторана",
+            restaurant: normalizeAnalyticsRestaurantName(row["Ресторан"]) || "Без ресторана",
             periodDate,
             periodKey: makePeriodKey(periodDate),
             owner,
@@ -3748,7 +3762,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
           return {
             id: row.id,
-            restaurant: row["Ресторан"] || "Без ресторана",
+            restaurant: normalizeAnalyticsRestaurantName(row["Ресторан"]) || "Без ресторана",
             periodDate,
             periodKey: makePeriodKey(periodDate),
             flowType: row["Поток"] || "",
@@ -3772,7 +3786,7 @@ function FinancialResultTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
           return {
             id: row.id,
-            restaurant: row["Ресторан"] || "Без ресторана",
+            restaurant: normalizeAnalyticsRestaurantName(row["Ресторан"]) || "Без ресторана",
             periodDate,
             periodKey: makePeriodKey(periodDate),
             balanceType: row["БалансТип"] || "",
@@ -4092,7 +4106,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
           return {
             id: row.id,
-            restaurant: row["Ресторан"] || "Без ресторана",
+            restaurant: normalizeAnalyticsRestaurantName(row["Ресторан"]) || "Без ресторана",
             periodDate,
             periodKey: makePeriodKey(periodDate),
             flowType: row["Поток"] || "",
@@ -4112,7 +4126,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       owners
         .map((row) => {
           const periodDate = parsePeriodDate(row["Период"]);
-          const restaurant = row["Ресторан"]?.trim() ?? "";
+          const restaurant = normalizeAnalyticsRestaurantName(row["Ресторан"]);
           const owner = row["Псевдо"]?.trim() ?? "";
           const rawArticle = row["Группа"]?.trim() ?? "";
 
@@ -4164,7 +4178,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
           return {
             id: row.id,
-            restaurant: row["Ресторан"] || "Без ресторана",
+            restaurant: normalizeAnalyticsRestaurantName(row["Ресторан"]) || "Без ресторана",
             periodDate,
             periodKey: makePeriodKey(periodDate),
             balanceType: row["БалансТип"] || "",
@@ -4544,7 +4558,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       owners
         .map((row) => {
           const periodDate = parsePeriodDate(row["Период"]);
-          const restaurant = row["Ресторан"]?.trim() ?? "";
+          const restaurant = normalizeAnalyticsRestaurantName(row["Ресторан"]);
           const baseCounterparty = row["Псевдо"]?.trim() ?? "Без контрагента";
           const article = row["Группа"] || "";
 
@@ -4592,7 +4606,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
           return {
             id: row.id,
-            restaurant: row["Ресторан"] || "Без ресторана",
+            restaurant: normalizeAnalyticsRestaurantName(row["Ресторан"]) || "Без ресторана",
             periodDate,
             periodKey: makePeriodKey(periodDate),
             balanceType: row["БалансТип"] || "",
@@ -4703,7 +4717,7 @@ function LoansTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
     owners.forEach((row) => {
       const periodDate = parsePeriodDate(row["Период"]);
-      const restaurant = row["Ресторан"]?.trim() ?? "";
+      const restaurant = normalizeAnalyticsRestaurantName(row["Ресторан"]);
       const counterparty = normalizeInvestmentLoanCounterparty(row["Псевдо"]);
       const article = normalizeLookupText(row["Группа"]);
 
@@ -4845,7 +4859,7 @@ function TransfersTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       owners
         .map((row) => {
           const periodDate = parsePeriodDate(row["Период"]);
-          const lenderRestaurant = row["Ресторан"]?.trim() ?? "";
+          const lenderRestaurant = normalizeAnalyticsRestaurantName(row["Ресторан"]);
           const recipientRestaurant = row["Псевдо"]?.trim() ?? "";
           const groupKey = normalizeLookupText(row["Группа"]);
 
@@ -5084,7 +5098,7 @@ function OwnersReportTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
           return {
             id: row.id,
-            restaurant: row["Ресторан"] || "Без ресторана",
+            restaurant: normalizeAnalyticsRestaurantName(row["Ресторан"]) || "Без ресторана",
             periodDate,
             periodKey: makePeriodKey(periodDate),
             owner,
@@ -6261,7 +6275,7 @@ function ReconciliationTabContent({ scope }: { scope?: AnalyticsScopeConfig }) {
       checks
         .map((row) => {
           const periodDate = parsePeriodDate(row["Период"]);
-          const restaurant = row["Ресторан"]?.trim() ?? "";
+          const restaurant = normalizeAnalyticsRestaurantName(row["Ресторан"]);
 
           if (!periodDate || !restaurant) {
             return null;
