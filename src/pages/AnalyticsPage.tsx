@@ -4347,16 +4347,6 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     let other = 0;
 
     filteredFlowRows.forEach((row) => {
-      if (row.finType === "Операционная" && row.flowType === "Поступления") {
-        income += row.amount;
-        return;
-      }
-
-      if (row.finType === "Операционная" && row.flowType === "Платежи") {
-        expense += Math.abs(row.amount);
-        return;
-      }
-
       if (matchesArticleAlias(row.article, CASH_LOAN_RECEIVED_ARTICLE_ALIASES)) {
         loans += row.amount;
         return;
@@ -4389,6 +4379,16 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
 
       if (matchesArticleAlias(row.article, CASH_OTHER_ARTICLE_ALIASES)) {
         other += normalizeCashEffectAmount(row.article, row.amount);
+        return;
+      }
+
+      if (row.finType === "Операционная" && row.flowType === "Поступления") {
+        income += row.amount;
+        return;
+      }
+
+      if (row.finType === "Операционная" && row.flowType === "Платежи") {
+        expense += Math.abs(row.amount);
       }
     });
 
