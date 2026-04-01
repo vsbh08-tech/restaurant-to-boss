@@ -446,6 +446,10 @@ const CASH_OTHER_ARTICLE_ALIASES = [
 const CASH_OWNER_WITHDRAWAL_GROUP_ALIASES = ["снятие с р/с", "снятие с р\\с"];
 const RECONCILIATION_PO_SUMS_GROUP_ALIASES = ["п/о суммы"];
 const RECONCILIATION_ARTICLE_OPTIONS: ReconciliationArticle[] = ["Снятие с р/с", "П/О суммы"];
+const CASH_LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные"];
+const CASH_LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные"];
+const CASH_CAPITAL_LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные кап"];
+const CASH_CAPITAL_LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные кап"];
 const LOAN_RECEIVED_ARTICLE_ALIASES = ["займы полученные"];
 const LOAN_ISSUED_ARTICLE_ALIASES = ["займы выданные"];
 const LOAN_GENERIC_ARTICLE_ALIASES = ["займы"];
@@ -1199,15 +1203,6 @@ function resolveLoanMovementDelta(article: string, movement: number) {
 
   if (isGenericLoanArticle(article) || isRentLoanArticle(article)) {
     return movement;
-  }
-
-  return null;
-}
-
-function resolveCashLoanMovementDelta(article: string, movement: number) {
-  const loanDelta = resolveLoanMovementDelta(article, movement);
-  if (loanDelta !== null) {
-    return loanDelta;
   }
 
   return null;
@@ -4328,20 +4323,6 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     [closingCashRowsWithOwnerNote],
   );
   const closingCashTotalWithoutOwners = closingCashTotal - ownerWithdrawalTotal;
-  const loansPeriodChange = useMemo(
-    () =>
-      ownerRows
-        .filter(
-          (row) =>
-            activeRestaurants.includes(row.restaurant) &&
-            activePeriods.includes(row.periodKey),
-        )
-        .reduce((sum, row) => {
-          const delta = resolveCashLoanMovementDelta(row.article, row.amount);
-          return delta === null ? sum : sum + delta;
-        }, 0),
-    [activePeriods, activeRestaurants, ownerRows],
-  );
   const dividendsPeriodChange = useMemo(
     () =>
       ownerRows
@@ -4359,7 +4340,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     let income = 0;
     let expense = 0;
     const dividends = dividendsPeriodChange;
-    const loans = loansPeriodChange;
+    let loans = 0;
     let capitalLoans = 0;
     let capitalInvestments = 0;
     let futureExpenses = 0;
@@ -4376,12 +4357,22 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         return;
       }
 
-      if (matchesArticleAlias(row.article, INVESTMENT_LOAN_RECEIVED_ARTICLE_ALIASES)) {
+      if (matchesArticleAlias(row.article, CASH_LOAN_RECEIVED_ARTICLE_ALIASES)) {
+        loans += Math.abs(row.amount);
+        return;
+      }
+
+      if (matchesArticleAlias(row.article, CASH_LOAN_ISSUED_ARTICLE_ALIASES)) {
+        loans -= Math.abs(row.amount);
+        return;
+      }
+
+      if (matchesArticleAlias(row.article, CASH_CAPITAL_LOAN_RECEIVED_ARTICLE_ALIASES)) {
         capitalLoans += Math.abs(row.amount);
         return;
       }
 
-      if (matchesArticleAlias(row.article, INVESTMENT_LOAN_ISSUED_ARTICLE_ALIASES)) {
+      if (matchesArticleAlias(row.article, CASH_CAPITAL_LOAN_ISSUED_ARTICLE_ALIASES)) {
         capitalLoans -= Math.abs(row.amount);
         return;
       }
@@ -4417,7 +4408,7 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       other,
       unidentified,
     };
-  }, [closingCashTotal, dividendsPeriodChange, filteredFlowRows, loansPeriodChange, openingCashTotal]);
+  }, [closingCashTotal, dividendsPeriodChange, filteredFlowRows, openingCashTotal]);
 
   const waterfallData = useMemo(
     () =>
