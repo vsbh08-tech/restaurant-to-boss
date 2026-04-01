@@ -531,8 +531,20 @@ function normalizeBalanceArticle(article: string) {
     return "Касса";
   }
 
-  if (matchesArticleAlias(article, ["авансы", "зп нач", "зп. нач"])) {
-    return "ЗП нач";
+  if (matchesArticleAlias(article, ["авансы", "зп нач", "зп. нач", "зп начисленная"])) {
+    return "ЗП начисленная";
+  }
+
+  if (matchesArticleAlias(article, ["комиссия нач", "комиссия начисленная"])) {
+    return "Комиссия начисленная";
+  }
+
+  if (matchesArticleAlias(article, ["займы полученные кап"])) {
+    return "Инвестиционные займы";
+  }
+
+  if (matchesArticleAlias(article, ["предоплата", "предоплаты", "предоплатыс"])) {
+    return "Предоплаты";
   }
 
   if (article.includes("��оли")) {
