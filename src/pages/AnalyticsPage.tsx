@@ -431,6 +431,7 @@ const CASH_REQUIRED_PAYMENT_GROUPS: CashArticleGroup[] = [
 const CASH_DIVIDEND_ARTICLE_ALIASES = ["доли"];
 const CASH_FUTURE_EXPENSE_ARTICLE_ALIASES = ["расходы будущих периодов"];
 const CASH_ASSET_EFFECT_ARTICLE_ALIASES = ["п/о суммы", "расходы будущих периодов"];
+const CASH_CAPITAL_INVESTMENT_ARTICLE_ALIASES = ["кап. вложения", "кап вложения", "кап.вложения"];
 const CASH_OTHER_ARTICLE_ALIASES = [
   "предоплата",
   "предоплаты",
@@ -1044,6 +1045,8 @@ const CASH_WATERFALL_COLORS = {
   expense: "#EF4444",
   dividends: "#DB2777",
   loans: "#14B8A6",
+  capitalLoans: "#0EA5E9",
+  capitalInvestments: "#A16207",
   futureExpenses: "#8B5CF6",
   other: "#64748B",
   unidentified: "#D97706",
@@ -1193,6 +1196,10 @@ function resolveCashLoanMovementDelta(article: string, movement: number) {
     return loanDelta;
   }
 
+  return null;
+}
+
+function resolveCapitalLoanMovementDelta(article: string, movement: number) {
   if (matchesArticleAlias(article, INVESTMENT_LOAN_RECEIVED_ARTICLE_ALIASES)) {
     return movement;
   }
@@ -1323,6 +1330,8 @@ function buildCashWaterfallData({
   expense,
   dividends,
   loans,
+  capitalLoans,
+  capitalInvestments,
   futureExpenses,
   other,
   unidentified,
@@ -1333,6 +1342,8 @@ function buildCashWaterfallData({
   expense: number;
   dividends: number;
   loans: number;
+  capitalLoans: number;
+  capitalInvestments: number;
   futureExpenses: number;
   other: number;
   unidentified: number;
@@ -1371,6 +1382,22 @@ function buildCashWaterfallData({
       fullLabel: "Займы",
       delta: loans,
       color: CASH_WATERFALL_COLORS.loans,
+    },
+    {
+      key: "capitalLoans",
+      label: "Займы кап",
+      legendLabel: "Займы кап",
+      fullLabel: "Капитальные займы",
+      delta: capitalLoans,
+      color: CASH_WATERFALL_COLORS.capitalLoans,
+    },
+    {
+      key: "capitalInvestments",
+      label: "Капвлож.",
+      legendLabel: "Кап. вложения",
+      fullLabel: "Капитальные вложения",
+      delta: capitalInvestments,
+      color: CASH_WATERFALL_COLORS.capitalInvestments,
     },
     {
       key: "futureExpenses",
@@ -4243,6 +4270,14 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     () => buildCashBreakdownRows(closingBalanceRows, CASH_ACCOUNT_GROUPS),
     [closingBalanceRows],
   );
+  const openingCapitalInvestmentTotal = useMemo(
+    () => sumAmountsByArticleAliases(openingBalanceRows, CASH_CAPITAL_INVESTMENT_ARTICLE_ALIASES),
+    [openingBalanceRows],
+  );
+  const closingCapitalInvestmentTotal = useMemo(
+    () => sumAmountsByArticleAliases(closingBalanceRows, CASH_CAPITAL_INVESTMENT_ARTICLE_ALIASES),
+    [closingBalanceRows],
+  );
   const requiredPaymentRows = useMemo(
     () =>
       buildCashBreakdownRows(
@@ -4313,6 +4348,24 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         }, 0),
     [activePeriods, activeRestaurants, ownerRows],
   );
+  const capitalLoansPeriodChange = useMemo(
+    () =>
+      ownerRows
+        .filter(
+          (row) =>
+            activeRestaurants.includes(row.restaurant) &&
+            activePeriods.includes(row.periodKey),
+        )
+        .reduce((sum, row) => {
+          const delta = resolveCapitalLoanMovementDelta(row.article, row.amount);
+          return delta === null ? sum : sum + delta;
+        }, 0),
+    [activePeriods, activeRestaurants, ownerRows],
+  );
+  const capitalInvestmentsPeriodChange = useMemo(
+    () => openingCapitalInvestmentTotal - closingCapitalInvestmentTotal,
+    [closingCapitalInvestmentTotal, openingCapitalInvestmentTotal],
+  );
   const dividendsPeriodChange = useMemo(
     () =>
       ownerRows
@@ -4331,6 +4384,8 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
     let expense = 0;
     const dividends = dividendsPeriodChange;
     const loans = loansPeriodChange;
+    const capitalLoans = capitalLoansPeriodChange;
+    const capitalInvestments = capitalInvestmentsPeriodChange;
     let futureExpenses = 0;
     let other = 0;
 
@@ -4355,7 +4410,8 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       }
     });
 
-    const classifiedDelta = income - expense + dividends + loans + futureExpenses + other;
+    const classifiedDelta =
+      income - expense + dividends + loans + capitalLoans + capitalInvestments + futureExpenses + other;
     const targetDelta = closingCashTotal - openingCashTotal;
     const unidentified = targetDelta - classifiedDelta;
 
@@ -4364,11 +4420,21 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
       expense,
       dividends,
       loans,
+      capitalLoans,
+      capitalInvestments,
       futureExpenses,
       other,
       unidentified,
     };
-  }, [closingCashTotal, dividendsPeriodChange, filteredFlowRows, loansPeriodChange, openingCashTotal]);
+  }, [
+    capitalInvestmentsPeriodChange,
+    capitalLoansPeriodChange,
+    closingCashTotal,
+    dividendsPeriodChange,
+    filteredFlowRows,
+    loansPeriodChange,
+    openingCashTotal,
+  ]);
 
   const waterfallData = useMemo(
     () =>
@@ -4379,6 +4445,8 @@ function CashMovementTab({ scope }: { scope?: AnalyticsScopeConfig }) {
         expense: cashMovementBreakdown.expense,
         dividends: cashMovementBreakdown.dividends,
         loans: cashMovementBreakdown.loans,
+        capitalLoans: cashMovementBreakdown.capitalLoans,
+        capitalInvestments: cashMovementBreakdown.capitalInvestments,
         futureExpenses: cashMovementBreakdown.futureExpenses,
         other: cashMovementBreakdown.other,
         unidentified: cashMovementBreakdown.unidentified,
