@@ -430,7 +430,7 @@ const CASH_REQUIRED_PAYMENT_GROUPS: CashArticleGroup[] = [
 ];
 const CASH_DIVIDEND_ARTICLE_ALIASES = ["доли"];
 const CASH_FUTURE_EXPENSE_ARTICLE_ALIASES = ["расходы будущих периодов"];
-const CASH_ASSET_EFFECT_ARTICLE_ALIASES = ["п/о суммы", "расходы будущих периодов"];
+const CASH_ASSET_EFFECT_ARTICLE_ALIASES = ["п/о суммы", "расходы будущих периодов", "кап. вложения", "кап вложения", "кап.вложения"];
 const CASH_CAPITAL_INVESTMENT_ARTICLE_ALIASES = ["кап. вложения", "кап вложения", "кап.вложения"];
 const CASH_OTHER_ARTICLE_ALIASES = [
   "предоплата",
