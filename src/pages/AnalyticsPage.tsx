@@ -435,6 +435,7 @@ const CASH_CAPITAL_INVESTMENT_ARTICLE_ALIASES = ["кап. вложения", "к
 const CASH_OTHER_ARTICLE_ALIASES = [
   "предоплата",
   "предоплаты",
+  "предоплатыс",
   "п/о суммы",
   "авансы",
   "зп нач",
@@ -532,6 +533,10 @@ function normalizeBalanceArticle(article: string) {
 
   if (matchesArticleAlias(article, ["авансы", "зп нач", "зп. нач"])) {
     return "ЗП нач";
+  }
+
+  if (article.includes("��оли")) {
+    return "Доли";
   }
 
   return article;
