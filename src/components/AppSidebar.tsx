@@ -61,34 +61,38 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarContent className="pt-4">
-        <div className={`mb-6 px-4 ${collapsed ? "px-2" : ""}`}>
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border/60">
+      <SidebarContent className="pt-6">
+        <div className={`mb-6 px-5 ${collapsed ? "px-2" : ""}`}>
           {collapsed ? (
-            <span className="block text-center font-serif text-lg font-bold text-sidebar-primary">R</span>
+            <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-sidebar-primary/20 text-lg font-serif font-bold text-sidebar-primary">
+              R
+            </span>
           ) : (
-            <div>
-              <h1 className="font-serif text-lg font-bold tracking-tight text-sidebar-primary">RestaurantOS</h1>
-              <div className="mt-1 h-0.5 w-10 rounded-full bg-sidebar-primary/60" />
+            <div className="space-y-2">
+              <h1 className="font-serif text-xl font-bold tracking-tight text-sidebar-primary">RestaurantOS</h1>
+              <p className="text-sm text-sidebar-foreground/70">Управляй финансами легко</p>
+              <div className="h-0.5 w-10 rounded-full bg-sidebar-primary/60" />
             </div>
           )}
         </div>
 
-        <SidebarGroup>
+        <SidebarGroup className="px-4">
           <SidebarGroupContent>
             <SidebarMenu>
               {visibleItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
+                    size="lg"
                     isActive={item.section === "analytics" ? analyticsActive : location.pathname === item.url}
+                    className="rounded-full border border-sidebar-border/70 bg-sidebar/40 px-4 py-2.5 text-[15px] font-semibold text-sidebar-foreground/80 transition-all hover:border-primary/60 hover:bg-primary/10 hover:text-sidebar-foreground data-[active=true]:border-primary/70 data-[active=true]:bg-primary/20 data-[active=true]:text-white data-[active=true]:shadow-[0_0_0_2px_rgba(0,217,255,0.2)]"
                   >
                     <NavLink
                       to={item.section === "analytics" ? ANALYTICS_ROUTE_PATHS.financial : item.url}
                       end={item.section !== "analytics"}
                       onClick={handleSidebarItemClick}
-                      className="hover:bg-sidebar-accent/60"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                      className="w-full"
                     >
                       <item.icon className="mr-2 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
@@ -96,16 +100,19 @@ export function AppSidebar() {
                   </SidebarMenuButton>
 
                   {item.section === "analytics" && analyticsVisible && !collapsed ? (
-                    <SidebarMenuSub>
+                    <SidebarMenuSub className="mt-2 border-sidebar-border/50">
                       {ANALYTICS_SIDEBAR_ITEMS.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.url}>
-                          <SidebarMenuSubButton asChild isActive={location.pathname === subItem.url}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={location.pathname === subItem.url}
+                            className="rounded-full border border-sidebar-border/50 bg-sidebar/30 px-3 py-1.5 text-xs font-semibold text-sidebar-foreground/70 transition-all hover:border-primary/60 hover:bg-primary/10 hover:text-white data-[active=true]:border-primary/70 data-[active=true]:bg-primary/20 data-[active=true]:text-white"
+                          >
                             <NavLink
                               to={subItem.url}
                               end
                               onClick={handleSidebarItemClick}
-                              className="hover:bg-sidebar-accent/60"
-                              activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                              className="w-full"
                             >
                               <span>{subItem.title}</span>
                             </NavLink>
@@ -124,8 +131,8 @@ export function AppSidebar() {
       <SidebarFooter className="p-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">
+            <button className="flex w-full items-center gap-3 rounded-2xl border border-sidebar-border/60 bg-sidebar/40 px-3 py-2 text-sm text-sidebar-foreground/80 transition-all hover:border-primary/60 hover:bg-primary/10">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-primary/20 text-xs font-bold text-sidebar-primary">
                 {getUserBadgeText(userName, roleLabel)}
               </div>
               {!collapsed && (

@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["DM Sans", "system-ui", "sans-serif"],
-        serif: ["DM Serif Display", "DM Sans", "serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+        serif: ["Montserrat", "Inter", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
       colors: {
