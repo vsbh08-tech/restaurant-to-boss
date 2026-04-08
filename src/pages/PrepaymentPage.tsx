@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { CalendarIcon, Columns3, Plus, Search } from "lucide-react";
+import { CalendarIcon, CheckCircle2, Columns3, DollarSign, Plus, RotateCcw, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -56,7 +56,7 @@ type PrepaymentWorkflowFields = {
 type Prepayment = Database["public"]["Tables"]["prepayments"]["Row"] & PrepaymentWorkflowFields;
 type PrepaymentInsert = Database["public"]["Tables"]["prepayments"]["Insert"] & PrepaymentWorkflowFields;
 type PrepaymentUpdate = Database["public"]["Tables"]["prepayments"]["Update"] & PrepaymentWorkflowFields;
-type PrepaymentCalendarKey = "period" | "prepayment" | "banquet" | "transfer";
+type PrepaymentCalendarKey = "prepayment" | "banquet" | "transfer";
 type PrepaymentOptionalColumn = "Сотрудник_Создал" | "Сотрудник_Изменил" | "Дата_Изменения" | "Комментарий";
 
 const PREPAYMENT_OPTIONAL_COLUMNS: PrepaymentOptionalColumn[] = [
@@ -117,6 +117,41 @@ function getPrepaymentBalanceAmount(item: Pick<Prepayment, "Статус" | "С�
 
 function getPrepaymentMetricAmount(item: Pick<Prepayment, "Сумма">) {
   return item["Сумма"] || 0;
+}
+
+function formatPrepaymentMonthLabel(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+
+  if (!year || !month) {
+    return monthKey;
+  }
+
+  return format(new Date(year, month - 1, 1), "LLLL yyyy", { locale: ru });
+}
+
+function formatPrepaymentMonthContextLabel(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+
+  if (!year || !month) {
+    return monthKey;
+  }
+
+  const monthLabels = [
+    "январе",
+    "феврале",
+    "марте",
+    "апреле",
+    "мае",
+    "июне",
+    "июле",
+    "августе",
+    "сентябре",
+    "октябре",
+    "ноябре",
+    "декабре",
+  ];
+
+  return `в ${monthLabels[month - 1] ?? monthKey}`;
 }
 
 function extractMissingPrepaymentColumn(message: string) {
@@ -198,17 +233,16 @@ export default function PrepaymentPage() {
   const queryClient = useQueryClient();
   const { role, selectedRestaurantId, userName } = useRole();
   const canManagePrepayments = role === "manager";
+  const currentMonthKey = format(new Date(), "yyyy-MM");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [actionMode, setActionMode] = useState<ActionMode>("create");
-  const [periodDate, setPeriodDate] = useState<Date>(new Date());
-  const [isExactPeriodFilter, setIsExactPeriodFilter] = useState(false);
+  const [selectedPeriodKey, setSelectedPeriodKey] = useState<string>(currentMonthKey);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>(DEFAULT_VISIBLE_COLUMNS);
   const [calendarOpen, setCalendarOpen] = useState<Record<PrepaymentCalendarKey, boolean>>({
-    period: false,
     prepayment: false,
     banquet: false,
     transfer: false,
@@ -258,21 +292,34 @@ export default function PrepaymentPage() {
       transfer: false,
     }));
   };
-  const selectedDateKey = format(periodDate, "yyyy-MM-dd");
-  const selectedMonthKey = format(periodDate, "yyyy-MM");
+  const periodOptions = useMemo(() => {
+    const monthMap = new Map<string, string>();
+
+    monthMap.set(currentMonthKey, formatPrepaymentMonthLabel(currentMonthKey));
+
+    prepayments.forEach((item) => {
+      const prepaymentDateKey = item["Дата предоплаты"]?.slice(0, 7);
+      const banquetDateKey = item["Дата банкета"]?.slice(0, 7);
+
+      [prepaymentDateKey, banquetDateKey].forEach((monthKey) => {
+        if (!monthKey) return;
+        monthMap.set(monthKey, formatPrepaymentMonthLabel(monthKey));
+      });
+    });
+
+    return Array.from(monthMap.entries())
+      .map(([key, label]) => ({ key, label }))
+      .sort((left, right) => right.key.localeCompare(left.key));
+  }, [currentMonthKey, prepayments]);
 
   const periodFiltered = useMemo(() => {
     return prepayments.filter((item) => {
       const prepaymentDateKey = item["Дата предоплаты"] || "";
       const banquetDateKey = item["Дата банкета"] || "";
 
-      if (isExactPeriodFilter) {
-        return prepaymentDateKey === selectedDateKey || banquetDateKey === selectedDateKey;
-      }
-
-      return prepaymentDateKey.startsWith(selectedMonthKey) || banquetDateKey.startsWith(selectedMonthKey);
+      return prepaymentDateKey.startsWith(selectedPeriodKey) || banquetDateKey.startsWith(selectedPeriodKey);
     });
-  }, [isExactPeriodFilter, prepayments, selectedDateKey, selectedMonthKey]);
+  }, [prepayments, selectedPeriodKey]);
 
   const filteredRows = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -305,13 +352,25 @@ export default function PrepaymentPage() {
   }, [paymentFilter, periodFiltered, searchQuery, statusFilter]);
 
   const stats = useMemo(() => {
-    const openRows = periodFiltered.filter((item) => item["Статус"] === "Открыт");
+    const receivedPeriodRows = prepayments.filter((item) =>
+      (item["Дата предоплаты"] || "").startsWith(selectedPeriodKey),
+    );
+    const banquetPeriodRows = prepayments.filter((item) =>
+      (item["Дата банкета"] || "").startsWith(selectedPeriodKey),
+    );
+    const openRows = prepayments.filter(
+      (item) =>
+        item["Статус"] === "Открыт" &&
+        (item["Дата банкета"] || "").startsWith(selectedPeriodKey),
+    );
     const closedRows = periodFiltered.filter((item) => item["Статус"] === "Закрыт");
     const refundRows = periodFiltered.filter((item) => item["Статус"] === "Возврат");
 
     return {
-      totalCount: periodFiltered.length,
-      totalSum: periodFiltered.reduce((sum, item) => sum + getPrepaymentMetricAmount(item), 0),
+      receivedPeriodCount: receivedPeriodRows.length,
+      receivedPeriodSum: receivedPeriodRows.reduce((sum, item) => sum + getPrepaymentMetricAmount(item), 0),
+      banquetPeriodCount: banquetPeriodRows.length,
+      banquetPeriodSum: banquetPeriodRows.reduce((sum, item) => sum + getPrepaymentMetricAmount(item), 0),
       openCount: openRows.length,
       openSum: openRows.reduce((sum, item) => sum + getPrepaymentMetricAmount(item), 0),
       closedCount: closedRows.length,
@@ -319,7 +378,7 @@ export default function PrepaymentPage() {
       refundCount: refundRows.length,
       refundSum: refundRows.reduce((sum, item) => sum + getPrepaymentMetricAmount(item), 0),
     };
-  }, [periodFiltered]);
+  }, [periodFiltered, prepayments, selectedPeriodKey]);
 
   const openCandidates = useMemo(() => {
     const normalizedQuery = operationSearch.trim().toLowerCase();
@@ -460,9 +519,16 @@ const upsertMutation = useMutation({
     },
   });
 
-  const periodLabel = isExactPeriodFilter
-    ? format(periodDate, "dd.MM.yyyy", { locale: ru })
-    : format(periodDate, "LLLL yyyy", { locale: ru });
+  const periodLabel = useMemo(
+    () =>
+      periodOptions.find((option) => option.key === selectedPeriodKey)?.label ??
+      formatPrepaymentMonthLabel(selectedPeriodKey),
+    [periodOptions, selectedPeriodKey],
+  );
+  const periodContextLabel = useMemo(
+    () => formatPrepaymentMonthContextLabel(selectedPeriodKey),
+    [selectedPeriodKey],
+  );
 
   const toggleColumn = (column: ColumnKey) => {
     setVisibleColumns((current) =>
@@ -510,37 +576,22 @@ const upsertMutation = useMutation({
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold font-serif">Предоплаты</h1>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Popover
-            open={calendarOpen.period}
-            onOpenChange={(open) => setCalendarOpen((current) => ({ ...current, period: open }))}
-          >
-            <PopoverTrigger asChild>
-              <Button variant="outline">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {periodLabel}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="single"
-                selected={periodDate}
-                onSelect={(date) => {
-                  if (!date) return;
-                  setPeriodDate(date);
-                  setIsExactPeriodFilter(true);
-                  setCalendarOpen((current) => ({ ...current, period: false }));
-                }}
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-
-          {isExactPeriodFilter ? (
-            <Button variant="outline" size="sm" onClick={() => setIsExactPeriodFilter(false)}>
-              Сбросить дату
-            </Button>
-          ) : null}
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex min-w-[210px] flex-col gap-1">
+            <Label className="text-xs text-muted-foreground">Период</Label>
+            <Select value={selectedPeriodKey} onValueChange={setSelectedPeriodKey}>
+              <SelectTrigger>
+                <SelectValue placeholder="Выберите период" />
+              </SelectTrigger>
+              <SelectContent>
+                {periodOptions.map((option) => (
+                  <SelectItem key={option.key} value={option.key}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -809,41 +860,83 @@ const upsertMutation = useMutation({
          </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Card className="kpi-card kpi-card-muted">
-          <CardContent className="pb-4 pt-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Всего</p>
-            <p className="mt-1 text-2xl font-bold">{formatCurrency(stats.totalSum)} ₽</p>
-            <p className="text-sm text-muted-foreground">{stats.totalCount} шт.</p>
+          <CardContent className="py-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <Wallet className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Всего получено</p>
+                <p className="text-[10px] leading-tight text-muted-foreground">{periodContextLabel}</p>
+              </div>
+            </div>
+            <p className="mt-2 text-xl font-bold leading-none">{formatCurrency(stats.receivedPeriodSum)} ₽</p>
+            <p className="mt-1 text-sm text-muted-foreground">{stats.receivedPeriodCount} шт.</p>
+          </CardContent>
+        </Card>
+
+        <Card className="kpi-card kpi-card-success">
+          <CardContent className="py-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-success/10">
+                <CalendarIcon className="h-4 w-4 text-success" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Всего банкетов</p>
+                <p className="text-[10px] leading-tight text-muted-foreground">{periodContextLabel}</p>
+              </div>
+            </div>
+            <p className="mt-2 text-xl font-bold leading-none text-success">{formatCurrency(stats.banquetPeriodSum)} ₽</p>
+            <p className="mt-1 text-sm text-success/70">{stats.banquetPeriodCount} шт.</p>
           </CardContent>
         </Card>
 
         <Card className="kpi-card kpi-card-primary">
-          <CardContent className="pb-4 pt-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Открытые</p>
-            <p className="mt-1 text-2xl font-bold text-primary">{formatCurrency(stats.openSum)} ₽</p>
-            <p className="text-sm text-primary/70">{stats.openCount} шт.</p>
+          <CardContent className="py-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <DollarSign className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Открытые</p>
+                <p className="text-[10px] leading-tight text-muted-foreground">{periodContextLabel}</p>
+              </div>
+            </div>
+            <p className="mt-2 text-xl font-bold leading-none text-primary">{formatCurrency(stats.openSum)} ₽</p>
+            <p className="mt-1 text-sm text-primary/70">{stats.openCount} шт.</p>
           </CardContent>
         </Card>
 
         <Card className="kpi-card kpi-card-sky">
-          <CardContent className="pb-4 pt-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Закрытые</p>
-            <p className="mt-1 text-2xl font-bold text-sky">{formatCurrency(stats.closedSum)} ₽</p>
-            <p className="text-sm text-sky/70">{stats.closedCount} шт.</p>
+          <CardContent className="py-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-light">
+                <CheckCircle2 className="h-4 w-4 text-sky" />
+              </div>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Закрытые</p>
+            </div>
+            <p className="mt-2 text-xl font-bold leading-none text-sky">{formatCurrency(stats.closedSum)} ₽</p>
+            <p className="mt-1 text-sm text-sky/70">{stats.closedCount} шт.</p>
           </CardContent>
         </Card>
 
         <Card className="kpi-card kpi-card-accent">
-          <CardContent className="pb-4 pt-4">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Возвраты</p>
-            <p className="mt-1 text-2xl font-bold text-accent">{formatCurrency(stats.refundSum)} ₽</p>
-            <p className="text-sm text-accent/70">{stats.refundCount} шт.</p>
+          <CardContent className="py-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-coral-light">
+                <RotateCcw className="h-4 w-4 text-accent" />
+              </div>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Возвраты</p>
+            </div>
+            <p className="mt-2 text-xl font-bold leading-none text-accent">{formatCurrency(stats.refundSum)} ₽</p>
+            <p className="mt-1 text-sm text-accent/70">{stats.refundCount} шт.</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3"> 
         <div className="relative min-w-[220px] flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input

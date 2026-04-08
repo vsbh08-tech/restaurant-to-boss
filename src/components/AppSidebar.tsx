@@ -28,9 +28,9 @@ import { ANALYTICS_ROUTE_PATHS, ANALYTICS_SIDEBAR_ITEMS } from "@/lib/analytics-
 import { roleLabels, useRole } from "@/lib/roles";
 
 const topLevelItems = [
-  { title: "Предоплаты", url: "/prepayments", icon: CreditCard, section: "prepayments" as const },
-  { title: "Бар", url: "/bar", icon: Wine, section: "bar" as const },
-  { title: "Аналитика", url: ANALYTICS_ROUTE_PATHS.root, icon: BarChart3, section: "analytics" as const },
+  { title: "??????????", url: "/prepayments", icon: CreditCard, section: "prepayments" as const },
+  { title: "???", url: "/bar", icon: Wine, section: "bar" as const },
+  { title: "?????????", url: ANALYTICS_ROUTE_PATHS.root, icon: BarChart3, section: "analytics" as const },
 ];
 
 function getUserBadgeText(name: string | null, roleLabel: string) {
@@ -52,7 +52,7 @@ export function AppSidebar() {
   const visibleItems = topLevelItems.filter((item) => canAccess(item.section));
   const analyticsVisible = visibleItems.some((item) => item.section === "analytics");
   const analyticsActive = location.pathname.startsWith(ANALYTICS_ROUTE_PATHS.root);
-  const roleLabel = role ? roleLabels[role] : "Пользователь";
+  const roleLabel = role ? roleLabels[role] : "????????????";
 
   const handleSidebarItemClick = () => {
     if (isMobile) {
@@ -71,7 +71,7 @@ export function AppSidebar() {
           ) : (
             <div className="space-y-2">
               <h1 className="font-serif text-xl font-bold tracking-tight text-sidebar-primary">RestaurantOS</h1>
-              <p className="text-sm text-sidebar-foreground/70">Управляй финансами легко</p>
+              <p className="text-sm text-sidebar-foreground/70">???????? ????????? ?????</p>
               <div className="h-0.5 w-10 rounded-full bg-sidebar-primary/60" />
             </div>
           )}
@@ -101,24 +101,21 @@ export function AppSidebar() {
 
                   {item.section === "analytics" && analyticsVisible && !collapsed ? (
                     <SidebarMenuSub className="mt-2 border-sidebar-border/50">
-                      {ANALYTICS_SIDEBAR_ITEMS.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.url}>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={location.pathname === subItem.url}
-                            className="rounded-full border border-sidebar-border/50 bg-sidebar/30 px-3 py-1.5 text-xs font-semibold text-sidebar-foreground/70 transition-all hover:border-primary/60 hover:bg-primary/10 hover:text-white data-[active=true]:border-primary/70 data-[active=true]:bg-primary/20 data-[active=true]:text-white"
-                          >
-                            <NavLink
-                              to={subItem.url}
-                              end
-                              onClick={handleSidebarItemClick}
-                              className="w-full"
+                      {ANALYTICS_SIDEBAR_ITEMS.filter((subItem) => !subItem.adminOnly || role === "admin").map(
+                        (subItem) => (
+                          <SidebarMenuSubItem key={subItem.url}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={location.pathname === subItem.url}
+                              className="rounded-full border border-sidebar-border/50 bg-sidebar/30 px-3 py-1.5 text-xs font-semibold text-sidebar-foreground/70 transition-all hover:border-primary/60 hover:bg-primary/10 hover:text-white data-[active=true]:border-primary/70 data-[active=true]:bg-primary/20 data-[active=true]:text-white"
                             >
-                              <span>{subItem.title}</span>
-                            </NavLink>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
+                              <NavLink to={subItem.url} end onClick={handleSidebarItemClick} className="w-full">
+                                <span>{subItem.title}</span>
+                              </NavLink>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ),
+                      )}
                     </SidebarMenuSub>
                   ) : null}
                 </SidebarMenuItem>
@@ -138,10 +135,10 @@ export function AppSidebar() {
               {!collapsed && (
                 <>
                   <div className="min-w-0 flex-1 text-left">
-                    <div className="truncate text-sm font-medium">{userName || "Пользователь"}</div>
-                    <div className="truncate text-xs text-sidebar-foreground/70">{roleLabel}</div>
+                    <div className="truncate text-sm font-medium text-sidebar-accent-foreground">{userName || "????????????"}</div>
+                    <div className="truncate text-xs text-sidebar-foreground/60">{roleLabel}</div>
                   </div>
-                  <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                  <ChevronDown className="h-3.5 w-3.5 opacity-40" />
                 </>
               )}
             </button>
@@ -149,13 +146,13 @@ export function AppSidebar() {
 
           <DropdownMenuContent side="top" align="start" className="w-56">
             <DropdownMenuLabel className="space-y-1">
-              <div className="truncate text-sm">{userName || "Пользователь"}</div>
+              <div className="truncate text-sm">{userName || "????????????"}</div>
               <div className="truncate text-xs font-normal text-muted-foreground">{userEmail || roleLabel}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => void signOut()}>
               <LogOut className="mr-2 h-4 w-4" />
-              Выйти
+              ?????
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

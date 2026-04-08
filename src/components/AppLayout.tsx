@@ -13,7 +13,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <header className="flex h-20 shrink-0 items-center justify-between border-b border-border/60 bg-card/70 px-6 backdrop-blur-sm">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="h-9 w-9 rounded-full border border-border/60 bg-card/60 text-foreground/80 hover:bg-card/90" />
-              <span className="text-lg font-serif font-semibold text-foreground/90">Панель управления</span>
+              <span className="text-lg font-serif font-semibold text-foreground/90">?????? ??????????</span>
             </div>
           </header>
 

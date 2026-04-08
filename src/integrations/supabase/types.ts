@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      check_kontragent: {
+        Row: {
+          id: string
+          Р”Р°С‚Р°: string | null
+          Р“СЂСѓРїРїР°: string | null
+          Р”РІРёР¶РµРЅРёРµ: string | null
+          РќР°С‡РёСЃР»РµРЅРѕ: string | null
+          РћРїР»Р°С‡РµРЅРѕ: string | null
+          РџРµСЂРёРѕРґ: string | null
+          РџСЃРµРІРґРѕ: string | null
+          Р РµСЃС‚РѕСЂР°РЅ: string | null
+        }
+        Insert: {
+          id?: string
+          Р”Р°С‚Р°?: string | null
+          Р“СЂСѓРїРїР°?: string | null
+          Р”РІРёР¶РµРЅРёРµ?: string | null
+          РќР°С‡РёСЃР»РµРЅРѕ?: string | null
+          РћРїР»Р°С‡РµРЅРѕ?: string | null
+          РџРµСЂРёРѕРґ?: string | null
+          РџСЃРµРІРґРѕ?: string | null
+          Р РµСЃС‚РѕСЂР°РЅ?: string | null
+        }
+        Update: {
+          id?: string
+          Р”Р°С‚Р°?: string | null
+          Р“СЂСѓРїРїР°?: string | null
+          Р”РІРёР¶РµРЅРёРµ?: string | null
+          РќР°С‡РёСЃР»РµРЅРѕ?: string | null
+          РћРїР»Р°С‡РµРЅРѕ?: string | null
+          РџРµСЂРёРѕРґ?: string | null
+          РџСЃРµРІРґРѕ?: string | null
+          Р РµСЃС‚РѕСЂР°РЅ?: string | null
+        }
+        Relationships: []
+      }
       balance_fact: {
         Row: {
           id: string
